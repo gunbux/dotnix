@@ -9,16 +9,20 @@
   # Gnome Settings
   services.xserver.desktopManager.gnome3 = {
     enable = true;
-    # extraGSettingsOverrides = ''
-    #   [ org/gnome/desktop/peripherals/mouse ]
-    #   natural-scroll=true
-    #
-    #   [org.gnome.desktop.peripherals.touchpad]
-    #   tap-to-click=true
-    #   click-method='default'
-    #   [org/gnome/shell]
-    #   disable-user-extensions=false
-    # '';
+    extraGSettingsOverridePackages = [ pkgs.gnome.muttter ];
+    extraGSettingsOverrides = ''
+     [org.gnome.mutter]
+     experimental-features=['scale-monitor-framebuffer']
+     [ org/gnome/desktop/peripherals/mouse ]
+      natural-scroll=true
+
+     [org.gnome.desktop.peripherals.touchpad]
+     tap-to-click=true
+     click-method='default'
+
+     [org/gnome/shell]
+     disable-user-extensions=false
+    '';
   };
 
   # Enable GNOME Keyring daemon
