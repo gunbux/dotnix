@@ -59,7 +59,7 @@
   services.printing.enable = true;
   services.udisks2.enable = true;
   security.sudo.enable = true;
-  # security.sudo.wheelNeedsPassword = false;
+  security.sudo.wheelNeedsPassword = false;
 
   # The NixOS release to be compatible with for stateful data such as databases
   system.stateVersion = "23.05";

@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 # Declaratively add Home Manager
 let
   home-manager = builtins.fetchTarball "https://github.com/nix-community/home-manager/archive/master.tar.gz";
@@ -35,7 +35,6 @@ in
       vivaldi
   
       # Core
-      neovim
       git
       nfs-utils
       tmux
@@ -64,6 +63,13 @@ in
       discord
       # davinci-resolve
     ];
+
+    # Neovim Configs
+    programs.neovim = {
+      enable = true;
+      defaultEditor = true;
+      extraConfig = lib.fileContents ./config/nvim/init.vim;
+    };
 
     home.stateVersion = "23.05";
   };
