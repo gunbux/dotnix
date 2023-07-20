@@ -54,7 +54,6 @@ in
       # DevTools
       gcc
       cargo
-      kitty
       ninja
       nodejs
       python312
