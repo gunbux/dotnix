@@ -1,15 +1,14 @@
 { config, pkgs, ... }:
 {
-  # Enable Gnome
+  # Enable GDM
   services.xserver.enable = true;
-  services.xserver.gdm.enable = true;
   services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gdm.wayland = true;
+  services.xserver.displayManager.gdm.wayland = true;
 
   # Gnome Settings
-  services.xserver.desktopManager.gnome3 = {
+  services.xserver.desktopManager.gnome = {
     enable = true;
-    extraGSettingsOverridePackages = [ pkgs.gnome.muttter ];
+    extraGSettingsOverridePackages = [ pkgs.gnome.mutter ];
     extraGSettingsOverrides = ''
      [org.gnome.mutter]
      experimental-features=['scale-monitor-framebuffer']
@@ -17,7 +16,6 @@
       natural-scroll=true
 
      [org.gnome.desktop.peripherals.touchpad]
-     tap-to-click=true
      click-method='default'
 
      [org/gnome/shell]

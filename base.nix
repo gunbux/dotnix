@@ -19,7 +19,10 @@
     # Include modular configs here
     ./modules/gnome.nix
     ./modules/fonts.nix
-  ]
+
+    # Home config
+    ./home.nix
+  ];
 
   nixpkgs.config.allowUnfree = true;
 
@@ -43,17 +46,14 @@
   # Locale and Timezone
   i18n = {
     defaultLocale = "en_US.UTF-8";
-    timezone = "Asia/Singapore";
   };
+  time.timeZone = "Asia/Singapore";
 
   # Keyboard Settings
   services.xserver.enable = true;
   services.xserver.layout = "us";
   services.xserver.xkbOptions = "ctrl:nocaps";
   services.xserver.libinput.enable = true;
-  services.xserver.libinput.naturalScrolling = true;
-  services.xserver.libinput.tapToClick = true;
-  services.xserver.libinput.disableWhileTyping = true;
 
   # Services
   services.openssh.enable = true;
@@ -63,10 +63,10 @@
   # security.sudo.wheelNeedsPassword = false;
 
   # The NixOS release to be compatible with for stateful data such as databases
-  system.stateVersion = "23.11";
+  system.stateVersion = "23.05";
   system.autoUpgrade = {
     enable = true;
-    autoUpgrade.channel = "https://channels.nixos.org/nixos-unstable";
+    channel = "https://channels.nixos.org/nixos-unstable";
   };
 
   # Docker
@@ -82,11 +82,10 @@
     extraGroups = [ "wheel" "networkmanager" "docker" "audio" "video" "input" "disk" ];
   };
 
-  nix = {
-    nixPath = [
-      "nixos-config=/home/chun/dotnix/base.nix"
-      "home-manager=/home/chun/dotnix/home-manager"
-    ]
-  };
-
+  # Some default programs to be installed in system profile
+  environment.systemPackages = with pkgs; [
+    home-manager
+    vim
+    firefox
+  ];
 }

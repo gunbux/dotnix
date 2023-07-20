@@ -1,7 +1,7 @@
 { config, pkgs, ...}:
 {
   fonts = {
-    enableFontDir = true;
+    fontDir.enable = true;
     fonts = with pkgs; [
       jetbrains-mono
       source-sans-pro
@@ -15,6 +15,6 @@
         sansSerif = [ "Source Sans Pro" ];
         serif = [ "Source Serif Pro" ];
       };
-    }
+    };
   };
 }
