@@ -1,6 +1,5 @@
 # Nix OS Configs
 # TODO:
-# Switch to unstable
 # Add power management
 # Add font configs
 # Add Pipewire configs
@@ -87,5 +86,6 @@
     home-manager
     vim
     firefox
+    powertop
   ];
 }

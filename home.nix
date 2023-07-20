@@ -36,6 +36,34 @@ in
   
       # Core
       neovim
+      git
+      nfs-utils
+      tmux
+
+      # System Utils
+      iperf
+      btop
+      fzf
+      fd
+      rsync
+      starship
+      wget
+      tshark
+      nmap
+
+      # DevTools
+      gcc
+      cargo
+      kitty
+      ninja
+      nodejs
+      python312
+
+      # Apps
+      spotify
+      bitwarden
+      discord
+      # davinci-resolve
     ];
 
     home.stateVersion = "23.05";
