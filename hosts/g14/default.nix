@@ -1,5 +1,6 @@
 # TODO:
 # Switch to cherry picked zen kernel
+# asus-nb-wmi power consumption
 {config, pkgs, ... }:
 {
   # Networking
@@ -16,6 +17,9 @@
 
   # Services
   services.upower.enable = true;
+  services.supergfxd.enable = true;
+  services.asusd.enable = true;
+  services.asusd.enableUserService = true;
 
   environment.systemPackages = with pkgs; [
     brightnessctl

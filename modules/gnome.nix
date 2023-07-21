@@ -4,22 +4,25 @@
   services.xserver.enable = true;
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.displayManager.gdm.wayland = true;
+  programs.dconf.enable = true;
 
   # Gnome Settings
+  environment.gnome.excludePackages = (with pkgs; [
+    gnome-tour
+    gnome.gnome-characters
+    gnome.yelp
+  ]) ++ (with pkgs.gnome; [
+    gnome-music
+    gnome-contacts
+    gnome-initial-setup
+  ]);
+
   services.xserver.desktopManager.gnome = {
     enable = true;
     extraGSettingsOverridePackages = [ pkgs.gnome.mutter ];
     extraGSettingsOverrides = ''
      [org.gnome.mutter]
      experimental-features=['scale-monitor-framebuffer']
-     [ org/gnome/desktop/peripherals/mouse ]
-      natural-scroll=true
-
-     [org.gnome.desktop.peripherals.touchpad]
-     click-method='default'
-
-     [org/gnome/shell]
-     disable-user-extensions=false
     '';
   };
 

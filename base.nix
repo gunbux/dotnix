@@ -1,7 +1,5 @@
 # Nix OS Configs
 # TODO:
-# Add power management
-# Add font configs
 # Add Pipewire configs
 # Add btrfs configs
 # Add secure boot support with lanzaboote
