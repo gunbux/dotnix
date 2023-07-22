@@ -107,6 +107,8 @@
   # Docker
   # virtualisation.docker.enable = true;
 
+  programs.zsh.enable = true;
+
   # User
   users.users.chun = {
     isNormalUser = true;
@@ -115,6 +117,7 @@
     home = "/home/chun";
     description = "Chun Yu";
     extraGroups = [ "wheel" "networkmanager" "docker" "audio" "video" "input" "disk" ];
+    shell = pkgs.zsh;
   };
 
   # Some default programs to be installed in system profile
@@ -123,5 +126,6 @@
     vim
     firefox
     powertop
+    zsh
   ];
 }

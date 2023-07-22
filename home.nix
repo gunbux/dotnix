@@ -92,79 +92,19 @@ in
       extraConfig = lib.fileContents ./config/nvim/init.vim;
     };
 
-    # Gnome Config
-    # gtk = {
-    #   enable = true;
+    # Shell Config
+    programs.starship = {
+      enable = true;
+      enableBashIntegration = true;
+      enableZshIntegration = true;
+    };
 
-    #   iconTheme = {
-    #   name = "Tela";
-    #   package = pkgs.tela-icon-theme;
-    # };
-
-    #   theme = {
-    #     name = "pop-dark";
-    #     package = pkgs.pop-gtk-theme;
-    #   };
-
-    #   cursorTheme = {
-    #     name = "Nordzy-cursors-white";
-    #     size = 30;
-    #     package = pkgs.nordzy-cursor-theme;
-    #   };
-
-    #   gtk3.extraConfig = {
-    #     Settings = ''
-    #       gtk-application-prefer-dark-theme=1
-    #     '';
-    #   };
-
-    #   gtk4.extraConfig = {
-    #     Settings = ''
-    #       gtk-application-prefer-dark-theme=1
-    #     '';
-    #   };
-    # };
-
-    # home.sessionVariables.GTK_THEME = "pop-dark";
-
-    # dconf.settings = {
-    #   "org/gnome/desktop/interface" = {
-    #     color-scheme = "prefer-dark";
-    #     clock-format = "12h";
-    #   };
-
-    #   "org/gnome/desktop/wm/preferences" = {
-    #     workspace-names = [ "Main" ];
-    #   };
-
-    #   "org/gnome/desktop/sound" = {
-    #     allow-volume-above-100-percent = true;
-    #   };
-
-    #   "org/gnome/desktop/interface" = {
-    #      font-name = "Source Sans 3 11";
-    #      document-font-name = "Source Sans 3 11";
-    #      monospace-font-name = "JetBrainsMono Nerd Font 10";
-    #   };
-
-    #   "org/gnome/shell" = {
-    #      disable-user-extensions = false;
-
-    #      favorite-apps = [
-    #        "org.gnome.Console.desktop"
-    #        "org.gnome.Nautilus.desktop"
-    #        "spotify.desktop"
-    #        "discord.desktop"
-    #        "vivaldi-stable.desktop"
-    #      ];
-
-    #      enabled-extensions = [
-    #        "blur-my-shell@aunetx"
-    #        "launch-new-instance@gnome-shell-extensions.gcampax.github.com"
-    #        "Vitals@CoreCoding.com"
-    #      ];
-    #   };
-    # };
+    programs.zsh = {
+      enable = true;
+      enableAutosuggestions = true;
+      enableCompletion = true;
+      autocd = true;
+    };
 
     home.stateVersion = "23.05";
   };
