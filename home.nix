@@ -61,14 +61,14 @@ in
       spotify
       bitwarden
       discord
+      qbittorrent
       # davinci-resolve
 
       # Gnome Extensions
-      pop-launcher
       gnome.gnome-tweaks
-      gnomeExtensions.pop-shell
-      gnomeExtensions.pop-launcher-super-key
       gnomeExtensions.blur-my-shell
+      gnomeExtensions.vitals
+      # gnomeExtensions.bat_consumption_wattmeter
     ];
 
     # Neovim Configs
@@ -93,9 +93,9 @@ in
       };
 
       cursorTheme = {
-        name = "Numix-Cursor";
-        size = 35;
-        package = pkgs.numix-cursor-theme;
+        name = "Nordzy-cursors-white";
+        size = 30;
+        package = pkgs.nordzy-cursor-theme;
       };
 
       gtk3.extraConfig = {
@@ -148,9 +148,8 @@ in
 
         enabled-extensions = [
           "blur-my-shell@aunetx"
-          "pop-launcher-super-key@ManeLippert"
-          "pop-shell@system76.com"
           "launch-new-instance@gnome-shell-extensions.gcampax.github.com"
+          "Vitals@CoreCoding.com"
         ];
       };
     };

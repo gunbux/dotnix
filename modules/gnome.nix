@@ -14,7 +14,7 @@
   ]) ++ (with pkgs.gnome; [
     gnome-music
     gnome-contacts
-    gnome-initial-setup
+    # gnome-terminal
   ]);
 
   services.xserver.desktopManager.gnome = {

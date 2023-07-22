@@ -3,7 +3,7 @@
 # Add Pipewire configs
 # Add btrfs configs
 # Add secure boot support with lanzaboote
-{ config, pkgs, ...}:
+{ config, pkgs, lib, inputs, ... }:
 
 {
   imports = [
@@ -51,6 +51,7 @@
   services.xserver.layout = "us";
   services.xserver.xkbOptions = "ctrl:nocaps";
   services.xserver.libinput.enable = true;
+  services.xserver.excludePackages = [ pkgs.xterm ];
 
   # Services
   services.openssh.enable = true;
@@ -66,8 +67,45 @@
     channel = "https://channels.nixos.org/nixos-unstable";
   };
 
+  # Nix Settings
+  nix = {
+    gc = {
+      automatic = true;
+      dates = "daily";
+      options = "--delete-older-than 3d";
+    };
+    package = pkgs.nixUnstable;
+
+    # Make builds run with low priority so my system stays responsive
+    daemonCPUSchedPolicy = "idle";
+    daemonIOSchedClass = "idle";
+
+    # Free up to 1GiB whenever there is less than 100MiB left.
+    extraOptions = ''
+      experimental-features = nix-command flakes recursive-nix
+      keep-outputs = true
+      warn-dirty = false
+      keep-derivations = true
+      min-free = ${toString (100 * 1024 * 1024)}
+      max-free = ${toString (1024 * 1024 * 1024)}
+    '';
+    settings = {
+      auto-optimise-store = true;
+      # allow sudo users to mark the following values as trusted
+      allowed-users = ["@wheel"];
+      # only allow sudo users to manage the nix store
+      trusted-users = ["@wheel"];
+      sandbox = true;
+      max-jobs = "auto";
+      # continue building derivations if one fails
+      keep-going = true;
+      log-lines = 20;
+      extra-experimental-features = ["flakes" "nix-command" "recursive-nix" "ca-derivations"];
+    };
+  };
+
   # Docker
-  virtualisation.docker.enable = true;
+  # virtualisation.docker.enable = true;
 
   # User
   users.users.chun = {
