@@ -8,11 +8,20 @@
 
   # Kernel
   boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelParams = [
+    "initcall_blacklist=acpi_cpufreq_init"
+    "amd_pstate=active" # Enables amd_pstate_epp I believe?
+  ];
+
+  boot.kernelModules = [ "amd-pstate" ];
 
   # Power Mangement
   powerManagement = {
     enable = true;
     powertop.enable = true;
+  };
+  services.auto-cpufreq = {
+    enable = true;
   };
 
   # Services

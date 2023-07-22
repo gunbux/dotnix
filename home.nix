@@ -14,6 +14,9 @@ in
     # Let Home Manager install & manage itself
     programs.home-manager.enable = true;
 
+    # Gnome Configs
+    imports = [ ./modules/dconf.nix ];
+
     # Base config for Home Manager
     home.username = "chun";
     home.homeDirectory = "/home/chun";
@@ -64,10 +67,21 @@ in
       qbittorrent
       # davinci-resolve
 
+      # Gnome Dependencies
+      tela-icon-theme
+      pop-gtk-theme
+      nordzy-cursor-theme
+
       # Gnome Extensions
       gnome.gnome-tweaks
       gnomeExtensions.blur-my-shell
       gnomeExtensions.vitals
+      gnomeExtensions.supergfxctl-gex
+      gnomeExtensions.user-avatar-in-quick-settings
+      gnomeExtensions.just-perfection
+      gnomeExtensions.space-bar
+      gnomeExtensions.gsconnect
+      gnomeExtensions.forge
       # gnomeExtensions.bat_consumption_wattmeter
     ];
 
@@ -79,80 +93,78 @@ in
     };
 
     # Gnome Config
-    gtk = {
-      enable = true;
+    # gtk = {
+    #   enable = true;
 
-      iconTheme = {
-      name = "Tela";
-      package = pkgs.tela-icon-theme;
-    };
+    #   iconTheme = {
+    #   name = "Tela";
+    #   package = pkgs.tela-icon-theme;
+    # };
 
-      theme = {
-        name = "pop-dark";
-        package = pkgs.pop-gtk-theme;
-      };
+    #   theme = {
+    #     name = "pop-dark";
+    #     package = pkgs.pop-gtk-theme;
+    #   };
 
-      cursorTheme = {
-        name = "Nordzy-cursors-white";
-        size = 30;
-        package = pkgs.nordzy-cursor-theme;
-      };
+    #   cursorTheme = {
+    #     name = "Nordzy-cursors-white";
+    #     size = 30;
+    #     package = pkgs.nordzy-cursor-theme;
+    #   };
 
-      gtk3.extraConfig = {
-        Settings = ''
-          gtk-application-prefer-dark-theme=1
-        '';
-      };
+    #   gtk3.extraConfig = {
+    #     Settings = ''
+    #       gtk-application-prefer-dark-theme=1
+    #     '';
+    #   };
 
-      gtk4.extraConfig = {
-        Settings = ''
-          gtk-application-prefer-dark-theme=1
-        '';
-      };
-    };
+    #   gtk4.extraConfig = {
+    #     Settings = ''
+    #       gtk-application-prefer-dark-theme=1
+    #     '';
+    #   };
+    # };
 
-    home.sessionVariables.GTK_THEME = "pop-dark";
+    # home.sessionVariables.GTK_THEME = "pop-dark";
 
-    dconf.settings = {
-      "org/gnome/shell" = {
-         favorite-apps = [
-           "org.gnome.Console.desktop"
-           "org.gnome.Nautilus.desktop"
-           "spotify.desktop"
-           "discord.desktop"
-           "vivaldi-stable.desktop"
-         ];
-      };
+    # dconf.settings = {
+    #   "org/gnome/desktop/interface" = {
+    #     color-scheme = "prefer-dark";
+    #     clock-format = "12h";
+    #   };
 
-      "org/gnome/desktop/interface" = {
-        color-scheme = "prefer-dark";
-        clock-format = "12h";
-      };
+    #   "org/gnome/desktop/wm/preferences" = {
+    #     workspace-names = [ "Main" ];
+    #   };
 
-      "org/gnome/desktop/wm/preferences" = {
-        workspace-names = [ "Main" ];
-      };
+    #   "org/gnome/desktop/sound" = {
+    #     allow-volume-above-100-percent = true;
+    #   };
 
-      "org/gnome/desktop/sound" = {
-        allow-volume-above-100-percent = true;
-      };
+    #   "org/gnome/desktop/interface" = {
+    #      font-name = "Source Sans 3 11";
+    #      document-font-name = "Source Sans 3 11";
+    #      monospace-font-name = "JetBrainsMono Nerd Font 10";
+    #   };
 
-      "org/gnome/desktop/interface" = {
-         font-name = "Source Sans 3 11";
-         document-font-name = "Source Sans 3 11";
-         monospace-font-name = "JetBrainsMono Nerd Font 10";
-      };
+    #   "org/gnome/shell" = {
+    #      disable-user-extensions = false;
 
-      "org/gnome/shell" = {
-        disable-user-extensions = false;
+    #      favorite-apps = [
+    #        "org.gnome.Console.desktop"
+    #        "org.gnome.Nautilus.desktop"
+    #        "spotify.desktop"
+    #        "discord.desktop"
+    #        "vivaldi-stable.desktop"
+    #      ];
 
-        enabled-extensions = [
-          "blur-my-shell@aunetx"
-          "launch-new-instance@gnome-shell-extensions.gcampax.github.com"
-          "Vitals@CoreCoding.com"
-        ];
-      };
-    };
+    #      enabled-extensions = [
+    #        "blur-my-shell@aunetx"
+    #        "launch-new-instance@gnome-shell-extensions.gcampax.github.com"
+    #        "Vitals@CoreCoding.com"
+    #      ];
+    #   };
+    # };
 
     home.stateVersion = "23.05";
   };

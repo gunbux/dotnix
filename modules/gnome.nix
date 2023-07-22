@@ -23,6 +23,7 @@
     extraGSettingsOverrides = ''
      [org.gnome.mutter]
      experimental-features=['scale-monitor-framebuffer']
+     # experimental-features=['scale-monitor-framebuffer', 'variable-refresh-rate']
     '';
   };
 

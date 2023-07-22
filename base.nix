@@ -74,34 +74,34 @@
       dates = "daily";
       options = "--delete-older-than 3d";
     };
-    package = pkgs.nixUnstable;
+    # package = pkgs.nixUnstable;
 
-    # Make builds run with low priority so my system stays responsive
-    daemonCPUSchedPolicy = "idle";
-    daemonIOSchedClass = "idle";
+    # # Make builds run with low priority so my system stays responsive
+    # daemonCPUSchedPolicy = "idle";
+    # daemonIOSchedClass = "idle";
 
-    # Free up to 1GiB whenever there is less than 100MiB left.
-    extraOptions = ''
-      experimental-features = nix-command flakes recursive-nix
-      keep-outputs = true
-      warn-dirty = false
-      keep-derivations = true
-      min-free = ${toString (100 * 1024 * 1024)}
-      max-free = ${toString (1024 * 1024 * 1024)}
-    '';
-    settings = {
-      auto-optimise-store = true;
-      # allow sudo users to mark the following values as trusted
-      allowed-users = ["@wheel"];
-      # only allow sudo users to manage the nix store
-      trusted-users = ["@wheel"];
-      sandbox = true;
-      max-jobs = "auto";
-      # continue building derivations if one fails
-      keep-going = true;
-      log-lines = 20;
-      extra-experimental-features = ["flakes" "nix-command" "recursive-nix" "ca-derivations"];
-    };
+    # # Free up to 1GiB whenever there is less than 100MiB left.
+    # extraOptions = ''
+    #   experimental-features = nix-command flakes recursive-nix
+    #   keep-outputs = true
+    #   warn-dirty = false
+    #   keep-derivations = true
+    #   min-free = ${toString (100 * 1024 * 1024)}
+    #   max-free = ${toString (1024 * 1024 * 1024)}
+    # '';
+    # settings = {
+    #   auto-optimise-store = true;
+    #   # allow sudo users to mark the following values as trusted
+    #   allowed-users = ["@wheel"];
+    #   # only allow sudo users to manage the nix store
+    #   trusted-users = ["@wheel"];
+    #   sandbox = true;
+    #   max-jobs = "auto";
+    #   # continue building derivations if one fails
+    #   keep-going = true;
+    #   log-lines = 20;
+    #   extra-experimental-features = ["flakes" "nix-command" "recursive-nix" "ca-derivations"];
+    # };
   };
 
   # Docker
