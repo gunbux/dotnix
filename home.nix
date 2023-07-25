@@ -65,6 +65,7 @@ in
       bitwarden
       discord
       qbittorrent
+      terminal-typeracer
       # davinci-resolve
 
       # Gnome Dependencies
@@ -101,6 +102,7 @@ in
 
     programs.zsh = {
       enable = true;
+      defaultKeymap = "emacs";
       enableAutosuggestions = true;
       enableCompletion = true;
       autocd = true;
