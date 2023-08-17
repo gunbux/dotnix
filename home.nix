@@ -41,6 +41,7 @@ in
       git
       nfs-utils
       tmux
+      # power-profiles-daemon # This clashes with TLP
 
       # System Utils
       iperf
@@ -52,6 +53,7 @@ in
       wget
       tshark
       nmap
+      wl-clipboard
 
       # DevTools
       gcc
@@ -66,6 +68,8 @@ in
       discord
       qbittorrent
       terminal-typeracer
+      jetbrains.webstorm
+      jetbrains.idea-ultimate
       # davinci-resolve
 
       # Gnome Dependencies
@@ -83,6 +87,8 @@ in
       gnomeExtensions.space-bar
       gnomeExtensions.gsconnect
       gnomeExtensions.forge
+      gnomeExtensions.unite
+      gnomeExtensions.pano
       # gnomeExtensions.bat_consumption_wattmeter
     ];
 
@@ -106,6 +112,11 @@ in
       enableAutosuggestions = true;
       enableCompletion = true;
       autocd = true;
+    };
+
+    programs.direnv = {
+      enable = true;
+      nix-direnv.enable = true;
     };
 
     home.stateVersion = "23.05";

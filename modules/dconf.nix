@@ -73,7 +73,7 @@ with lib.hm.gvariant;
     "org/gnome/desktop/input-sources" = {
       show-all-sources = true;
       sources = [ (mkTuple [ "xkb" "us" ]) ];
-      xkb-options = [ "terminate:ctrl_alt_bksp" ];
+      xkb-options = [ "terminate:ctrl_alt_bksp" "caps:swapescape" ];
     };
 
     "org/gnome/desktop/interface" = {
@@ -98,6 +98,10 @@ with lib.hm.gvariant;
 
     "org/gnome/desktop/notifications/application/discord" = {
       application-id = "discord.desktop";
+    };
+
+    "org/gnome/desktop/notifications/application/gnome-network-panel" = {
+      application-id = "gnome-network-panel.desktop";
     };
 
     "org/gnome/desktop/notifications/application/gnome-power-panel" = {
@@ -234,6 +238,11 @@ with lib.hm.gvariant;
       initial-size = mkTuple [ 1012 1224 ];
     };
 
+    "org/gnome/nm-applet/eap/c1aa27da-8230-407d-a915-4906f2b7193f" = {
+      ignore-ca-cert = true;
+      ignore-phase2-ca-cert = false;
+    };
+
     "org/gnome/photos" = {
       window-maximized = true;
     };
@@ -329,6 +338,7 @@ with lib.hm.gvariant;
     };
 
     "org/gnome/shell/extensions/gsconnect" = {
+      enabled = false;
       id = "b1c3bb93-fd98-4d6e-9a35-fe513a7027e7";
       name = "chun-lappy";
     };
@@ -372,6 +382,11 @@ with lib.hm.gvariant;
       workspaces-in-app-grid = false;
     };
 
+    "org/gnome/shell/extensions/pano" = {
+      history-length = 50;
+      sync-primary = false;
+    };
+
     "org/gnome/shell/extensions/pop-shell" = {
       active-hint = false;
       smart-gaps = true;
@@ -380,6 +395,19 @@ with lib.hm.gvariant;
 
     "org/gnome/shell/extensions/space-bar/shortcuts" = {
       enable-activate-workspace-shortcuts = false;
+    };
+
+    "org/gnome/shell/extensions/unite" = {
+      autofocus-windows = true;
+      enable-titlebar-actions = true;
+      extend-left-box = false;
+      hide-activities-button = "always";
+      hide-app-menu-icon = true;
+      hide-dropdown-arrows = true;
+      hide-window-titlebars = "always";
+      reduce-panel-spacing = false;
+      show-desktop-name = true;
+      show-legacy-tray = false;
     };
 
     "org/gnome/shell/extensions/user-theme" = {
@@ -413,6 +441,21 @@ with lib.hm.gvariant;
 
     "org/gnome/tweaks" = {
       show-extensions-notice = false;
+    };
+
+    "org/gtk/gtk4/settings/file-chooser" = {
+      date-format = "regular";
+      location-mode = "path-bar";
+      show-hidden = true;
+      show-size-column = true;
+      show-type-column = true;
+      sidebar-width = 140;
+      sort-column = "name";
+      sort-directories-first = false;
+      sort-order = "ascending";
+      type-format = "category";
+      view-type = "list";
+      window-size = mkTuple [ 793 720 ];
     };
 
     "org/gtk/settings/file-chooser" = {

@@ -3,7 +3,7 @@
 # Add Pipewire configs
 # Add btrfs configs
 # Add secure boot support with lanzaboote
-{ config, pkgs, lib, inputs, ... }:
+{ config, pkgs, lib, inputs, options, ... }:
 
 {
   imports = [
@@ -81,6 +81,10 @@
       dates = "daily";
       options = "--delete-older-than 3d";
     };
+
+    # Modify this if using a different location
+    nixPath = [ "nixos-config=/home/chun/dotnix/base.nix" ] ++ options.nix.nixPath.default;
+
     package = pkgs.nixUnstable;
 
     # Make builds run with low priority so my system stays responsive
