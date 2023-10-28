@@ -67,6 +67,8 @@ in
       # libnfc
       ccid
       gnumake
+      alacritty
+      phoronix-test-suite
 
       # NUS Bloat
       (openfortivpn.overrideAttrs(
