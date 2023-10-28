@@ -25,6 +25,9 @@ in
       # Nix utils
       niv
 
+      # Docker
+      docker
+
       # Archiving
       unrar
       unzip
@@ -61,14 +64,25 @@ in
       ninja
       nodejs
       python312
+      # libnfc
+      ccid
+      gnumake
+
+      # NUS Bloat
+      (openfortivpn.overrideAttrs(
+            old: {
+              src = builtins.fetchTarball https://github.com/adrienverge/openfortivpn/archive/refs/tags/v1.20.4.tar.gz;
+      }))
 
       # Apps
+      blender
       spotify
       bitwarden
       discord
       qbittorrent
       terminal-typeracer
       jetbrains.webstorm
+      jetbrains.clion
       jetbrains.idea-ultimate
       # davinci-resolve
 

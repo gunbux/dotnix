@@ -57,6 +57,10 @@
   services.openssh.enable = true;
   services.printing.enable = true;
   services.udisks2.enable = true;
+
+  # For NFC
+  services.pcscd.enable = true;
+
   security.sudo.enable = true;
   security.sudo.wheelNeedsPassword = false;
 
@@ -116,7 +120,7 @@
   };
 
   # Docker
-  # virtualisation.docker.enable = true;
+  virtualisation.docker.enable = true;
 
   programs.zsh.enable = true;
 
@@ -127,7 +131,7 @@
     uid = 1000;
     home = "/home/chun";
     description = "Chun Yu";
-    extraGroups = [ "wheel" "networkmanager" "docker" "audio" "video" "input" "disk" "syncthing" ];
+    extraGroups = [ "wheel" "networkmanager" "docker" "audio" "video" "input" "disk" "syncthing" "docker"];
     shell = pkgs.zsh;
   };
 

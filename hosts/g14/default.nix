@@ -16,6 +16,10 @@
 
   boot.kernelModules = [ "amd-pstate" ];
 
+  # NTFS Support
+  boot.supportedFilesystems = [ "ntfs" ];
+
+
   # Power Mangement
   powerManagement = {
     enable = true;
