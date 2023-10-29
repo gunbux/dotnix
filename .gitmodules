@@ -1,0 +1,3 @@
+[submodule "clear-pkgs"]
+	path = clear-pkgs
+	url = git@github.com:clearlinux-pkgs/linux.git

@@ -1,7 +1,19 @@
 # TODO:
 # Switch to cherry picked zen kernel
 # asus-nb-wmi power consumption
-{config, pkgs, ... }:
+{lib, config, pkgs, ... }:
+let
+
+  clearPatchDir = ../../clear-pkgs;
+  # clearPatchList = builtins.split "\n" (builtins.readFile ../../patches.txt);
+
+  # Convert the list of patch filenames to a list of patches Nix can apply
+  clearPatchList = builtins.filter (name: lib.hasSuffix ".patch" name) (builtins.attrNames (builtins.readDir clearPatchDir));
+  clearLinuxPatches = map (patchName:
+    { name = patchName;
+      patch = ../../clear-pkgs/${patchName};
+    }) clearPatchList;
+in
 {
   # Networking
   networking.hostName = "chun-lappy";
@@ -13,8 +25,8 @@
     "initcall_blacklist=acpi_cpufreq_init"
     "amd_pstate=active" # Enables amd_pstate_epp I believe?
   ];
-
   boot.kernelModules = [ "amd-pstate" ];
+  boot.kernelPatches = clearLinuxPatches;
 
   # NTFS Support
   boot.supportedFilesystems = [ "ntfs" ];
