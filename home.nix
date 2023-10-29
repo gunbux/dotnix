@@ -68,7 +68,7 @@ in
       ccid
       gnumake
       alacritty
-      phoronix-test-suite
+      geekbench
 
       # NUS Bloat
       (openfortivpn.overrideAttrs(
