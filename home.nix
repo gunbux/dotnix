@@ -64,6 +64,7 @@ in
       ninja
       nodejs
       python312
+      ncurses
       # libnfc
       ccid
       gnumake

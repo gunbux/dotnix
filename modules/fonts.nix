@@ -2,7 +2,7 @@
 {
   fonts = {
     fontDir.enable = true;
-    fonts = with pkgs; [
+    packages = with pkgs; [
       (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
       source-sans-pro
       source-serif-pro

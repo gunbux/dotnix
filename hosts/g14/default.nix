@@ -20,13 +20,19 @@ in
   networking.networkmanager.wifi.powersave = true;
 
   # Kernel
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = pkgs.linuxPackages_6_5;
   boot.kernelParams = [
     "initcall_blacklist=acpi_cpufreq_init"
     "amd_pstate=active" # Enables amd_pstate_epp I believe?
   ];
   boot.kernelModules = [ "amd-pstate" ];
+
+  # Optimizations and tuning
   boot.kernelPatches = clearLinuxPatches;
+  nixpkgs.localSystem = {
+    gcc.arch = "native";
+    gcc.tune = "native";
+  };
 
   # NTFS Support
   boot.supportedFilesystems = [ "ntfs" ];
