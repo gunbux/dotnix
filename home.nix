@@ -49,8 +49,6 @@ in
       # System Utils
       iperf
       btop
-      fzf
-      fd
       rsync
       starship
       wget
@@ -70,6 +68,22 @@ in
       alacritty
       geekbench
 
+      # Modern Unix
+      bat
+      eza
+      lsd
+      delta
+      du-dust
+      duf
+      fzf
+      fd
+      ripgrep
+      mcfly
+      cheat
+      tldr
+      gping
+      dog
+
       # NUS Bloat
       (openfortivpn.overrideAttrs(
             old: {
@@ -77,6 +91,7 @@ in
       }))
 
       # Apps
+      steam
       blender
       spotify
       bitwarden

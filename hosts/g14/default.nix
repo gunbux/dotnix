@@ -49,6 +49,12 @@
   #   };
   # };
 
+  # Steam Configs
+  programs.steam = {
+    enable = true;
+  };
+
+
   # Services
   services.upower.enable = true;
   services.supergfxd.enable = true;
