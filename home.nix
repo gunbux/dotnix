@@ -61,6 +61,7 @@ in
       cargo
       ninja
       nodejs
+      bun
       python312
       # libnfc
       ccid

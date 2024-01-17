@@ -64,8 +64,8 @@ with lib.hm.gvariant;
     "org/gnome/desktop/background" = {
       color-shading-type = "solid";
       picture-options = "zoom";
-      picture-uri = "file:///run/current-system/sw/share/backgrounds/gnome/adwaita-l.webp";
-      picture-uri-dark = "file:///run/current-system/sw/share/backgrounds/gnome/adwaita-d.webp";
+      picture-uri = "file:///run/current-system/sw/share/backgrounds/gnome/adwaita-l.jpg";
+      picture-uri-dark = "file:///run/current-system/sw/share/backgrounds/gnome/adwaita-d.jpg";
       primary-color = "#3071AE";
       secondary-color = "#000000";
     };
@@ -148,7 +148,7 @@ with lib.hm.gvariant;
     "org/gnome/desktop/screensaver" = {
       color-shading-type = "solid";
       picture-options = "zoom";
-      picture-uri = "file:///run/current-system/sw/share/backgrounds/gnome/adwaita-l.webp";
+      picture-uri = "file:///run/current-system/sw/share/backgrounds/gnome/adwaita-l.jpg";
       primary-color = "#3071AE";
       secondary-color = "#000000";
     };

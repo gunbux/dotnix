@@ -71,6 +71,9 @@
     configDir = "/home/chun/.config/syncthing";
   };
 
+  # For better shebang
+  services.envfs.enable = true;
+
   # The NixOS release to be compatible with for stateful data such as databases
   system.stateVersion = "23.05";
   system.autoUpgrade = {
