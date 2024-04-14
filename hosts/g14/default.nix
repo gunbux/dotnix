@@ -3,6 +3,12 @@
 # asus-nb-wmi power consumption
 {config, pkgs, ... }:
 {
+  # Swap
+   swapDevices = [ {
+    device = "/var/lib/swapfile";
+    size = 16*1024;
+  } ];
+
   # Networking
   networking.hostName = "chun-lappy";
   networking.networkmanager.wifi.powersave = true;
@@ -14,7 +20,10 @@
     "amd_pstate=active" # Enables amd_pstate_epp I believe?
   ];
 
-  boot.kernelModules = [ "amd-pstate" ];
+  # Boot correct driver early
+  boot.initrd.kernelModules = [ "amdgpu" ];
+
+  boot.kernelModules = [ "amd-pstate" "vboxdrv" ];
 
   # NTFS Support
   boot.supportedFilesystems = [ "ntfs" ];
@@ -54,6 +63,12 @@
     enable = true;
   };
 
+  # Dynamic Linking for non nix programs
+  programs.nix-ld.enable = true;
+    programs.nix-ld.libraries = with pkgs; [
+      # Add any missing dynamic libraries for unpackaged programs
+      # here, NOT in environment.systemPackages
+    ];
 
   # Services
   services.upower.enable = true;
@@ -66,4 +81,10 @@
   ];
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = false;
+
+  # Virtualization
+  virtualisation.virtualbox.host.enable = true;
+  virtualisation.virtualbox.guest.enable = true;
+  virtualisation.virtualbox.guest.x11 = true;
+  users.extraGroups.vboxusers.members = [ "chun" ];
 }

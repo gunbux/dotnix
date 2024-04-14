@@ -35,6 +35,10 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  # Systemd Settings - Workaround to Gnome
+  systemd.services."getty@tty1".enable = false;
+  systemd.services."autovt@tty1".enable = false;
+
   # Console Settings
   console = {
     font = "Lat2-Terminus16";
@@ -48,8 +52,8 @@
 
   # Keyboard Settings
   services.xserver.enable = true;
-  services.xserver.layout = "us";
-  services.xserver.xkbOptions = "ctrl:nocaps";
+  services.xserver.xkb.layout = "us";
+  services.xserver.xkb.options = "ctrl:nocaps";
   services.xserver.libinput.enable = true;
   services.xserver.excludePackages = [ pkgs.xterm ];
 
@@ -79,6 +83,10 @@
   system.autoUpgrade = {
     enable = true;
     channel = "https://channels.nixos.org/nixos-unstable";
+    flags = [
+      "-I"
+      "nixos-config=/home/chun/dotnix/base.nix"
+    ];
   };
 
   # Nix Settings
@@ -134,7 +142,7 @@
     uid = 1000;
     home = "/home/chun";
     description = "Chun Yu";
-    extraGroups = [ "wheel" "networkmanager" "docker" "audio" "video" "input" "disk" "syncthing" "docker"];
+    extraGroups = [ "wheel" "networkmanager" "docker" "audio" "video" "input" "disk" "syncthing" "docker" "dialout"];
     shell = pkgs.zsh;
   };
 

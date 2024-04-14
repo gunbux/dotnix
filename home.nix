@@ -44,6 +44,7 @@ in
       git
       nfs-utils
       tmux
+      libcxx
       # power-profiles-daemon # This clashes with TLP
 
       # System Utils
@@ -55,6 +56,7 @@ in
       tshark
       nmap
       wl-clipboard
+      rcon
 
       # DevTools
       gcc
@@ -62,6 +64,7 @@ in
       ninja
       nodejs
       bun
+      yarn
       python312
       # libnfc
       ccid
@@ -84,6 +87,7 @@ in
       tldr
       gping
       dog
+      z-lua
 
       # NUS Bloat
       (openfortivpn.overrideAttrs(
@@ -92,6 +96,7 @@ in
       }))
 
       # Apps
+      obs-studio
       steam
       blender
       spotify
@@ -101,6 +106,7 @@ in
       terminal-typeracer
       jetbrains.webstorm
       jetbrains.clion
+      jetbrains.goland
       jetbrains.idea-ultimate
       # davinci-resolve
 
