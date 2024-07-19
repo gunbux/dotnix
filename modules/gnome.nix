@@ -4,7 +4,7 @@
   services.xserver.enable = true;
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.displayManager.gdm.wayland = true;
-  services.xserver.displayManager.autoLogin = {
+  services.displayManager.autoLogin = {
     enable = true;
     user = "chun";
   };
@@ -32,7 +32,7 @@
   };
 
   # Enable GNOME Keyring daemon
-  services.gnome3.gnome-keyring.enable = lib.mkForce false;
+  services.gnome.gnome-keyring.enable = lib.mkForce false;
   # security.pam.services.sddm.enableGnomeKeyring = false;
   # Enable Chrome GNOME Shell native host connector
   # This is a DBus service allowing to install GNOME Shell extensions from a web browser.

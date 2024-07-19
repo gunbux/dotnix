@@ -16,6 +16,7 @@
     # Include modular configs here
     ./modules/gnome.nix
     ./modules/fonts.nix
+    # ./modules/wireguard.nix
 
     # Home config
     ./home.nix
@@ -51,10 +52,10 @@
   time.timeZone = "Asia/Singapore";
 
   # Keyboard Settings
+  services.libinput.enable = true;
   services.xserver.enable = true;
   services.xserver.xkb.layout = "us";
   services.xserver.xkb.options = "ctrl:nocaps";
-  services.xserver.libinput.enable = true;
   services.xserver.excludePackages = [ pkgs.xterm ];
 
   # Services
@@ -100,7 +101,7 @@
     # Modify this if using a different location
     nixPath = [ "nixos-config=/home/chun/dotnix/base.nix" ] ++ options.nix.nixPath.default;
 
-    package = pkgs.nixUnstable;
+    package = pkgs.nixVersions.latest;
 
     # Make builds run with low priority so my system stays responsive
     daemonCPUSchedPolicy = "idle";

@@ -13,6 +13,9 @@
   networking.hostName = "chun-lappy";
   networking.networkmanager.wifi.powersave = true;
 
+  # For wireguard
+  networking.firewall.checkReversePath = false;
+
   # Kernel
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernelParams = [
@@ -84,7 +87,7 @@
 
   # Virtualization
   virtualisation.virtualbox.host.enable = true;
-  virtualisation.virtualbox.guest.enable = true;
-  virtualisation.virtualbox.guest.x11 = true;
+  # virtualisation.virtualbox.guest.enable = true;
+  # virtualisation.virtualbox.guest.x11 = true;
   users.extraGroups.vboxusers.members = [ "chun" ];
 }

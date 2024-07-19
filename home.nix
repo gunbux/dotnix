@@ -1,12 +1,7 @@
 { config, pkgs, lib, ... }:
 # Declaratively add Home Manager
-let
-  home-manager = builtins.fetchTarball "https://github.com/nix-community/home-manager/archive/master.tar.gz";
-in
 {
-  imports = [
-    (import "${home-manager}/nixos")
-  ];
+  imports = [ <home-manager/nixos> ];
 
   home-manager.users.chun = {
     nixpkgs.config.allowUnfree = true;
@@ -96,6 +91,7 @@ in
       }))
 
       # Apps
+      apostrophe
       obs-studio
       steam
       blender
@@ -103,6 +99,7 @@ in
       bitwarden
       discord
       qbittorrent
+      telegram-desktop
       terminal-typeracer
       jetbrains.webstorm
       jetbrains.clion
@@ -147,7 +144,7 @@ in
     programs.zsh = {
       enable = true;
       defaultKeymap = "emacs";
-      enableAutosuggestions = true;
+      autosuggestion.enable = true;
       enableCompletion = true;
       autocd = true;
     };
