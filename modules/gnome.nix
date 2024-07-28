@@ -12,9 +12,9 @@
 
   # Gnome Settings
   environment.gnome.excludePackages = (with pkgs; [
+    yelp
     gnome-tour
     gnome.gnome-characters
-    gnome.yelp
   ]) ++ (with pkgs.gnome; [
     gnome-music
     gnome-contacts

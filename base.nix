@@ -25,8 +25,8 @@
   nixpkgs.config.allowUnfree = true;
 
   # Audio Settings
-  sound.enable = true;
-  sound.mediaKeys.enable = true;
+  # sound.enable = true;
+  # sound.mediaKeys.enable = true;
   hardware.pulseaudio = {
     enable = true;
     support32Bit = true;

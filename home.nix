@@ -17,6 +17,9 @@
     home.homeDirectory = "/home/chun";
 
     home.packages = with pkgs; [
+      # scx
+      scx
+
       # Nix utils
       niv
 
@@ -54,8 +57,16 @@
       rcon
 
       # DevTools
-      gcc
+      # gcc
+      bpftools
       cargo
+      clang
+      jq
+      libbpf
+      libelf
+      elfutils
+      libz
+      meson
       ninja
       nodejs
       bun
@@ -66,6 +77,7 @@
       gnumake
       alacritty
       geekbench
+      zstd
 
       # Modern Unix
       bat
@@ -113,7 +125,7 @@
       nordzy-cursor-theme
 
       # Gnome Extensions
-      gnome.gnome-tweaks
+      gnome-tweaks
       gnomeExtensions.blur-my-shell
       gnomeExtensions.vitals
       gnomeExtensions.supergfxctl-gex

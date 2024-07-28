@@ -3,6 +3,9 @@
 # asus-nb-wmi power consumption
 {config, pkgs, ... }:
 {
+  # scx
+  # chaotic.scx.enable = true;
+
   # Swap
    swapDevices = [ {
     device = "/var/lib/swapfile";
@@ -17,7 +20,7 @@
   networking.firewall.checkReversePath = false;
 
   # Kernel
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = pkgs.linuxPackages_cachyos; # special kernel for sched_ext
   boot.kernelParams = [
     "initcall_blacklist=acpi_cpufreq_init"
     "amd_pstate=active" # Enables amd_pstate_epp I believe?
@@ -44,7 +47,7 @@
   };
 
   # TLP Config, use one or the other but not both
-  # services.power-profiles-daemon.enable = false; # Defaults to true in Gnome 44
+  services.power-profiles-daemon.enable = false; # Defaults to true in Gnome 44
   # services.tlp = {
   #   enable = true;
   #   settings = {
@@ -81,6 +84,7 @@
 
   environment.systemPackages = with pkgs; [
     brightnessctl
+    scx
   ];
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = false;
