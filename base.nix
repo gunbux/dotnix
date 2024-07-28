@@ -11,7 +11,8 @@
     /etc/nixos/hardware-configuration.nix
 
     # Include host specific configs
-    ./hosts/g14/default.nix
+    # ./hosts/g14/default.nix
+    # ./hosts/legion/default.nix
 
     # Include modular configs here
     ./modules/gnome.nix

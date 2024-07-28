@@ -17,6 +17,16 @@
         system = "x86_64-linux";
         modules = [
           ./base.nix
+          ./hosts/g14/default.nix
+          chaotic.nixosModules.default
+        ];
+      };
+
+      "legion-nix" = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          ./base.nix
+          ./hosts/legion/default.nix
           chaotic.nixosModules.default
         ];
       };

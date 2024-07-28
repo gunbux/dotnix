@@ -43,7 +43,7 @@
   };
 
   # TLP Config, use one or the other but not both
-  # services.power-profiles-daemon.enable = false; # Defaults to true in Gnome 44
+  services.power-profiles-daemon.enable = false; # Defaults to true in Gnome 44
   # services.tlp = {
   #   enable = true;
   #   settings = {
