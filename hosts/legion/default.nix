@@ -4,8 +4,14 @@
 {config, pkgs, ... }:
 {
   imports = [
-    <nixos-hardware/lenovo/legion/15arh05h>
+    <nixos-hardware/lenovo/legion/15ach6h/hybrid>
   ];
+
+  # Swap
+   swapDevices = [ {
+    device = "/var/lib/swapfile";
+    size = 16*1024;
+  } ];
 
   # Networking
   networking.hostName = "legion-nix";
@@ -15,14 +21,15 @@
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernelParams = [
     "initcall_blacklist=acpi_cpufreq_init"
-    "amd_pstate=active" # Enables amd_pstate_epp I believe?
+    "amd_pstate=active"
   ];
 
+  # Boot correct driver early
+  boot.initrd.kernelModules = [ "amdgpu" ];
   boot.kernelModules = [ "amd-pstate" ];
 
   # NTFS Support
   boot.supportedFilesystems = [ "ntfs" ];
-
 
   # Power Mangement
   powerManagement = {
@@ -62,4 +69,8 @@
   ];
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = false;
+
+  # Virtualization
+  virtualisation.virtualbox.host.enable = true;
+  users.extraGroups.vboxusers.members = [ "chun" ];
 }
