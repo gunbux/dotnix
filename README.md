@@ -17,5 +17,10 @@ sudo nix-channel --update
 ## Building the system
 
 ```bash
+# Without flakes
 nixos-rebuild -I nixos-config=./base.nix switch
+
+# With flakes
+sudo nixos-rebuild switch --flake .#chun-lappy --impure
+
 ```
