@@ -20,7 +20,7 @@
   networking.firewall.checkReversePath = false;
 
   # Kernel
-  boot.kernelPackages = pkgs.linuxPackages_cachyos; # special kernel for sched_ext
+  boot.kernelPackages = pkgs.linuxPackages_latest; # special kernel for sched_ext
   boot.kernelParams = [
     "initcall_blacklist=acpi_cpufreq_init"
     "amd_pstate=active" # Enables amd_pstate_epp I believe?
@@ -69,6 +69,11 @@
     enable = true;
   };
 
+  # bcc
+  # programs.bcc = {
+  #   enable = true;
+  # };
+
   # Dynamic Linking for non nix programs
   programs.nix-ld.enable = true;
     programs.nix-ld.libraries = with pkgs; [
@@ -84,7 +89,7 @@
 
   environment.systemPackages = with pkgs; [
     brightnessctl
-    scx
+    # scx
   ];
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = false;

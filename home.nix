@@ -18,7 +18,7 @@
 
     home.packages = with pkgs; [
       # scx
-      scx
+      # scx
 
       # Nix utils
       niv
@@ -55,6 +55,7 @@
       nmap
       wl-clipboard
       rcon
+      gnupg
 
       # DevTools
       # gcc
@@ -117,6 +118,7 @@
       jetbrains.clion
       jetbrains.goland
       jetbrains.idea-ultimate
+      mutt
       # davinci-resolve
 
       # Gnome Dependencies
