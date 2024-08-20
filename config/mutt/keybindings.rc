@@ -18,6 +18,7 @@ bind index ZZ quit
 bind index,pager g noop
 bind index gg first-entry
 bind index G last-entry
+bind index <f5> imap-fetch-mail
 
 # Replies:
 bind index,pager r reply

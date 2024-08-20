@@ -22,4 +22,5 @@ set ssl_force_tls=yes
 set ssl_starttls=yes
 
 # Source the mailbox we're using at the moment.
-source "/home/chun/dotnix/config/mutt/mailboxes/chunyu.rc"
+source "/home/chun/dotnix/config/mutt/mailboxes/$MAILBOX.rc"
+
