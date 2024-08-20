@@ -67,6 +67,14 @@
   # For NFC
   services.pcscd.enable = true;
 
+  # GPG
+  programs.gnupg.agent = {
+     enable = true;
+     enableSSHSupport = true;
+  };
+
+
+
   security.sudo.enable = true;
   security.sudo.wheelNeedsPassword = false;
 

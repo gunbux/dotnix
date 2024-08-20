@@ -13,7 +13,6 @@ sudo nix-channel --add https://github.com/NixOS/nixos-hardware/archive/master.ta
 sudo nix-channel --update
 ```
 
-
 ## Building the system
 
 ```bash
@@ -22,5 +21,12 @@ nixos-rebuild -I nixos-config=./base.nix switch
 
 # With flakes
 sudo nixos-rebuild switch --flake .#chun-lappy --impure
+```
 
+## Adding mutt configs
+
+There's no good way to configure mutt/neomutt using Nix configurations, so we can just symlink/copy the folder over.
+
+```
+ln -sf /home/chun/dotnix/config/mutt ~/.config/mutt
 ```

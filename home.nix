@@ -56,6 +56,7 @@
       wl-clipboard
       rcon
       gnupg
+      pinentry-tty
 
       # DevTools
       # gcc
@@ -118,7 +119,7 @@
       jetbrains.clion
       jetbrains.goland
       jetbrains.idea-ultimate
-      mutt
+      neomutt
       # davinci-resolve
 
       # Gnome Dependencies
