@@ -17,3 +17,6 @@ set smtp_pass = $my_password
 # Point mutt to whatever IMAP server you're using.
 set folder = "imaps://mail.chunyu.sh:993"
 set spoolfile = "+INBOX"
+set record = +Sent
+set trash = +Trash
+set postponed = +Drafts
