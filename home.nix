@@ -77,7 +77,7 @@
       # libnfc
       ccid
       gnumake
-      alacritty
+      kitty
       geekbench
       zstd
 
@@ -96,7 +96,7 @@
       tldr
       gping
       dog
-      z-lua
+      zoxide
 
       # NUS Bloat
       (openfortivpn.overrideAttrs(
@@ -120,6 +120,7 @@
       jetbrains.goland
       jetbrains.idea-ultimate
       neomutt
+      thunderbird
       # davinci-resolve
 
       # Gnome Dependencies
@@ -162,6 +163,10 @@
       autosuggestion.enable = true;
       enableCompletion = true;
       autocd = true;
+      oh-my-zsh = {
+        enable = true;
+        plugins = ["zoxide" "fzf"];
+      };
     };
 
     programs.direnv = {
