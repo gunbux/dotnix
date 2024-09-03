@@ -90,14 +90,17 @@
 
   # The NixOS release to be compatible with for stateful data such as databases
   system.stateVersion = "23.05";
-  system.autoUpgrade = {
-    enable = true;
-    channel = "https://channels.nixos.org/nixos-unstable";
-    flags = [
-      "-I"
-      "nixos-config=/home/chun/dotnix/base.nix"
-    ];
-  };
+
+  # autoUpgrade disabled for now
+  # system.autoUpgrade = {
+  #   enable = true;
+  #   flake = inputs.self.outPath;
+  #   channel = "https://channels.nixos.org/nixos-unstable";
+  #   flags = [
+  #     "-I"
+  #     "nixos-config=/home/chun/dotnix/base.nix"
+  #   ];
+  # };
 
   # Nix Settings
   nix = {
