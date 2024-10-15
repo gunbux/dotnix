@@ -15,7 +15,8 @@
     # ./hosts/legion/default.nix
 
     # Include modular configs here
-    ./modules/gnome.nix
+    # ./modules/gnome.nix
+    ./modules/hyprland.nix
     ./modules/fonts.nix
     # ./modules/wireguard.nix
 
@@ -72,8 +73,6 @@
      enable = true;
      enableSSHSupport = true;
   };
-
-
 
   security.sudo.enable = true;
   security.sudo.wheelNeedsPassword = false;
