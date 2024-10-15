@@ -697,10 +697,6 @@ with lib.hm.gvariant;
       use-higher-precision = true;
     };
 
-    "org/gnome/shell/world-clocks" = {
-      locations = [ (mkVariant [ (mkUint32 2) (mkVariant [ "Singapore" "WSAP" true [ (mkTuple [ 2.3852838928353343e-2 1.8136879868485383 ]) ] [ (mkTuple [ 2.2568084612667797e-2 1.8126262332513803 ]) ] ]) ]) ];
-    };
-
     "org/gnome/terminal/legacy" = {
       always-check-default-terminal = true;
     };
