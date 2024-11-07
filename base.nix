@@ -15,8 +15,8 @@
     # ./hosts/legion/default.nix
 
     # Include modular configs here
-    # ./modules/gnome.nix
-    ./modules/hyprland.nix
+    ./modules/gnome.nix
+    # ./modules/hyprland.nix
     ./modules/fonts.nix
     # ./modules/wireguard.nix
 
@@ -29,10 +29,10 @@
   # Audio Settings
   # sound.enable = true;
   # sound.mediaKeys.enable = true;
-  hardware.pulseaudio = {
-    enable = true;
-    support32Bit = true;
-  };
+  # hardware.pulseaudio = {
+  #   enable = true;
+  #   support32Bit = true;
+  # };
 
   # Boot Loader Settings
   boot.loader.systemd-boot.enable = true;
