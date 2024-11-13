@@ -78,16 +78,12 @@ vim.api.nvim_set_keymap('n', '<leader>o', ':setlocal nohlsearch<CR>', { noremap 
 --   )<CR>
 -- ]])
 
+-- RenderMarkdown with vimwiki
+vim.treesitter.language.register('markdown', 'vimwiki')
 
 -- Vimwiki settings
-vim.g.vimwiki_list = {
-    {
-        path = '~/vimwiki/',
-        syntax = 'markdown',
-        ext = '.md'
-    }
-}
 vim.api.nvim_set_keymap('n', '<C-Space>', ':VimwikiIndex<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<leader>ww', ':VimwikiIndex<CR>', { noremap = true })
 
 -- Copilot settings
 vim.api.nvim_set_keymap('i', '<C-Space>', 'copilot#Accept("\\<CR>")', { expr = true, noremap = true })

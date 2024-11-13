@@ -115,7 +115,7 @@
       discord
       qbittorrent
       telegram-desktop
-      terminal-typeracer
+      # terminal-typeracer
       jetbrains.webstorm
       jetbrains.pycharm-professional
       jetbrains.clion
@@ -152,7 +152,7 @@
     programs.neovim = {
       enable = true;
       defaultEditor = true;
-      extraConfig = lib.fileContents ./config/nvim/init.lua;
+      extraLuaConfig = lib.fileContents ./config/nvim/init.lua;
     };
 
     # Shell Config

@@ -3,4 +3,3 @@
 source /home/chun/dotnix/config/nvim/general/plugins.vim
 source /home/chun/dotnix/config/nvim/general/settings.vim
 source /home/chun/dotnix/config/nvim/general/mappings.vim
-source /home/chun/dotnix/config/nvim/general/csharp.vim

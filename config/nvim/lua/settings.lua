@@ -60,7 +60,6 @@ vim.opt.lazyredraw = true
 vim.opt.magic = true
 vim.opt.showmatch = true
 vim.opt.number = true
-vim.opt.relativenumber = true
 
 -- Center document when entering insert mode
 vim.api.nvim_create_autocmd('InsertEnter', { command = 'norm zz' })
