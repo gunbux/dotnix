@@ -74,6 +74,7 @@
       bun
       yarn
       python312
+      tree-sitter
       # libnfc
       ccid
       gnumake
@@ -151,7 +152,7 @@
     programs.neovim = {
       enable = true;
       defaultEditor = true;
-      extraConfig = lib.fileContents ./config/nvim/init.vim;
+      extraConfig = lib.fileContents ./config/nvim/init.lua;
     };
 
     # Shell Config
