@@ -4,7 +4,7 @@
 {config, pkgs, ... }:
 {
   imports = [
-    <nixos-hardware/lenovo/legion/15ach6h/hybrid>
+    <nixos-hardware/lenovo/legion/15arh05h/hybrid>
   ];
 
   # Swap
