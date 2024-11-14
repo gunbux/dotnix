@@ -51,6 +51,7 @@
       rsync
       starship
       wget
+      termshark
       tshark
       nmap
       wl-clipboard

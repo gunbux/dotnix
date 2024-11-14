@@ -14,7 +14,7 @@
 
   # Networking
   networking.hostName = "chun-lappy";
-  networking.networkmanager.wifi.powersave = true;
+  # networking.networkmanager.wifi.powersave = true; # Powersave seems to kill connection for enterprise university wifi
 
   # For wireguard
   networking.firewall.checkReversePath = false;
