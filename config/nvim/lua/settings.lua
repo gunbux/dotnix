@@ -135,7 +135,6 @@ vim.api.nvim_set_keymap('n', '<leader>cd', ':cd %:p:h<CR>:pwd<CR>', { noremap = 
 
 -- 8. Status Line
 vim.opt.laststatus = 2
-vim.g.lightline = { colorscheme = 'dracula' }
 vim.opt.statusline = [[ %{HasPaste()}%F%m%r%h %w CWD:%r%{getcwd()} Line:%l Column:%c ]]
 
 -- 9. Spell Checking

@@ -16,16 +16,16 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
     -- Plugin list
     { 'amix/vim-zenroom2' },
+    { "catppuccin/nvim", name = "catppuccin", priority = 1000 },
     { 'dense-analysis/ale' },
-    { 'dracula/vim', name = 'dracula' },
     { 'easymotion/vim-easymotion' },
     { 'github/copilot.vim' },
-    { 'itchyny/lightline.vim' },
-    -- { 'itchyny/calendar.vim' },  -- Uncomment if needed
-    { 'junegunn/fzf',
-      build = function() vim.fn['fzf#install']() end,
+    { 'itchyny/lightline.vim',
+      init = function()
+        vim.g.lightline = { colorscheme = 'catppuccin' }
+      end,
     },
-    { 'junegunn/fzf.vim' },
+    -- { 'itchyny/calendar.vim' },  -- Uncomment if needed
     { 'junegunn/goyo.vim' },
     { 'lervag/vimtex' },
     { 'mattn/emmet-vim' },
@@ -36,15 +36,16 @@ require('lazy').setup({
           file_types = { 'markdown', 'vimwiki' },
         })
       end,
-      ---@module 'render-markdown'
-      ---@type render.md.UserConfig
       opts = {},
     },
     { 'neoclide/coc.nvim', branch = 'release' },
-    { 'OmniSharp/omnisharp-vim' },
+    {
+    'nvim-telescope/telescope.nvim', tag = '0.1.8',
+      dependencies = { 'nvim-lua/plenary.nvim', 'nvim-tree/nvim-web-devicons' }
+    },
     { 'preservim/nerdtree' },
-    { 'Raimondi/delimitMate' },
     { 'ryanoasis/vim-devicons' },
+    { 'Raimondi/delimitMate' },
     { 'tpope/vim-commentary' },
     { 'Vimjas/vim-python-pep8-indent' },
     { 'vimwiki/vimwiki',
@@ -98,5 +99,5 @@ require('lazy').setup({
 })
 
 -- Set the colorscheme
-vim.cmd('colorscheme dracula')
+vim.cmd('colorscheme catppuccin')
 

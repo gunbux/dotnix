@@ -78,6 +78,12 @@ vim.api.nvim_set_keymap('n', '<leader>o', ':setlocal nohlsearch<CR>', { noremap 
 --   )<CR>
 -- ]])
 
+
+-- nvim-telescope
+local builtin = require('telescope.builtin')
+vim.keymap.set('n', '<leader>/', builtin.find_files, { desc = 'Telescope find files' })
+vim.keymap.set('n', '<leader>r', builtin.live_grep, { desc = 'Telescope live grep' })
+
 -- RenderMarkdown with vimwiki
 vim.treesitter.language.register('markdown', 'vimwiki')
 
@@ -101,18 +107,17 @@ vim.api.nvim_set_keymap('n', '<F12>', '<plug>(vimtex-view)', {})
 
 -- NERDTree keybinds and auto-open
 vim.api.nvim_set_keymap('n', '<leader>f', ':NERDTreeToggle<CR>', { noremap = true })
-vim.cmd([[
-  autocmd StdinReadPre * let s:std_in=1
-  autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
-  autocmd StdinReadPre * let s:std_in=1
-  autocmd VimEnter * if argc() == 0 && !exists("s:std_in") && v:this_session == "" | NERDTree | endif
-  autocmd StdinReadPre * let s:std_in=1
-  autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
-  autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-]])
 
--- Fuzzy Finder keybinds
-vim.api.nvim_set_keymap('n', '<leader>/', ':Files<CR>', { noremap = true })
+-- Helper to enavle NERDTree if no file is passed. The telescope workflow is much faster.
+-- vim.cmd([[
+--   autocmd StdinReadPre * let s:std_in=1
+--   autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
+--   autocmd StdinReadPre * let s:std_in=1
+--   autocmd VimEnter * if argc() == 0 && !exists("s:std_in") && v:this_session == "" | NERDTree | endif
+--   autocmd StdinReadPre * let s:std_in=1
+--   autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
+--   autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+-- ]])
 
 -- Easymotion keybinds
 vim.api.nvim_set_keymap('n', ',', '<Plug>(easymotion-prefix)', {})
