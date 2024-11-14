@@ -14,16 +14,14 @@
   environment.gnome.excludePackages = (with pkgs; [
     yelp
     gnome-tour
-    gnome.gnome-characters
-  ]) ++ (with pkgs.gnome; [
+    gnome-characters
     gnome-music
     gnome-contacts
-    # gnome-terminal
   ]);
 
   services.xserver.desktopManager.gnome = {
     enable = true;
-    extraGSettingsOverridePackages = [ pkgs.gnome.mutter ];
+    extraGSettingsOverridePackages = [ pkgs.mutter ];
     extraGSettingsOverrides = ''
      [org.gnome.mutter]
      experimental-features=['scale-monitor-framebuffer']
