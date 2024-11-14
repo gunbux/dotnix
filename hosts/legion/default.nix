@@ -3,10 +3,6 @@
 # asus-nb-wmi power consumption
 {config, pkgs, ... }:
 {
-  imports = [
-    <nixos-hardware/lenovo/legion/15arh05h/hybrid>
-  ];
-
   # Swap
    swapDevices = [ {
     device = "/var/lib/swapfile";
