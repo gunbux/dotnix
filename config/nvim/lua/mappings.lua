@@ -33,18 +33,19 @@ vim.api.nvim_set_keymap('n', '<leader>o', ':setlocal nohlsearch<CR>', { noremap 
 
 -- Calendar.vim
 -- Enable Google Calendar integration
--- vim.cmd('source ~/.cache/calendar.vim/credentials.vim')
--- vim.g.calendar_google_calendar = 1
---
--- -- Hotkey for opening Calendar in days view, with a vertical split on the right
--- vim.api.nvim_set_keymap('n', '<leader>c', ':Calendar -view=days -split=vertical -position=right<CR>', { noremap = true })
---
--- -- Helper function to prefix a zero to single-digit numbers
--- local function prefix_zero(num)
---     return num < 10 and '0' .. num or tostring(num)
--- end
---
--- -- Callback function for Calendar.vim, integrated with Vimwiki's diary feature
+vim.cmd('source ~/.cache/calendar.vim/credentials.vim')
+vim.g.calendar_google_calendar = 1
+
+-- Hotkey for opening Calendar in days view, with a vertical split on the right
+vim.api.nvim_set_keymap('n', '<leader>c', ':Calendar -view=days -split=vertical -position=right<CR>', { noremap = true })
+
+-- Helper function to prefix a zero to single-digit numbers
+local function prefix_zero(num)
+    return num < 10 and '0' .. num or tostring(num)
+end
+
+-- TODO: Fix this
+-- Callback function for Calendar.vim, integrated with Vimwiki's diary feature
 -- function DiaryDay(day, month, year, week, dir, wnum)
 --     day = prefix_zero(day)
 --     month = prefix_zero(month)
@@ -78,6 +79,8 @@ vim.api.nvim_set_keymap('n', '<leader>o', ':setlocal nohlsearch<CR>', { noremap 
 --   )<CR>
 -- ]])
 
+-- lazygit
+vim.api.nvim_set_keymap('n', '<leader>g', ':LazyGit<CR>', { noremap = true })
 
 -- nvim-telescope
 local builtin = require('telescope.builtin')
@@ -96,7 +99,7 @@ vim.api.nvim_set_keymap('i', '<C-Space>', 'copilot#Accept("\\<CR>")', { expr = t
 vim.g.copilot_no_tab_map = true
 
 -- Goyo toggle
-vim.api.nvim_set_keymap('n', '<leader>g', ':Goyo<CR>', { noremap = true })
+-- vim.api.nvim_set_keymap('n', '<leader>g', ':Goyo<CR>', { noremap = true })
 
 -- Markdown Preview toggle
 vim.api.nvim_set_keymap('n', '<F11>', '<plug>MarkdownPreviewToggle', {})

@@ -25,8 +25,28 @@ require('lazy').setup({
         vim.g.lightline = { colorscheme = 'catppuccin' }
       end,
     },
-    -- { 'itchyny/calendar.vim' },  -- Uncomment if needed
+    { 'itchyny/calendar.vim' },
     { 'junegunn/goyo.vim' },
+    {
+      "kdheepak/lazygit.nvim",
+      lazy = true,
+      cmd = {
+          "LazyGit",
+          "LazyGitConfig",
+          "LazyGitCurrentFile",
+          "LazyGitFilter",
+          "LazyGitFilterCurrentFile",
+      },
+      -- optional for floating window border decoration
+      dependencies = {
+          "nvim-lua/plenary.nvim",
+      },
+      -- setting the keybinding for LazyGit with 'keys' is recommended in
+      -- order to load the plugin when the command is run for the first time
+      keys = {
+          { "<leader>g", "<cmd>LazyGit<cr>", desc = "LazyGit" }
+      }
+    },
     { 'lervag/vimtex' },
     { 'mattn/emmet-vim' },
     { 'MeanderingProgrammer/render-markdown.nvim',
@@ -37,6 +57,17 @@ require('lazy').setup({
         })
       end,
       opts = {},
+    },
+    { "mistricky/codesnap.nvim", build = "make" },
+    {
+      'nvimdev/dashboard-nvim',
+      event = 'VimEnter',
+      config = function()
+        require('dashboard').setup {
+          theme = 'hyper'
+        }
+      end,
+      dependencies = { {'nvim-tree/nvim-web-devicons'}}
     },
     { 'neoclide/coc.nvim', branch = 'release' },
     {

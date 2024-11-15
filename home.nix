@@ -40,6 +40,7 @@
 
       # Core
       git
+      lazygit
       nfs-utils
       tmux
       libcxx
@@ -149,6 +150,16 @@
       # gnomeExtensions.bat_consumption_wattmeter
     ];
 
+    # Git Configs
+    programs.git = {
+      enable = true;
+      aliases = { lola = "log --graph --decorate --pretty=oneline --abbrev-commit --all"; };
+      delta.enable = true;
+      userName = "Chun Yu";
+      userEmail = "lamchunyu00@gmail.com";
+      # TODO: Add signing
+    };
+
     # Neovim Configs
     programs.neovim = {
       enable = true;
@@ -197,7 +208,7 @@
     };
 
     # Hyprland config
-    wayland.windowManager.hyprland.enable = true;
+    # wayland.windowManager.hyprland.enable = true;
 
     home.stateVersion = "23.05";
   };
