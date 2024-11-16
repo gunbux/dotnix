@@ -1,9 +1,9 @@
 { config, pkgs, lib, ... }:
 {
-  
-  # GNOME specific settings
   imports = [
-    ./modules/dconf.nix
+    # GNOME specific settings
+    # ./modules/home/dconf.nix
+    ./modules/home/hyprland.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -16,9 +16,6 @@
   home.homeDirectory = "/home/chun";
 
   home.packages = with pkgs; [
-    # Nix utils
-    niv
-
     # Docker
     docker
 
@@ -42,6 +39,7 @@
     libcxx
     # power-profiles-daemon # This clashes with TLP
 
+    # TODO: Move this to DE specific config
     # System Utils
     iperf
     btop
@@ -188,7 +186,7 @@
   };
 
   # Hyprland config
-  # wayland.windowManager.hyprland.enable = true;
+  wayland.windowManager.hyprland.enable = true;
 
   home.stateVersion = "23.05";
 }

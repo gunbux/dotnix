@@ -14,7 +14,10 @@
 
   # Networking
   networking.hostName = "legion-nix";
-  networking.networkmanager.wifi.powersave = true;
+  networking.networkmanager = {
+    enable = true;
+    wifi.powersave = true;
+  };
 
   # Kernel
   boot.kernelPackages = pkgs.linuxPackages_latest;
@@ -33,6 +36,16 @@
   # Hardware Acceleration
   hardware.graphics = {
     enable = true;
+  };
+  
+  hardware.nvidia = {
+    modesetting.enable = true;
+    # powerManagement.enable = true;
+    # prime = {
+    #   offload.enable = true;
+    #   nvidiaBusId = "PCI:1:0:0";
+    #   amdgpuBusId = "PCI:0:2:0";
+    # };
   };
 
   # Power Mangement

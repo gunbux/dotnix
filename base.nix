@@ -8,13 +8,9 @@
     # Include the results of the hardware scan.
     # /etc/nixos/hardware-configuration.nix
 
-    # Include host specific configs
-    # ./hosts/g14/default.nix
-    # ./hosts/legion/default.nix
-
     # Include modular configs here
-    ./modules/gnome.nix
-    # ./modules/hyprland.nix
+    # ./modules/gnome.nix
+    ./modules/hyprland.nix
     ./modules/fonts.nix
     # ./modules/wireguard.nix
   ];
