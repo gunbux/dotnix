@@ -7,6 +7,7 @@
       
       monitor = [
         "eDP-1,preferred,auto,1"
+        "eDP-2,preferred,auto,1.5"
         ",preferred,auto,1"
       ];
 
@@ -14,6 +15,8 @@
         "waybar"
         "dunst"
         "swww init"
+        "hyprlock"
+        # "~/.config/hypr/scripts/wallpaper.sh"
       ];
 
       general = {
@@ -29,25 +32,32 @@
         rounding = 10;
         blur = {
           enabled = true;
-          size = 3;
-          passes = 1;
+          size = 10;
+          passes = 3;
+          new_optimizations = true;
+          ignore_opacity = true;
         };
         shadow = {
           enabled = true;
-          range = 4;
+          range = 14;
           render_power = 3;
+          scale = 0.30;
         };
       };
 
       animations = {
         enabled = true;
-        bezier = "myBezier, 0.05, 0.9, 0.1, 1.05";
+        bezier = [
+          "smoothOut, 0.36, 0, 0.66, -0.56"
+          "smoothIn, 0.25, 1, 0.5, 1"
+          "overshot, 0.13, 0.99, 0.29, 1.1"
+        ];
         animation = [
-          "windows, 1, 7, myBezier"
-          "windowsOut, 1, 7, default, popin 80%"
+          "windows, 1, 4, smoothOut, slide"
+          "windowsOut, 1, 7, smoothIn, slide"
           "border, 1, 10, default"
-          "fade, 1, 7, default"
-          "workspaces, 1, 6, default"
+          "fade, 1, 7, smoothIn"
+          "workspaces, 1, 6, overshot, slidevert"
         ];
       };
 
@@ -56,22 +66,40 @@
         preserve_split = true;
       };
 
+      input = {
+        kb_options = "caps:swapescape";
+        touchpad = {
+          natural_scroll = true;
+        };
+      };
+
       # Keybindings
       bind = [
         "$mod, Return, exec, kitty"
         "$mod, Q, killactive,"
-        "$mod, M, exit,"
-        "$mod, E, exec, dolphin"
+        "$mod, F, exec, nautilus"
         "$mod, V, togglefloating,"
-        "$mod, R, exec, rofi -show drun"
-        "$mod, P, pseudo,"
         "$mod, J, togglesplit,"
+        "$mod, F, fullscreen, 1"
+        "$mod, SPACE, exec, rofi -show drun"
+        # "$mod, N, exec, networkmanager_dmenu"
+        # "$mod, R, exec, rofi -show calc"
+        # Lock screen
+        # "$mod, L, exec, hyprlock"
+        # Color picker
+        "$mod, C, exec, hyprpicker --autocopy"
 
-        # Move focus
-        "$mod, left, movefocus, l"
-        "$mod, right, movefocus, r"
-        "$mod, up, movefocus, u"
-        "$mod, down, movefocus, d"
+        # Move focus with vim keys
+        "$mod, h, movefocus, l"
+        "$mod, l, movefocus, r" 
+        "$mod, k, movefocus, u"
+        "$mod, j, movefocus, d"
+
+        # Resize windows
+        "$mod CTRL, h, resizeactive, -20 0"
+        "$mod CTRL, l, resizeactive, 20 0"
+        "$mod CTRL, k, resizeactive, 0 -20"
+        "$mod CTRL, j, resizeactive, 0 20"
 
         # Switch workspaces
         "$mod, 1, workspace, 1"
@@ -96,6 +124,12 @@
         "$mod SHIFT, 8, movetoworkspace, 8"
         "$mod SHIFT, 9, movetoworkspace, 9"
         "$mod SHIFT, 0, movetoworkspace, 10"
+
+        # Application shortcuts
+        "$mod, E, exec, nautilus"
+        "$mod, M, exec, spotify" 
+        "$mod, D, exec, discord"
+        "$mod, B, exec, vivaldi"
       ];
 
       bindm = [
@@ -118,4 +152,36 @@
       };
     };
   };
-} 
+
+  # Add rofi configuration
+  programs.rofi = {
+    enable = true;
+    package = pkgs.rofi-wayland;
+    plugins = with pkgs; [
+      rofi-calc
+      rofi-emoji
+    ];
+    extraConfig = {
+      modi = "run,drun,window";
+      show-icons = true;
+      terminal = "kitty";
+      drun-display-format = "{icon} {name}";
+      location = 0;
+      disable-history = false;
+      hide-scrollbar = true;
+      display-drun = "   Apps ";
+      display-run = "   Run ";
+      display-window = " 﩯  Window";
+      display-Network = " 󰤨  Network";
+      sidebar-mode = true;
+    };
+  };
+
+  # Copy the theme files to the correct location
+  # home.file = {
+  #   ".config/rofi" = {
+  #     source = "${rofi-catppuccin}/deathemonic";
+  #     recursive = true;
+  #   };
+  # };
+}

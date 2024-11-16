@@ -10,8 +10,8 @@
 
     # Include modular configs here
     # ./modules/gnome.nix
-    ./modules/hyprland.nix
     ./modules/fonts.nix
+    ./modules/hyprland.nix
     # ./modules/wireguard.nix
   ];
 
@@ -49,8 +49,10 @@
   # Keyboard Settings
   services.libinput.enable = true;
   services.xserver.enable = true;
-  services.xserver.xkb.layout = "us";
-  services.xserver.xkb.options = "ctrl:nocaps";
+  services.xserver.xkb = {
+    layout = "us";
+    options = "terminate:ctrl_alt_bksp,caps:swapescape";
+  };
   services.xserver.excludePackages = [ pkgs.xterm ];
 
   # Services

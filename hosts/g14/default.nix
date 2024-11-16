@@ -3,6 +3,9 @@
 # asus-nb-wmi power consumption
 {config, pkgs, ... }:
 {
+  imports = [
+    ./hardware-configuration.nix
+  ];
   # scx
   # chaotic.scx.enable = true;
 
@@ -14,7 +17,10 @@
 
   # Networking
   networking.hostName = "chun-lappy";
-  # networking.networkmanager.wifi.powersave = true; # Powersave seems to kill connection for enterprise university wifi
+  networking.networkmanager = {
+    enable = true;
+    # wifi.powersave = true; # Powersave seems to kill connection for enterprise university wifi
+  };
 
   # For wireguard
   networking.firewall.checkReversePath = false;

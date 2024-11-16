@@ -54,6 +54,10 @@
     pamixer # Audio control
     grim # Screenshot
     slurp # Screen selection
+    
+    # Lock screen and color picker
+    hyprlock
+    hyprpicker
   ];
 }
 
