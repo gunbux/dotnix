@@ -1,7 +1,5 @@
 # Nix OS Configs
 # TODO:
-# Add Pipewire configs
-# Add btrfs configs
 # Add secure boot support with lanzaboote
 { config, pkgs, lib, inputs, options, ... }:
 
@@ -19,20 +17,19 @@
     # ./modules/hyprland.nix
     ./modules/fonts.nix
     # ./modules/wireguard.nix
-
-    # Home config
-    ./home.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
 
   # Audio Settings
-  # sound.enable = true;
-  # sound.mediaKeys.enable = true;
-  # hardware.pulseaudio = {
-  #   enable = true;
-  #   support32Bit = true;
-  # };
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    jack.enable = true;
+  };
 
   # Boot Loader Settings
   boot.loader.systemd-boot.enable = true;
@@ -90,16 +87,18 @@
   # The NixOS release to be compatible with for stateful data such as databases
   system.stateVersion = "23.05";
 
-  # autoUpgrade disabled for now
-  # system.autoUpgrade = {
-  #   enable = true;
-  #   flake = inputs.self.outPath;
-  #   channel = "https://channels.nixos.org/nixos-unstable";
-  #   flags = [
-  #     "-I"
-  #     "nixos-config=/home/chun/dotnix/base.nix"
-  #   ];
-  # };
+  # Enable automatic system upgrades
+  system.autoUpgrade = {
+    enable = true;
+    flake = "github:gunbux/dotnix";
+    flags = [
+      "--update-input" "nixpkgs"
+      "-L" # Print build logs
+    ];
+    dates = "daily";
+    randomizedDelaySec = "45min";
+    allowReboot = false;
+  };
 
   # Nix Settings
   nix = {
@@ -107,13 +106,9 @@
       automatic = true;
       dates = "daily";
       options = "--delete-older-than 3d";
+      persistent = true;
+      randomizedDelaySec = "45min";
     };
-
-    # Flakes support
-    settings.experimental-features = ["nix-command" "flakes" "recursive-nix"];
-
-    # Modify this if using a different location
-    nixPath = [ "nixos-config=/home/chun/dotnix/base.nix" ] ++ options.nix.nixPath.default;
 
     package = pkgs.nixVersions.latest;
 
@@ -129,18 +124,28 @@
       min-free = ${toString (100 * 1024 * 1024)}
       max-free = ${toString (1024 * 1024 * 1024)}
     '';
+
     settings = {
       auto-optimise-store = true;
-      # allow sudo users to mark the following values as trusted
       allowed-users = ["@wheel"];
-      # only allow sudo users to manage the nix store
       trusted-users = ["@wheel"];
       sandbox = true;
       max-jobs = "auto";
-      # continue building derivations if one fails
       keep-going = true;
       log-lines = 20;
-      extra-experimental-features = ["flakes" "nix-command" "recursive-nix" "ca-derivations"];
+      experimental-features = [
+        "flakes"
+        "nix-command"
+        "recursive-nix"
+        "ca-derivations"
+      ];
+      keep-derivations = true;
+      keep-outputs = true;
+    };
+
+    optimise = {
+      automatic = true;
+      dates = [ "weekly" ];
     };
   };
 
@@ -156,7 +161,7 @@
     uid = 1000;
     home = "/home/chun";
     description = "Chun Yu";
-    extraGroups = [ "wheel" "networkmanager" "docker" "audio" "video" "input" "disk" "syncthing" "docker" "dialout"];
+    extraGroups = [ "wheel" "networkmanager" "docker" "audio" "video" "input" "disk" "syncthing" "dialout"];
     shell = pkgs.zsh;
   };
 

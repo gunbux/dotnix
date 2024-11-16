@@ -27,6 +27,11 @@
   # NTFS Support
   boot.supportedFilesystems = [ "ntfs" ];
 
+  # Hardware Acceleration
+  hardware.graphics = {
+    enable = true;
+  };
+
   # Power Mangement
   powerManagement = {
     enable = true;
