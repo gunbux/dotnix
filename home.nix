@@ -1,5 +1,11 @@
 { config, pkgs, lib, ... }:
 {
+  
+  # GNOME specific settings
+  imports = [
+    ./modules/dconf.nix
+  ];
+
   nixpkgs.config.allowUnfree = true;
 
   # Let Home Manager install & manage itself

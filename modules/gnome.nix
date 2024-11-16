@@ -10,9 +10,6 @@
   };
   programs.dconf.enable = true;
 
-  # Import dconf settings
-  imports = [ ./dconf.nix ];
-
   # Gnome Settings
   environment.gnome.excludePackages = (with pkgs; [
     yelp
