@@ -20,7 +20,7 @@ sudo nix-channel --update
 nixos-rebuild -I nixos-config=./base.nix switch
 
 # With flakes
-sudo nixos-rebuild switch --flake .#chun-lappy --impure
+sudo nixos-rebuild switch --flake .#chun-lappy
 ```
 
 ## Adding mutt configs

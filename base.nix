@@ -6,7 +6,7 @@
 {
   imports = [
     # Include the results of the hardware scan.
-    /etc/nixos/hardware-configuration.nix
+    # /etc/nixos/hardware-configuration.nix
 
     # Include host specific configs
     # ./hosts/g14/default.nix

@@ -10,6 +10,9 @@
   };
   programs.dconf.enable = true;
 
+  # Import dconf settings
+  imports = [ ./dconf.nix ];
+
   # Gnome Settings
   environment.gnome.excludePackages = (with pkgs; [
     yelp
@@ -18,6 +21,27 @@
     gnome-music
     gnome-contacts
   ]);
+
+  # Add Gnome packages that were in home.nix
+  environment.systemPackages = with pkgs; [
+    # Gnome Dependencies
+    tela-icon-theme
+    pop-gtk-theme
+    nordzy-cursor-theme
+
+    # Gnome Extensions
+    gnome-tweaks
+    gnomeExtensions.blur-my-shell
+    gnomeExtensions.vitals
+    gnomeExtensions.supergfxctl-gex
+    gnomeExtensions.user-avatar-in-quick-settings
+    gnomeExtensions.just-perfection
+    gnomeExtensions.space-bar
+    gnomeExtensions.gsconnect
+    gnomeExtensions.forge
+    gnomeExtensions.unite
+    gnomeExtensions.pano
+  ];
 
   services.xserver.desktopManager.gnome = {
     enable = true;
@@ -31,8 +55,4 @@
 
   # Enable GNOME Keyring daemon
   services.gnome.gnome-keyring.enable = lib.mkForce false;
-  # security.pam.services.sddm.enableGnomeKeyring = false;
-  # Enable Chrome GNOME Shell native host connector
-  # This is a DBus service allowing to install GNOME Shell extensions from a web browser.
-  # services.gnome3.chrome-gnome-shell.enable = tr
 }

@@ -1,8 +1,11 @@
 # TODO:
-# Switch to cherry picked zen kernel
 # asus-nb-wmi power consumption
 {config, pkgs, ... }:
 {
+  imports = [
+    ./hardware-configuration.nix
+  ];
+
   # Swap
    swapDevices = [ {
     device = "/var/lib/swapfile";

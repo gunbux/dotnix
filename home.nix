@@ -1,22 +1,15 @@
 { config, pkgs, lib, ... }:
-# Declaratively add Home Manager
 {
   nixpkgs.config.allowUnfree = true;
 
   # Let Home Manager install & manage itself
   programs.home-manager.enable = true;
 
-  # Gnome Configs
-  imports = [ ./modules/dconf.nix ];
-
   # Base config for Home Manager
   home.username = "chun";
   home.homeDirectory = "/home/chun";
 
   home.packages = with pkgs; [
-    # scx
-    # scx
-
     # Nix utils
     niv
 
@@ -69,9 +62,7 @@
     libz
     meson
     ninja
-    nodejs
     bun
-    yarn
     python312
     tree-sitter
     # libnfc
@@ -101,7 +92,10 @@
     # NUS Bloat
     (openfortivpn.overrideAttrs(
           old: {
-            src = builtins.fetchTarball https://github.com/adrienverge/openfortivpn/archive/refs/tags/v1.20.4.tar.gz;
+            src = builtins.fetchTarball {
+              url = "https://github.com/adrienverge/openfortivpn/archive/refs/tags/v1.20.4.tar.gz";
+              sha256 = "sha256:1dzw16ndvghkkhq8z5w6vyxblrjkmns0mfh8r6z8q4r95dal59i4";
+            };
     }))
 
     # Apps
@@ -128,25 +122,6 @@
     musescore
 
     # davinci-resolve
-
-    # Gnome Dependencies
-    tela-icon-theme
-    pop-gtk-theme
-    nordzy-cursor-theme
-
-    # Gnome Extensions
-    gnome-tweaks
-    gnomeExtensions.blur-my-shell
-    gnomeExtensions.vitals
-    gnomeExtensions.supergfxctl-gex
-    gnomeExtensions.user-avatar-in-quick-settings
-    gnomeExtensions.just-perfection
-    gnomeExtensions.space-bar
-    gnomeExtensions.gsconnect
-    gnomeExtensions.forge
-    gnomeExtensions.unite
-    gnomeExtensions.pano
-    # gnomeExtensions.bat_consumption_wattmeter
   ];
 
   # Git Configs
