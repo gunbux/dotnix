@@ -16,9 +16,9 @@ with lib.hm.gvariant;
     };
 
     "org/gnome/Extensions" = {
-      window-height = 1033;
+      window-height = 1048;
       window-maximized = true;
-      window-width = 1704;
+      window-width = 1920;
     };
 
     "org/gnome/Geary" = {
@@ -31,12 +31,19 @@ with lib.hm.gvariant;
       show-properties = true;
     };
 
+    "org/gnome/Snapshot" = {
+      is-maximized = false;
+      window-height = 1064;
+      window-width = 948;
+    };
+
     "org/gnome/Totem" = {
       active-plugins = [ "open-directory" "screenshot" "vimeo" "apple-trailers" "recent" "movie-properties" "screensaver" "autoload-subtitles" "save-file" "skipto" "mpris" "rotation" "variable-rate" ];
       subtitle-encoding = "UTF-8";
     };
 
     "org/gnome/baobab/ui" = {
+      active-chart = "rings";
       is-maximized = false;
       window-size = mkTuple [ 2032 1232 ];
     };
@@ -91,6 +98,12 @@ with lib.hm.gvariant;
 
     "org/gnome/desktop/app-folders" = {
       folder-children = [ "Utilities" "YaST" ];
+    };
+
+    "org/gnome/desktop/app-folders/folders/Pardus" = {
+      categories = [ "X-Pardus-Apps" ];
+      name = "X-Pardus-Apps.directory";
+      translate = true;
     };
 
     "org/gnome/desktop/app-folders/folders/Utilities" = {
@@ -165,6 +178,10 @@ with lib.hm.gvariant;
       application-id = "gnome-printers-panel.desktop";
     };
 
+    "org/gnome/desktop/notifications/application/org-gnome-baobab" = {
+      application-id = "org.gnome.baobab.desktop";
+    };
+
     "org/gnome/desktop/notifications/application/org-gnome-characters" = {
       application-id = "org.gnome.Characters.desktop";
     };
@@ -233,9 +250,13 @@ with lib.hm.gvariant;
       application-id = "vivaldi-stable.desktop";
     };
 
+    "org/gnome/desktop/peripherals/keyboard" = {
+      numlock-state = true;
+    };
+
     "org/gnome/desktop/peripherals/mouse" = {
       natural-scroll = false;
-      speed = -0.8898305084745762;
+      speed = -0.889831;
     };
 
     "org/gnome/desktop/peripherals/touchpad" = {
@@ -308,8 +329,8 @@ with lib.hm.gvariant;
       sidebar-page = "thumbnails";
       sidebar-size = 148;
       sizing-mode = "free";
-      window-ratio = mkTuple [ 1.77498252969951 1.912962962962963 ];
-      zoom = 1.2814586858921717;
+      window-ratio = mkTuple [ 1.774983 1.912963 ];
+      zoom = 1.281459;
     };
 
     "org/gnome/evolution-data-server" = {
@@ -386,6 +407,7 @@ with lib.hm.gvariant;
 
     "org/gnome/nautilus/window-state" = {
       initial-size = mkTuple [ 1012 1033 ];
+      initial-size-file-chooser = mkTuple [ 890 550 ];
       maximized = true;
     };
 
@@ -409,12 +431,22 @@ with lib.hm.gvariant;
       ignore-phase2-ca-cert = false;
     };
 
+    "org/gnome/nm-applet/eap/57f09523-d1c1-468f-aba2-b1dd5d8fc154" = {
+      ignore-ca-cert = true;
+      ignore-phase2-ca-cert = false;
+    };
+
     "org/gnome/nm-applet/eap/647e3ab2-d691-4650-a0e0-2f66e69daf67" = {
       ignore-ca-cert = true;
       ignore-phase2-ca-cert = false;
     };
 
     "org/gnome/nm-applet/eap/6ffa0bc2-a465-4faf-9f0a-1ea5945bb24d" = {
+      ignore-ca-cert = false;
+      ignore-phase2-ca-cert = false;
+    };
+
+    "org/gnome/nm-applet/eap/79ee2b2e-03fe-47ed-ab5e-40a656a76b61" = {
       ignore-ca-cert = false;
       ignore-phase2-ca-cert = false;
     };
@@ -478,6 +510,10 @@ with lib.hm.gvariant;
       window-maximized = true;
     };
 
+    "org/gnome/portal/filechooser/discord" = {
+      last-folder-path = "/home/chun/Downloads";
+    };
+
     "org/gnome/portal/filechooser/vivaldi-stable" = {
       last-folder-path = "/home/chun";
     };
@@ -502,13 +538,14 @@ with lib.hm.gvariant;
       power-button-action = "interactive";
       power-saver-profile-on-low-battery = true;
       sleep-inactive-ac-type = "nothing";
+      sleep-inactive-battery-type = "nothing";
     };
 
     "org/gnome/shell" = {
       command-history = [ "lg" ];
       disable-user-extensions = false;
-      disabled-extensions = [ "workspace-indicator@gnome-shell-extensions.gcampax.github.com" "apps-menu@gnome-shell-extensions.gcampax.github.com" "auto-move-windows@gnome-shell-extensions.gcampax.github.com" "pop-launcher-super-key@ManeLippert" "pop-shell@system76.com" "window-list@gnome-shell-extensions.gcampax.github.com" "drive-menu@gnome-shell-extensions.gcampax.github.com" "places-menu@gnome-shell-extensions.gcampax.github.com" "native-window-placement@gnome-shell-extensions.gcampax.github.com" "windowsNavigator@gnome-shell-extensions.gcampax.github.com" ];
-      enabled-extensions = [ "blur-my-shell@aunetx" "launch-new-instance@gnome-shell-extensions.gcampax.github.com" "Vitals@CoreCoding.com" "gsconnect@andyholmes.github.io" "supergfxctl-gex@asus-linux.org" "quick-settings-avatar@d-go" "forge@jmmaranan.com" "just-perfection-desktop@just-perfection" "space-bar@luchrioh" "wifiqrcode@glerro.pm.me" ];
+      disabled-extensions = [ "workspace-indicator@gnome-shell-extensions.gcampax.github.com" "apps-menu@gnome-shell-extensions.gcampax.github.com" "auto-move-windows@gnome-shell-extensions.gcampax.github.com" "pop-launcher-super-key@ManeLippert" "pop-shell@system76.com" "window-list@gnome-shell-extensions.gcampax.github.com" "drive-menu@gnome-shell-extensions.gcampax.github.com" "places-menu@gnome-shell-extensions.gcampax.github.com" "native-window-placement@gnome-shell-extensions.gcampax.github.com" "windowsNavigator@gnome-shell-extensions.gcampax.github.com" "hidetopbar@mathieu.bidon.ca" ];
+      enabled-extensions = [ "blur-my-shell@aunetx" "launch-new-instance@gnome-shell-extensions.gcampax.github.com" "Vitals@CoreCoding.com" "gsconnect@andyholmes.github.io" "supergfxctl-gex@asus-linux.org" "quick-settings-avatar@d-go" "forge@jmmaranan.com" "just-perfection-desktop@just-perfection" "space-bar@luchrioh" "wifiqrcode@glerro.pm.me" "unite@hardpixel.eu" ];
       favorite-apps = [ "org.gnome.Console.desktop" "org.gnome.Nautilus.desktop" "spotify.desktop" "discord.desktop" "vivaldi-stable.desktop" ];
       last-selected-power-profile = "power-saver";
       looking-glass-history = [ "exit" "quit" "ls" ];
@@ -553,7 +590,7 @@ with lib.hm.gvariant;
       css-last-update = mkUint32 37;
       focus-border-toggle = false;
       move-pointer-focus-enabled = true;
-      tiling-mode-enabled = false;
+      tiling-mode-enabled = true;
       window-gap-hidden-on-single = true;
       window-gap-size = mkUint32 2;
       window-gap-size-increment = mkUint32 1;
@@ -627,6 +664,7 @@ with lib.hm.gvariant;
       double-super-to-appgrid = true;
       gesture = true;
       hot-corner = true;
+      max-displayed-search-results = 0;
       osd = true;
       panel = true;
       panel-arrow = false;
@@ -659,12 +697,16 @@ with lib.hm.gvariant;
       tile-by-default = true;
     };
 
+    "org/gnome/shell/extensions/space-bar/appearance" = {
+      application-styles = ".space-bar {n  -natural-hpadding: 12px;n}nn.space-bar-workspace-label.active {n  margin: 0 4px;n  background-color: rgba(255,255,255,0.3);n  color: rgba(255,255,255,1);n  border-color: rgba(0,0,0,0);n  font-weight: 700;n  border-radius: 4px;n  border-width: 0px;n  padding: 3px 8px;n}nn.space-bar-workspace-label.inactive {n  margin: 0 4px;n  background-color: rgba(0,0,0,0);n  color: rgba(255,255,255,1);n  border-color: rgba(0,0,0,0);n  font-weight: 700;n  border-radius: 4px;n  border-width: 0px;n  padding: 3px 8px;n}nn.space-bar-workspace-label.inactive.empty {n  margin: 0 4px;n  background-color: rgba(0,0,0,0);n  color: rgba(255,255,255,0.5);n  border-color: rgba(0,0,0,0);n  font-weight: 700;n  border-radius: 4px;n  border-width: 0px;n  padding: 3px 8px;n}";
+    };
+
     "org/gnome/shell/extensions/space-bar/shortcuts" = {
       enable-activate-workspace-shortcuts = false;
     };
 
     "org/gnome/shell/extensions/space-bar/state" = {
-      version = 27;
+      version = 31;
     };
 
     "org/gnome/shell/extensions/unite" = {
@@ -697,6 +739,10 @@ with lib.hm.gvariant;
       use-higher-precision = true;
     };
 
+    "org/gnome/shell/world-clocks" = {
+      locations = [];
+    };
+
     "org/gnome/terminal/legacy" = {
       always-check-default-terminal = true;
     };
@@ -713,8 +759,8 @@ with lib.hm.gvariant;
     };
 
     "org/gtk/gtk4/settings/color-chooser" = {
-      custom-colors = [ (mkTuple [ 9.019608050584793e-2 9.41176488995552e-2 0.13333334028720856 1.0 ]) ];
-      selected-color = mkTuple [ true 9.019608050584793e-2 9.41176488995552e-2 0.13333334028720856 1.0 ];
+      custom-colors = [ (mkTuple [ 9.0196e-2 9.4118e-2 0.133333 1.0 ]) ];
+      selected-color = mkTuple [ true 9.0196e-2 9.4118e-2 0.133333 1.0 ];
     };
 
     "org/gtk/gtk4/settings/file-chooser" = {
