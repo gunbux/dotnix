@@ -48,9 +48,9 @@
       animations = {
         enabled = true;
         bezier = [
-          "smoothOut, 0.36, 0, 0.66, -0.56"
-          "smoothIn, 0.25, 1, 0.5, 1"
-          "overshot, 0.13, 0.99, 0.29, 1.1"
+          "smoothOut, 0.25, 0, 0.4, -0.3" # Made curve steeper and shorter
+          "smoothIn, 0.2, 0.8, 0.3, 0.9"  # Reduced curve duration
+          "overshot, 0.1, 0.8, 0.2, 1.05" # Reduced overshoot and made faster
         ];
         animation = [
           "windows, 1, 4, smoothOut, slide"
@@ -149,6 +149,8 @@
         modules-left = ["hyprland/workspaces"];
         modules-center = ["clock"];
         modules-right = ["pulseaudio" "network" "battery"];
+        font-family = "JetBrainsMono Nerd Font";
+        font-size = 13;
       };
     };
   };
