@@ -9,9 +9,9 @@
     # /etc/nixos/hardware-configuration.nix
 
     # Include modular configs here
-    # ./modules/gnome.nix
+    ./modules/gnome.nix
     ./modules/fonts.nix
-    ./modules/hyprland.nix
+    # ./modules/hyprland.nix
     # ./modules/wireguard.nix
   ];
 

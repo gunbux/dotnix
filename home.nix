@@ -2,8 +2,8 @@
 {
   imports = [
     # GNOME specific settings
-    # ./modules/home/dconf.nix
-    ./modules/home/hyprland.nix
+    ./modules/home/dconf.nix
+    # ./modules/home/hyprland.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
