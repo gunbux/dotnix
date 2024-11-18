@@ -21,21 +21,6 @@
     # Authentication agent
     gnome.gnome-keyring.enable = true;
   };
-  
-  # Session variables
-  environment.variables = {
-    NIXOS_OZONE_WL = "1";
-    NIXPKGS_ALLOW_UNFREE = "1";
-    XDG_CURRENT_DESKTOP = "Hyprland";
-    XDG_SESSION_TYPE = "wayland";
-    XDG_SESSION_DESKTOP = "Hyprland";
-    GDK_BACKEND = "wayland";
-    CLUTTER_BACKEND = "wayland";
-    QT_QPA_PLATFORM = "wayland";
-    QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
-    QT_AUTO_SCREEN_SCALE_FACTOR = "1";
-    MOZ_ENABLE_WAYLAND = "1";
-  };
 
   # System packages needed for Hyprland
   environment.systemPackages = with pkgs; [
