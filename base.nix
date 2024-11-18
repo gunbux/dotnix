@@ -8,10 +8,12 @@
     # Include the results of the hardware scan.
     # /etc/nixos/hardware-configuration.nix
 
+    # Fonts
+    ./modules/fonts.nix
+
     # Include modular configs here
     ./modules/gnome.nix
-    ./modules/fonts.nix
-    # ./modules/hyprland.nix
+    ./modules/hyprland.nix
     # ./modules/wireguard.nix
   ];
 

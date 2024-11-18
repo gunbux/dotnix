@@ -3,7 +3,7 @@
   imports = [
     # GNOME specific settings
     ./modules/home/dconf.nix
-    # ./modules/home/hyprland.nix
+    ./modules/home/hyprland.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -66,6 +66,7 @@
     libz
     meson
     ninja
+    nodejs
     bun
     python312
     tree-sitter

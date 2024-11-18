@@ -1,5 +1,9 @@
 { config, pkgs, lib, ... }:
 {
+  imports = [
+    # ./greetd.nix
+  ];
+
   # Enable Hyprland
   programs.hyprland = {
     enable = true;
@@ -16,22 +20,21 @@
   services = {
     # Authentication agent
     gnome.gnome-keyring.enable = true;
-
-    # Display manager
-    greetd = {
-      enable = true;
-      settings = {
-        default_session = {
-          command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland";
-          user = "greeter";
-        };
-      };
-    };
   };
   
   # Session variables
   environment.variables = {
     NIXOS_OZONE_WL = "1";
+    NIXPKGS_ALLOW_UNFREE = "1";
+    XDG_CURRENT_DESKTOP = "Hyprland";
+    XDG_SESSION_TYPE = "wayland";
+    XDG_SESSION_DESKTOP = "Hyprland";
+    GDK_BACKEND = "wayland";
+    CLUTTER_BACKEND = "wayland";
+    QT_QPA_PLATFORM = "wayland";
+    QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
+    QT_AUTO_SCREEN_SCALE_FACTOR = "1";
+    MOZ_ENABLE_WAYLAND = "1";
   };
 
   # System packages needed for Hyprland
@@ -51,6 +54,7 @@
     wl-clipboard
     wlr-randr
     brightnessctl
+    fuzzel
     pamixer # Audio control
     grim # Screenshot
     slurp # Screen selection
@@ -58,6 +62,13 @@
     # Lock screen and color picker
     hyprlock
     hyprpicker
+    
+    # System utilities
+    nordzy-cursor-theme
+    gnome-control-center
+    wl-clip-persist
+    nautilus
+    tesseract
   ];
 }
 
