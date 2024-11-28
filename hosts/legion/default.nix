@@ -20,11 +20,14 @@
   };
 
   # Kernel
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = pkgs.linuxPackages_cachyos;
   boot.kernelParams = [
     "initcall_blacklist=acpi_cpufreq_init"
     "amd_pstate=active"
   ];
+
+  # SCX
+  chaotic.scx.enable= true;
 
   # Boot correct driver early
   boot.initrd.kernelModules = [ "amdgpu" ];
@@ -37,7 +40,7 @@
   hardware.graphics = {
     enable = true;
   };
-  
+
   hardware.nvidia = {
     modesetting.enable = true;
     # powerManagement.enable = true;
