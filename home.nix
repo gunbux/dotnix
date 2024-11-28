@@ -126,7 +126,7 @@
     thunderbird
     musescore
 
-    # davinci-resolve
+    davinci-resolve
   ];
 
   # Git Configs
