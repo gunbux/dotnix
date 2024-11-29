@@ -20,14 +20,15 @@
   };
 
   # Kernel
-  boot.kernelPackages = pkgs.linuxPackages_cachyos;
+  # boot.kernelPackages = pkgs.linuxPackages_cachyos;
+  boot.kernelPackages = pkgs.linuxPackages_6_11;
   boot.kernelParams = [
     "initcall_blacklist=acpi_cpufreq_init"
     "amd_pstate=active"
   ];
 
   # SCX
-  chaotic.scx.enable= true;
+  #chaotic.scx.enable= true;
 
   # Boot correct driver early
   boot.initrd.kernelModules = [ "amdgpu" ];
@@ -43,7 +44,7 @@
 
   hardware.nvidia = {
     modesetting.enable = true;
-    # powerManagement.enable = true;
+    powerManagement.enable = true;
     # prime = {
     #   offload.enable = true;
     #   nvidiaBusId = "PCI:1:0:0";

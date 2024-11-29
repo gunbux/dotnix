@@ -14,7 +14,7 @@
     # Include modular configs here
     ./modules/gnome.nix
     ./modules/hyprland.nix
-    # ./modules/wireguard.nix
+    ./modules/wireguard.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
