@@ -1,12 +1,17 @@
 { config, pkgs, ... }:
 
 {
+  networking.firewall.checkReversePath = false;
   # Enable Wireguard
-  networking.wireguard.interfaces = {
+  networking.wg-quick.interfaces = {
     # "wg0" is the network interface name. You can name the interface arbitrarily.
     wg0 = {
+      # Disable autostart
+      autostart = false;
+
       # Determines the IP address and subnet of the client's end of the tunnel interface.
-      ips = [ "10.8.0.4/24" ];
+      address = [ "10.8.0.4/24" ];
+      dns = [ "1.1.1.1" "8.8.8.8" ];
 
       # Path to the private key file.
       #

@@ -30,3 +30,11 @@ There's no good way to configure mutt/neomutt using Nix configurations, so we ca
 ```
 ln -sf /home/chun/dotnix/config/mutt ~/.config/mutt
 ```
+
+## Running wireguard
+
+If you're running wireguard on boot (wifi), wg0 will fail to autostart, so autostart is disabled. To start the vpn, run:
+
+```nix
+sudo systemctl start wg-quick-wg0
+```

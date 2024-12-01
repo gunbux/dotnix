@@ -4,6 +4,7 @@
     # GNOME specific settings
     ./modules/home/dconf.nix
     ./modules/home/hyprland.nix
+    ./modules/home/zed.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -106,7 +107,7 @@
     # Apps
     apostrophe
     code-cursor
-    zed-editor
+    # zed-editor
     obs-studio
     steam
     blender

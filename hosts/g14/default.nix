@@ -6,8 +6,10 @@
   imports = [
     ./hardware-configuration.nix
   ];
+
   # scx
-  # chaotic.scx.enable = true;
+  services.scx.enable = true;
+  services.scx.scheduler = "scx_lavd";
 
   # Swap
    swapDevices = [ {
@@ -21,9 +23,6 @@
     enable = true;
     # wifi.powersave = true; # Powersave seems to kill connection for enterprise university wifi
   };
-
-  # For wireguard
-  networking.firewall.checkReversePath = false;
 
   # Kernel
   boot.kernelPackages = pkgs.linuxPackages_latest;
