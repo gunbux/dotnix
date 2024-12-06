@@ -43,11 +43,10 @@
     # TODO: Fix Pane context
     userKeymaps = [
       {
-        context = "Pane";
         bindings = {
-          ctrl-shift-w = "pane::CloseActiveItem"; 
-          alt-1 = "file_finder::Toggle";
-          alt-4 = "workspace::NewTerminal";
+          ctrl-shift-w = "pane::CloseActiveItem";
+          alt-1 = "workspace::ToggleLeftDock";
+          alt-4 = "workspace::ToggleBottomDock";
         };
       }
       {
@@ -55,6 +54,20 @@
         bindings = {
           "j k" = ["workspace::SendKeystrokes" "escape"];
           ctrl-d = "editor::MovePageDown";
+        };
+      }
+      {
+        context = "Workspace";
+        bindings = {
+          ctrl-1 = ["workspace::ActivatePane" 0];
+          ctrl-2 = ["workspace::ActivatePane" 1];
+          ctrl-3 = ["workspace::ActivatePane" 2];
+          ctrl-4 = ["workspace::ActivatePane" 3];
+          ctrl-5 = ["workspace::ActivatePane" 4];
+          ctrl-6 = ["workspace::ActivatePane" 5];
+          ctrl-7 = ["workspace::ActivatePane" 6];
+          ctrl-8 = ["workspace::ActivatePane" 7];
+          ctrl-9 = ["workspace::ActivatePane" 8];
         };
       }
     ];

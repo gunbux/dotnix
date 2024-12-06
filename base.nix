@@ -65,6 +65,10 @@
   # For NFC
   services.pcscd.enable = true;
 
+  # VPN
+  services.tailscale.enable = true;
+  services.mullvad-vpn.enable = true;
+
   # GPG
   programs.gnupg.agent = {
      enable = true;

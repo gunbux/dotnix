@@ -17,6 +17,9 @@
   home.homeDirectory = "/home/chun";
 
   home.packages = with pkgs; [
+    # AI
+    aider-chat
+
     # Docker
     docker
 
@@ -31,6 +34,10 @@
 
     # Web
     vivaldi
+
+    # VPN
+    mullvad-vpn
+    tailscale
 
     # Core
     git

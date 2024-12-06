@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 {
-  networking.firewall.checkReversePath = false;
+  # networking.firewall.checkReversePath = false;
   # Enable Wireguard
   networking.wg-quick.interfaces = {
     # "wg0" is the network interface name. You can name the interface arbitrarily.
