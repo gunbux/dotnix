@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, zen-browser, ... }:
 {
   imports = [
     # GNOME specific settings
@@ -135,7 +135,7 @@
     musescore
 
     davinci-resolve
-  ];
+  ] ++ [zen-browser.packages.${pkgs.system}.specific];
 
   # Git Configs
   programs.git = {

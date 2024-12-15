@@ -9,41 +9,51 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
+    zen-browser.url = "github:0xc000022070/zen-browser-flake";
   };
 
-  outputs = { self, nixpkgs, nixos-hardware, home-manager, chaotic }: {
+  outputs = { self, nixpkgs, nixos-hardware, home-manager, chaotic, zen-browser }: {
 
     nixosConfigurations = {
-      "chun-lappy" = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [
-          ./base.nix
-          ./hosts/g14/default.nix
-          chaotic.nixosModules.default
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.chun = import ./home.nix;
-          }
-        ];
-      };
+      "chun-lappy" = 
+        let
+          system = "x86_64-linux";
+          zen = zen-browser.packages."${system}";
+        in nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            ./base.nix
+            ./hosts/g14/default.nix
+            chaotic.nixosModules.default
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.extraSpecialArgs = { inherit zen-browser; };
+              home-manager.users.chun = import ./home.nix;
+            }
+          ];
+        };
 
-      "legion-nix" = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [
-          ./base.nix
-          ./hosts/legion/default.nix
-          nixos-hardware.nixosModules.lenovo-legion-15arh05h
-          chaotic.nixosModules.default
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.chun = import ./home.nix;
-          }
-        ];
-      };
+      "legion-nix" =
+        let
+          system = "x86_64-linux";
+          zen = zen-browser.packages."${system}";
+        in nixpkgs.lib.nixosSystem {
+          modules = [
+            ./base.nix
+            ./hosts/legion/default.nix
+            nixos-hardware.nixosModules.lenovo-legion-15arh05h
+            chaotic.nixosModules.default
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.extraSpecialArgs = { inherit zen-browser; };
+              home-manager.users.chun = import ./home.nix;
+            }
+          ];
+        };
     };
 
     homeConfigurations = {
