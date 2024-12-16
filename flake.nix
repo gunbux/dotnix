@@ -15,7 +15,7 @@
   outputs = { self, nixpkgs, nixos-hardware, home-manager, chaotic, zen-browser }: {
 
     nixosConfigurations = {
-      "chun-lappy" = 
+      "chun-lappy" =
         let
           system = "x86_64-linux";
           zen = zen-browser.packages."${system}";
@@ -24,6 +24,7 @@
           modules = [
             ./base.nix
             ./hosts/g14/default.nix
+            nixos-hardware.nixosModules.asus-zephyrus-ga402
             chaotic.nixosModules.default
             home-manager.nixosModules.home-manager
             {
@@ -59,7 +60,7 @@
     homeConfigurations = {
       "chun@non-nixos" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
-        modules = [ 
+        modules = [
           ./home.nix
           {
             home = {
