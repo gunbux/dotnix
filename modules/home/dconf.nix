@@ -12,7 +12,7 @@ with lib.hm.gvariant;
     "org/gnome/Console" = {
       font-scale = 1.2;
       last-window-maximised = false;
-      last-window-size = mkTuple [ 1080 1033 ];
+      last-window-size = mkTuple [ 1920 1080 ];
     };
 
     "org/gnome/Extensions" = {
@@ -520,6 +520,7 @@ with lib.hm.gvariant;
 
     "org/gnome/settings-daemon/plugins/color" = {
       night-light-enabled = false;
+      night-light-schedule-automatic = false;
     };
 
     "org/gnome/settings-daemon/plugins/media-keys" = {
@@ -546,7 +547,7 @@ with lib.hm.gvariant;
       disable-user-extensions = false;
       disabled-extensions = [ "workspace-indicator@gnome-shell-extensions.gcampax.github.com" "apps-menu@gnome-shell-extensions.gcampax.github.com" "auto-move-windows@gnome-shell-extensions.gcampax.github.com" "pop-launcher-super-key@ManeLippert" "pop-shell@system76.com" "window-list@gnome-shell-extensions.gcampax.github.com" "drive-menu@gnome-shell-extensions.gcampax.github.com" "places-menu@gnome-shell-extensions.gcampax.github.com" "native-window-placement@gnome-shell-extensions.gcampax.github.com" "windowsNavigator@gnome-shell-extensions.gcampax.github.com" "hidetopbar@mathieu.bidon.ca" ];
       enabled-extensions = [ "blur-my-shell@aunetx" "launch-new-instance@gnome-shell-extensions.gcampax.github.com" "Vitals@CoreCoding.com" "gsconnect@andyholmes.github.io" "supergfxctl-gex@asus-linux.org" "quick-settings-avatar@d-go" "forge@jmmaranan.com" "just-perfection-desktop@just-perfection" "space-bar@luchrioh" "wifiqrcode@glerro.pm.me" "unite@hardpixel.eu" ];
-      favorite-apps = [ "org.gnome.Console.desktop" "org.gnome.Nautilus.desktop" "spotify.desktop" "discord.desktop" "vivaldi-stable.desktop" ];
+      favorite-apps = [ "com.mitchellh.ghostty.desktop" "org.gnome.Nautilus.desktop" "spotify.desktop" "discord.desktop" "zen.desktop" ];
       last-selected-power-profile = "power-saver";
       looking-glass-history = [ "exit" "quit" "ls" ];
       welcome-dialog-last-shown-version = "44.2";
@@ -590,6 +591,8 @@ with lib.hm.gvariant;
       css-last-update = mkUint32 37;
       focus-border-toggle = false;
       move-pointer-focus-enabled = true;
+      stacked-tiling-mode-enabled = true;
+      tabbed-tiling-mode-enabled = true;
       tiling-mode-enabled = true;
       window-gap-hidden-on-single = true;
       window-gap-size = mkUint32 2;
@@ -706,7 +709,7 @@ with lib.hm.gvariant;
     };
 
     "org/gnome/shell/extensions/space-bar/state" = {
-      version = 31;
+      version = 32;
     };
 
     "org/gnome/shell/extensions/unite" = {

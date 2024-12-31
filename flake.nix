@@ -9,10 +9,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
+    ghostty.url = "github:ghostty-org/ghostty";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
   };
 
-  outputs = { self, nixpkgs, nixos-hardware, home-manager, chaotic, zen-browser }: {
+  outputs = { self, nixpkgs, nixos-hardware, home-manager, chaotic, ghostty, zen-browser }: {
 
     nixosConfigurations = {
       "chun-lappy" =
@@ -50,7 +51,7 @@
             {
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
-              home-manager.extraSpecialArgs = { inherit zen-browser; };
+              home-manager.extraSpecialArgs = { inherit zen-browser; inherit ghostty; };
               home-manager.users.chun = import ./home.nix;
             }
           ];
