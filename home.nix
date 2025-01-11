@@ -99,7 +99,7 @@
     cheat
     tldr
     gping
-    dog
+    # dog
     zoxide
 
     # NUS Bloat
