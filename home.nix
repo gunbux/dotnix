@@ -67,6 +67,7 @@
     bpftools
     cargo
     clang
+    conda
     jq
     libbpf
     libelf

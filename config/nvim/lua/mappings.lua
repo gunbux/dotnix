@@ -91,8 +91,9 @@ vim.keymap.set('n', '<leader>r', builtin.live_grep, { desc = 'Telescope live gre
 vim.treesitter.language.register('markdown', 'vimwiki')
 
 -- Vimwiki settings
-vim.api.nvim_set_keymap('n', '<C-Space>', ':VimwikiIndex<CR>', { noremap = true })
-vim.api.nvim_set_keymap('n', '<leader>ww', ':VimwikiIndex<CR>', { noremap = true })
+-- vim.api.nvim_set_keymap('n', '<C-Space>', ':VimwikiIndex<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<leader>ww', ':VimwikiIndex 1<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<leader>ee', ':VimwikiIndex 2<CR>', { noremap = true })
 
 -- Copilot settings
 vim.api.nvim_set_keymap('i', '<C-Space>', 'copilot#Accept("\\<CR>")', { expr = true, noremap = true })

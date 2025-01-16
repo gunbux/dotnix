@@ -21,6 +21,7 @@ vim.opt.clipboard:append('unnamedplus')
 vim.opt.history = 500
 vim.opt.autoread = true
 vim.api.nvim_create_autocmd({'FocusGained', 'BufEnter'}, { command = 'checktime' })
+vim.opt.autochdir = true
 
 -- Remember last edit position
 vim.api.nvim_create_autocmd('BufReadPost', {

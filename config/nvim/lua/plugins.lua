@@ -91,6 +91,12 @@ require('lazy').setup({
             path = '~/vimwiki/',
             syntax = 'markdown',
             ext = '.md'
+          },
+
+          {
+            path = '~/repo/neuro/',
+            syntax = 'markdown',
+            ext = '.md'
           }
         }
       end,
