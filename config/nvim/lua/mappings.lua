@@ -35,6 +35,7 @@ vim.api.nvim_set_keymap('n', '<leader>o', ':setlocal nohlsearch<CR>', { noremap 
 -- Enable Google Calendar integration
 vim.cmd('source ~/.cache/calendar.vim/credentials.vim')
 vim.g.calendar_google_calendar = 1
+vim.g.calendar_view = { 'year', 'month', 'week', 'day_4', 'agenda', 'clock' }
 
 -- Hotkey for opening Calendar in days view, with a vertical split on the right
 vim.api.nvim_set_keymap('n', '<leader>c', ':Calendar -view=days -split=vertical -position=right<CR>', { noremap = true })
@@ -80,7 +81,7 @@ end
 -- ]])
 
 -- lazygit
-vim.api.nvim_set_keymap('n', '<leader>g', ':LazyGit<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<leader>k', ':LazyGit<CR>', { noremap = true })
 
 -- nvim-telescope
 local builtin = require('telescope.builtin')
@@ -100,7 +101,7 @@ vim.api.nvim_set_keymap('i', '<C-Space>', 'copilot#Accept("\\<CR>")', { expr = t
 vim.g.copilot_no_tab_map = true
 
 -- Goyo toggle
--- vim.api.nvim_set_keymap('n', '<leader>g', ':Goyo<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<leader>g', ':Goyo<CR>', { noremap = true })
 
 -- Markdown Preview toggle
 vim.api.nvim_set_keymap('n', '<F11>', '<plug>MarkdownPreviewToggle', {})
