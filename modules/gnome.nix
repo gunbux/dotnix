@@ -4,10 +4,10 @@
   services.xserver.enable = true;
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.displayManager.gdm.wayland = true;
-  # services.displayManager.autoLogin = {
-  #   enable = true;
-  #   user = "chun";
-  # };
+  services.displayManager.autoLogin = {
+    enable = true;
+    user = "chun";
+  };
   programs.dconf.enable = true;
 
   # Gnome Settings
