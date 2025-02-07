@@ -39,6 +39,9 @@
     mullvad-vpn
     tailscale
 
+    # Mouse
+    solaar
+
     # Core
     git
     lazygit
@@ -85,6 +88,7 @@
     kitty
     geekbench
     zstd
+    logiops
 
     # Modern Unix
     bat

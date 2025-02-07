@@ -2,15 +2,30 @@
 # Switch to cherry picked zen kernel
 # asus-nb-wmi power consumption
 {config, pkgs, ... }:
-{
+let
+  # Import the old supergfxd module directly
+  oldNixpkgs = import (builtins.fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/ab7b6889ae9d484eed2876868209e33eb262511d.tar.gz";
+    sha256 = "sha256:0wl2rq7jxr7b0g0inxbh9jgiifamn9i45p7fgra8rhhnrmcdlqjz";
+  }) {
+    system = "x86_64-linux";
+  };
+in {
   imports = [
     ./hardware-configuration.nix
   ];
 
-  # scx
-  services.scx.enable = true;
+  # Override the supergfxd package
+  nixpkgs.overlays = [
+    (final: prev: {
+      supergfxctl = oldNixpkgs.supergfxctl;
+    })
+  ];
 
-  # Swap
+  # scx
+  #services.scx.enable = true;
+
+  # Swapj
    swapDevices = [ {
     device = "/var/lib/swapfile";
     size = 16*1024;
@@ -24,7 +39,7 @@
   };
 
   # Kernel
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = pkgs.linuxPackages_6_12;
   boot.kernelParams = [
     "initcall_blacklist=acpi_cpufreq_init"
     "amd_pstate=active" # Enables amd_pstate_epp I believe?
@@ -82,12 +97,18 @@
   #   enable = true;
   # };
 
+  # Logitech
+  hardware.logitech.wireless = {
+    enable = true;
+    enableGraphical = true;
+  };
+
   # Dynamic Linking for non nix programs
-  programs.nix-ld.enable = true;
-    programs.nix-ld.libraries = with pkgs; [
-      # Add any missing dynamic libraries for unpackaged programs
-      # here, NOT in environment.systemPackages
-    ];
+  # programs.nix-ld.enable = true;
+  #   programs.nix-ld.libraries = with pkgs; [
+  #     # Add any missing dynamic libraries for unpackaged programs
+  #     # here, NOT in environment.systemPackages
+  #   ];
 
   # Services
   services.upower.enable = true;

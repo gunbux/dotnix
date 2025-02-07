@@ -14,7 +14,6 @@
   };
 
   outputs = { self, nixpkgs, nixos-hardware, home-manager, chaotic, ghostty, zen-browser }: {
-
     nixosConfigurations = {
       "chun-lappy" =
         let
@@ -56,7 +55,7 @@
             }
           ];
         };
-    };
+      };
 
     homeConfigurations = {
       "chun@non-nixos" = home-manager.lib.homeManagerConfiguration {
