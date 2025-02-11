@@ -63,7 +63,7 @@
   services.udisks2.enable = true;
 
   # For NFC
-  services.pcscd.enable = true;
+  # services.pcscd.enable = true;
 
   # VPN
   services.tailscale.enable = true;
