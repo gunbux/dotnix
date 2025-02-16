@@ -136,6 +136,7 @@
     jetbrains.goland
     jetbrains.idea-ultimate
     neomutt
+    mpv
     thunderbird
     musescore
 
