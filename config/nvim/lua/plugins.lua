@@ -27,6 +27,13 @@ require('lazy').setup({
     },
     { 'itchyny/calendar.vim' },
     { 'junegunn/goyo.vim' },
+    { 'joshuavial/aider.nvim',
+      opts = {
+        auto_manage_context = true, -- automatically manage buffer context
+        default_bindings = true,    -- use default <leader>A keybindings
+        debug = false,              -- enable debug logging
+      },
+    },
     {
       "kdheepak/lazygit.nvim",
       lazy = true,
@@ -44,7 +51,7 @@ require('lazy').setup({
       -- setting the keybinding for LazyGit with 'keys' is recommended in
       -- order to load the plugin when the command is run for the first time
       keys = {
-          { "<leader>g", "<cmd>LazyGit<cr>", desc = "LazyGit" }
+          { "<leader>k", "<cmd>LazyGit<cr>", desc = "LazyGit" }
       }
     },
     { 'lervag/vimtex' },
