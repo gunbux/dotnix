@@ -44,6 +44,7 @@
 
     # Core
     git
+    uv
     lazygit
     nfs-utils
     tmux
@@ -194,6 +195,10 @@
         "zoxide"
         "fzf"
       ];
+    };
+
+    shellAliases = {
+      lg = "lazygit";
     };
   };
 

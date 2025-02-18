@@ -114,7 +114,7 @@ vim.api.nvim_set_keymap('n', '<F12>', '<plug>(vimtex-view)', {})
 vim.api.nvim_set_keymap('n', '<leader>f', ':NERDTreeToggle<CR>', { noremap = true })
 
 -- Aider.nvim
-vim.api.nvim_set_keymap('n', '<leader>ai', ':lua require("aider").start()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>ai', ':AiderOpen<CR>', { noremap = true, silent = true })
 
 -- Helper to enavle NERDTree if no file is passed. The telescope workflow is much faster.
 -- vim.cmd([[
