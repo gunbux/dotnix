@@ -30,8 +30,11 @@ require('lazy').setup({
     { 'joshuavial/aider.nvim',
       opts = {
         auto_manage_context = true, -- automatically manage buffer context
-        default_bindings = true,    -- use default <leader>A keybindings
+        default_bindings = false,   -- we'll set our own keybindings
         debug = false,              -- enable debug logging
+        provider = "openrouter",
+        openrouter_api_key = os.getenv("OPENROUTER_API_KEY"),
+        model = "anthropic/claude-2",
       },
     },
     {
