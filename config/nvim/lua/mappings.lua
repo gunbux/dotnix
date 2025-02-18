@@ -114,7 +114,7 @@ vim.api.nvim_set_keymap('n', '<F12>', '<plug>(vimtex-view)', {})
 vim.api.nvim_set_keymap('n', '<leader>f', ':NERDTreeToggle<CR>', { noremap = true })
 
 -- Aider.nvim
-vim.api.nvim_set_keymap('n', '<leader>ai', ':AiderOpen<CR>', { noremap = true, silent = true })
+-- vim.api.nvim_set_keymap('n', '<leader>ai', ':AiderOpen --model openrouter/anthropic/claude-3.5-sonnet<CR>', { noremap = true, silent = true })
 
 -- Helper to enavle NERDTree if no file is passed. The telescope workflow is much faster.
 -- vim.cmd([[
@@ -129,4 +129,7 @@ vim.api.nvim_set_keymap('n', '<leader>ai', ':AiderOpen<CR>', { noremap = true, s
 
 -- Easymotion keybinds
 vim.api.nvim_set_keymap('n', ',', '<Plug>(easymotion-prefix)', {})
+
+-- Avante mappings
+vim.api.nvim_set_keymap('n', '<leader>ai', ':AvanteAsk<CR>', { noremap = true, silent = true })
 

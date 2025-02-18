@@ -177,6 +177,12 @@
     autosuggestion.enable = true;
     enableCompletion = true;
     autocd = true;
+    initExtra = ''
+      # Load environment variables from ~/.env if it exists
+      if [ -f "$HOME/.env" ]; then
+        source "$HOME/.env"
+      fi
+    '';
     plugins = [
         {
           name = "zsh-nix-shell";
