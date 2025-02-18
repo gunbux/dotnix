@@ -33,7 +33,7 @@ require('lazy').setup({
         default_bindings = false,   -- we'll set our own keybindings
         debug = false,              -- enable debug logging
         provider = "openrouter",
-        openrouter_api_key = os.getenv("OPENROUTER_API_KEY"),
+        openrouter_api_key = vim.fn.system('source ~/.env && echo -n $OPENROUTER_API_KEY'),
         model = "anthropic/claude-2",
       },
     },
