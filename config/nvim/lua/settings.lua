@@ -38,8 +38,8 @@ vim.g.mapleader = ' '
 -- Quick save/quit options
 vim.api.nvim_set_keymap('n', '<leader>w', ':w!<CR>', { noremap = true })
 vim.api.nvim_set_keymap('n', '<leader>q', ':wq<CR>', { noremap = true })
-vim.api.nvim_set_keymap('n', '<leader>e', ':q!<CR>', { noremap = true })
 vim.cmd('cnoremap w!! w !sudo tee %')
+-- vim.api.nvim_set_keymap('n', '<leader>e', ':q!<CR>', { noremap = true })
 
 -- Remove trailing whitespaces
 vim.api.nvim_create_autocmd('BufWritePre', { command = '%s/\\s\\+$//e' })
