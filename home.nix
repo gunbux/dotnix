@@ -20,8 +20,13 @@
     # AI
     aider-chat
 
-    # Docker
-    docker
+    # User tools
+    uv
+    lazygit
+    starship
+    wl-clipboard
+    rcon
+    pinentry-tty
 
     # Archiving
     unrar
@@ -29,49 +34,8 @@
     xz
     zip
 
-    # PDF
-    evince
-
-    # Web
-    vivaldi
-
-    # VPN
-    mullvad-vpn
-    tailscale
-
-    # Mouse
-    solaar
-
-    # Core
-    git
-    uv
-    lazygit
-    nfs-utils
-    tmux
-    libcxx
-    # power-profiles-daemon # This clashes with TLP
-
-    # TODO: Move this to DE specific config
-    # System Utils
-    marksman
-    iperf
-    btop
-    rsync
-    starship
-    wget
-    termshark
-    tshark
-    nmap
-    wl-clipboard
-    rcon
-    gnupg
-    pinentry-tty
-
-    # DevTools
-    # gcc
+    # Development tools
     bpftools
-    cargo
-    clang
     conda
     jq
     libbpf
@@ -80,17 +44,18 @@
     libz
     meson
     ninja
-    nodejs
-    bun
-    python312
     tree-sitter
-    # libnfc
     ccid
     gnumake
     kitty
     geekbench
     zstd
     logiops
+
+    # Applications
+    evince
+    vivaldi
+    solaar
 
     # Modern Unix
     bat
