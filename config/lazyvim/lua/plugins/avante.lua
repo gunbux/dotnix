@@ -5,8 +5,12 @@ return {
   version = false,
   disable_tools = true,
   config = function()
+      -- Read API key from ~/.openrouter and remove any whitespace/newlines
+      local api_key = vim.fn.trim(vim.fn.readfile(vim.fn.expand('~/.openrouter'))[1])
+      vim.env.OPENROUTER_API_KEY = api_key
+
       require("avante").setup({
-          provider = "copilot",
+          provider = "openrouter",
           vendors = {
               deepseek = {
                   __inherited_from = "openai",
@@ -54,7 +58,7 @@ return {
       "hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
       "ibhagwan/fzf-lua", -- for file_selector provider fzf
       "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
-      -- "zbirenbaum/copilot.lua", -- for providers='copilot'
+       "zbirenbaum/copilot.lua", -- for providers='copilot'
       {
           "HakonHarnes/img-clip.nvim",
           event = "VeryLazy",
