@@ -7,8 +7,6 @@
     ./modules/home/zed.nix
   ];
 
-  nixpkgs.config.allowUnfree = true;
-
   # Let Home Manager install & manage itself
   programs.home-manager.enable = true;
 
@@ -21,12 +19,12 @@
     aider-chat
 
     # User tools
-    uv
     lazygit
-    starship
-    wl-clipboard
-    rcon
     pinentry-tty
+    rcon
+    starship
+    uv
+    wl-clipboard
 
     # Archiving
     unrar
