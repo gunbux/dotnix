@@ -53,6 +53,7 @@
 
     # TODO: Move this to DE specific config
     # System Utils
+    marksman
     iperf
     btop
     rsync
