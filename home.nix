@@ -18,13 +18,8 @@
     # AI
     aider-chat
 
-    # User tools
-    lazygit
-    pinentry-tty
-    rcon
-    starship
-    uv
-    wl-clipboard
+    # Docker
+    docker
 
     # Archiving
     unrar
@@ -32,8 +27,48 @@
     xz
     zip
 
-    # Development tools
+    # PDF
+    evince
+
+    # Web
+    vivaldi
+
+    # VPN
+    mullvad-vpn
+    tailscale
+
+    # Mouse
+    solaar
+
+    # Core
+    git
+    uv
+    lazygit
+    nfs-utils
+    tmux
+    libcxx
+    # power-profiles-daemon # This clashes with TLP
+
+    # System Utils
+    marksman
+    iperf
+    btop
+    rsync
+    starship
+    wget
+    termshark
+    tshark
+    nmap
+    wl-clipboard
+    rcon
+    gnupg
+    pinentry-tty
+
+    # DevTools
+    # gcc
     bpftools
+    cargo
+    clang
     conda
     jq
     libbpf
@@ -42,18 +77,17 @@
     libz
     meson
     ninja
+    nodejs
+    bun
+    python312
     tree-sitter
+    # libnfc
     ccid
     gnumake
     kitty
     geekbench
     zstd
     logiops
-
-    # Applications
-    evince
-    vivaldi
-    solaar
 
     # Modern Unix
     bat
@@ -147,12 +181,6 @@
     autosuggestion.enable = true;
     enableCompletion = true;
     autocd = true;
-    initExtra = ''
-      # Load environment variables from ~/.env if it exists
-      if [ -f "$HOME/.env" ]; then
-        source "$HOME/.env"
-      fi
-    '';
     plugins = [
         {
           name = "zsh-nix-shell";
