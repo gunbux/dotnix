@@ -1,5 +1,12 @@
 return {
   'vimwiki/vimwiki',
+  event = VeryLazy,
+  lazy = true,
+  keys = {
+    { "<leader>ww", ":VimwikiIndex 1<CR>", desc = "Open main wiki" },
+    { "<leader>ee", ":VimwikiIndex 2<CR>", desc = "Open neuro wiki" },
+  },
+  ft = { "vimwiki", "markdown" },
   init = function()
     vim.g.vimwiki_list = {
       {
@@ -17,9 +24,5 @@ return {
 
     -- Register markdown for vimwiki in treesitter
     vim.treesitter.language.register('markdown', 'vimwiki')
-
-    -- Set up keymaps
-    vim.api.nvim_set_keymap('n', '<leader>ww', ':VimwikiIndex 1<CR>', { noremap = true })
-    vim.api.nvim_set_keymap('n', '<leader>ee', ':VimwikiIndex 2<CR>', { noremap = true })
   end,
 }

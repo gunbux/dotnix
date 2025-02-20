@@ -1,18 +1,25 @@
 return {
   "yetone/avante.nvim",
-  event = "BufReadPre",
-  lazy = false,
+  event = "VeryLazy",
+  lazy = true,
   version = false,
   disable_tools = false,
   config = function()
       require("avante").setup({
           provider = "copilot",
           vendors = {
-              openrouter = {
+              deepseek = {
                   __inherited_from = "openai",
                   endpoint = "https://openrouter.ai/api/v1",
                   api_key_name = "OPENROUTER_API_KEY",
                   model = "deepseek:deepseek-r1:free",
+                  max_tokens = 8192,
+              },
+              openrouter = {
+                  __inherited_from = "openai",
+                  endpoint = "https://openrouter.ai/api/v1",
+                  api_key_name = "OPENROUTER_API_KEY",
+                  model = "anthropic/claude-3.5-sonnet:beta",
                   max_tokens = 8192,
               },
           },
@@ -47,7 +54,7 @@ return {
       "hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
       "ibhagwan/fzf-lua", -- for file_selector provider fzf
       "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
-      "zbirenbaum/copilot.lua", -- for providers='copilot'
+      -- "zbirenbaum/copilot.lua", -- for providers='copilot'
       {
           "HakonHarnes/img-clip.nvim",
           event = "VeryLazy",

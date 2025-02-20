@@ -52,10 +52,10 @@ vim.api.nvim_set_keymap('n', '<M-l>', ':vertical resize +2<CR>', { noremap = tru
 -- vim.api.nvim_set_keymap('n', '<S-TAB>', ':bprevious<CR>', { noremap = true })
 
 -- Tab management -- DEPRECATED FOR LAZYVIM DEFAULTS
-vim.api.nvim_set_keymap('n', '<leader>tn', ':tabnew<CR>', { noremap = true })
-vim.api.nvim_set_keymap('n', '<leader>to', ':tabonly<CR>', { noremap = true })
-vim.api.nvim_set_keymap('n', '<leader>tc', ':tabclose<CR>', { noremap = true })
-vim.api.nvim_set_keymap('n', '<leader>tm', ':tabmove', { noremap = true })
+-- vim.api.nvim_set_keymap('n', '<leader>tn', ':tabnew<CR>', { noremap = true })
+-- vim.api.nvim_set_keymap('n', '<leader>to', ':tabonly<CR>', { noremap = true })
+-- vim.api.nvim_set_keymap('n', '<leader>tc', ':tabclose<CR>', { noremap = true })
+-- vim.api.nvim_set_keymap('n', '<leader>tm', ':tabmove', { noremap = true })
 
 -- DEPRECATED
 -- 8. Status Line
