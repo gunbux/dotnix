@@ -50,19 +50,20 @@
     # power-profiles-daemon # This clashes with TLP
 
     # System Utils
-    marksman
-    iperf
+    amdgpu_top
     btop
+    gnupg
+    iperf
+    marksman
+    nmap
+    pinentry-tty
+    rcon
     rsync
     starship
-    wget
     termshark
     tshark
-    nmap
+    wget
     wl-clipboard
-    rcon
-    gnupg
-    pinentry-tty
 
     # DevTools
     # gcc

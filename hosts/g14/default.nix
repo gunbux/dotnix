@@ -1,7 +1,7 @@
 # TODO:
 # Switch to cherry picked zen kernel
 # asus-nb-wmi power consumption
-{config, pkgs, ... }:
+{config, lib, pkgs, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -97,7 +97,14 @@
 
   # Services
   services.upower.enable = true;
-  services.supergfxd.enable = true;
+  services.supergfxd = {
+    enable = true;
+    settings = {
+      hotplug_type = "Asus";
+      mode = "Hybrid";
+    };
+  };
+
   services.asusd.enable = true;
   services.asusd.enableUserService = true;
 
