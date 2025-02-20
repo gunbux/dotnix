@@ -3,7 +3,7 @@ return {
   event = "VeryLazy",
   lazy = true,
   version = false,
-  disable_tools = false,
+  disable_tools = true,
   config = function()
       require("avante").setup({
           provider = "copilot",
