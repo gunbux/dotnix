@@ -18,6 +18,12 @@
     # AI
     aider-chat
 
+    # Screen sharing
+    xdg-desktop-portal
+    xdg-desktop-portal-wlr
+    pipewire
+    wireplumber
+
     # Docker
     docker
 
