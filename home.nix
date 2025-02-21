@@ -97,20 +97,21 @@
     logiops
 
     # Modern Unix
+    # dog
     bat
-    eza
-    lsd
+    cheat
     delta
     du-dust
     duf
-    fzf
+    eza
     fd
-    ripgrep
-    mcfly
-    cheat
-    tldr
+    fzf
     gping
-    # dog
+    lsd
+    mcfly
+    ncdu
+    ripgrep
+    tldr
     zoxide
 
     # NUS Bloat
@@ -123,30 +124,31 @@
     }))
 
     # Apps
-    apostrophe
-    code-cursor
-    # zed-editor
-    obs-studio
-    steam
-    blender
-    spotify
-    bitwarden
-    discord
-    qbittorrent
-    telegram-desktop
     # terminal-typeracer
-    jetbrains.webstorm
-    jetbrains.pycharm-professional
+    # zed-editor
+    apostrophe
+    bitwarden
+    blender
+    code-cursor
+    davinci-resolve
+    discord
     jetbrains.clion
-    jetbrains.rust-rover
     jetbrains.goland
     jetbrains.idea-ultimate
-    neomutt
+    jetbrains.pycharm-professional
+    jetbrains.rust-rover
+    jetbrains.webstorm
     mpv
-    thunderbird
     musescore
+    neomutt
+    obs-studio
+    qbittorrent
+    spotify
+    steam
+    telegram-desktop
+    thunderbird
+    youtube-music
 
-    davinci-resolve
   ] ++ [
       zen-browser.packages.${pkgs.system}.default
       ghostty.packages.${pkgs.system}.default

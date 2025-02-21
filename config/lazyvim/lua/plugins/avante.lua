@@ -16,7 +16,14 @@ return {
                   __inherited_from = "openai",
                   endpoint = "https://openrouter.ai/api/v1",
                   api_key_name = "OPENROUTER_API_KEY",
-                  model = "deepseek:deepseek-r1:free",
+                  model = "deepseek/deepseek-r1",
+                  max_tokens = 8192,
+              },
+              gemini = {
+                  __inherited_from = "openai",
+                  endpoint = "https://openrouter.ai/api/v1",
+                  api_key_name = "OPENROUTER_API_KEY",
+                  model = "google/gemini-2.0-flash-001",
                   max_tokens = 8192,
               },
               openrouter = {
@@ -40,11 +47,6 @@ return {
               temperature = 0,
               max_tokens = 8192,
           },
-          gemini = {
-              model = "gemini-2.0-flash",
-              temperature = 0,
-              max_tokens = 8192,
-          },
       })
   end,
   build = "make",
@@ -58,7 +60,6 @@ return {
       "hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
       "ibhagwan/fzf-lua", -- for file_selector provider fzf
       "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
-       "zbirenbaum/copilot.lua", -- for providers='copilot'
       {
           "HakonHarnes/img-clip.nvim",
           event = "VeryLazy",
@@ -85,6 +86,7 @@ return {
       },
     },
   keys = {
-    { "<leader>ai", "<cmd>AvanteAsk<CR>", desc = "Open Avante" }
+    { "<leader>ai", "<cmd>AvanteAsk<CR>", desc = "Open Avante" },
+    { "<leader>as", ":AvanteSwitchProvider ", desc = "Switch Avante Provider" }
   }
 }
