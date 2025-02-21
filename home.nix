@@ -182,6 +182,12 @@
     autosuggestion.enable = true;
     enableCompletion = true;
     autocd = true;
+    initExtra = ''
+      # Set OPENROUTER_API_KEY from ~/.openrouter if it exists
+      if [ -f "$HOME/.openrouter" ]; then
+        export OPENROUTER_API_KEY=$(cat "$HOME/.openrouter")
+      fi
+    '';
     plugins = [
         {
           name = "zsh-nix-shell";
