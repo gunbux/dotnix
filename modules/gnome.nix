@@ -21,6 +21,10 @@
 
   # Add Gnome packages that were in home.nix
   environment.systemPackages = with pkgs; [
+    # Screen sharing dependencies
+    xdg-desktop-portal
+    xdg-desktop-portal-gnome
+    
     # Gnome Dependencies
     tela-icon-theme
     pop-gtk-theme
@@ -39,6 +43,14 @@
     gnomeExtensions.unite
     gnomeExtensions.pano
   ];
+
+  # Enable screen sharing portal
+  services.pipewire.enable = true;
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-gnome ];
+    config.common.default = "*";
+  };
 
   services.xserver.desktopManager.gnome = {
     enable = true;
