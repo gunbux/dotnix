@@ -30,7 +30,7 @@ return {
                   __inherited_from = "openai",
                   endpoint = "https://openrouter.ai/api/v1",
                   api_key_name = "OPENROUTER_API_KEY",
-                  model = "anthropic/claude-3.5-sonnet:beta",
+                  model = "anthropic/claude-3.7-sonnet",
                   max_tokens = 8192,
               },
           },
@@ -43,7 +43,7 @@ return {
               minimize_diff = false,
           },
           copilot = {
-              model = "claude-3.5-sonnet",
+              model = "claude-3.7-sonnet",
               temperature = 0,
               max_tokens = 8192,
           },

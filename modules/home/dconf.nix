@@ -138,7 +138,7 @@ with lib.hm.gvariant;
     "org/gnome/desktop/interface" = {
       clock-format = "12h";
       color-scheme = "prefer-dark";
-      cursor-size = 30;
+      cursor-size = 32;
       cursor-theme = "Nordzy-cursors-white";
       document-font-name = "Source Sans 3 11";
       enable-animations = true;
