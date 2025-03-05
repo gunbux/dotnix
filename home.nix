@@ -66,6 +66,7 @@
     rcon
     rsync
     starship
+    tectonic
     termshark
     tshark
     wget
@@ -115,13 +116,7 @@
     zoxide
 
     # NUS Bloat
-    (openfortivpn.overrideAttrs(
-          old: {
-            src = builtins.fetchTarball {
-              url = "https://github.com/adrienverge/openfortivpn/archive/refs/tags/v1.20.4.tar.gz";
-              sha256 = "sha256:1dzw16ndvghkkhq8z5w6vyxblrjkmns0mfh8r6z8q4r95dal59i4";
-            };
-    }))
+    openfortivpn
 
     # Apps
     # terminal-typeracer

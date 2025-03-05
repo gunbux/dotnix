@@ -112,8 +112,18 @@
     brightnessctl
     # scx
   ];
-  hardware.bluetooth.enable = true;
-  hardware.bluetooth.powerOnBoot = false;
+
+  # Bluetooth
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = false;
+    settings = {
+      General = {
+        Experiemental = true;
+        KernelExperiemental = true;
+      };
+    };
+  };
 
   # Virtualization
   virtualisation.virtualbox.host.enable = true;

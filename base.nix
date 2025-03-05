@@ -14,7 +14,7 @@
     # Include modular configs here
     ./modules/gnome.nix
     ./modules/hyprland.nix
-    ./modules/wireguard.nix
+    # ./modules/wireguard.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -67,7 +67,7 @@
 
   # VPN
   services.tailscale.enable = true;
-  services.mullvad-vpn.enable = true;
+  #services.mullvad-vpn.enable = true;
 
   # GPG
   programs.gnupg.agent = {
