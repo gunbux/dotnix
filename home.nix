@@ -48,11 +48,11 @@
 
     # Core
     git
-    uv
     lazygit
+    libcxx
     nfs-utils
     tmux
-    libcxx
+    uv
     # power-profiles-daemon # This clashes with TLP
 
     # System Utils
@@ -78,6 +78,7 @@
     cargo
     clang
     conda
+    commitizen
     jq
     libbpf
     libelf
@@ -170,6 +171,11 @@
   home.file."./.config/nvim/" = {
     source = ./config/lazyvim;
     recursive = true;
+  };
+
+  # LazyGit Config
+  home.file."./.config/lazygit/config.yml" = {
+    source = ./config/lazygit/config.yml;
   };
 
   # Shell Config
