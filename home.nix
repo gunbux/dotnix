@@ -70,6 +70,7 @@
       # DevTools
       # gcc
       # libnfc
+      alejandra
       bpftools
       btop
       bun
