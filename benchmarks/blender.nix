@@ -1,5 +1,4 @@
-{ pkgs ? import <nixpkgs> { } }:
-
+{pkgs ? import <nixpkgs> {}}:
 (pkgs.buildFHSUserEnv {
   name = "blender-environment";
   targetPkgs = pkgs:
@@ -17,8 +16,8 @@
       openal
       libGL
       libGLU
-
-    ]) ++ (with pkgs.xorg; [
+    ])
+    ++ (with pkgs.xorg; [
       libX11
       libXcursor
       libXrender
@@ -29,8 +28,8 @@
       libXi
 
       libXext
-
     ]);
-  multiPkgs = pkgs: (with pkgs; [ udev alsaLib ]);
+  multiPkgs = pkgs: (with pkgs; [udev alsaLib]);
   runScript = "bash";
-}).env
+})
+.env

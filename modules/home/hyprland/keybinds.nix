@@ -1,8 +1,10 @@
-{ config, lib, ... }:
-let
-  mod = "SUPER";
-in
 {
+  config,
+  lib,
+  ...
+}: let
+  mod = "SUPER";
+in {
   wayland.windowManager.hyprland.settings = {
     bind = [
       "ALT, Tab, cyclenext"
@@ -23,7 +25,7 @@ in
 
       # Move focus with vim keys
       "${mod}, h, movefocus, l"
-      "${mod}, l, movefocus, r" 
+      "${mod}, l, movefocus, r"
       "${mod}, k, movefocus, u"
       "${mod}, j, movefocus, d"
 
@@ -88,5 +90,5 @@ in
       "${mod}, mouse:272, movewindow"
       "${mod}, mouse:273, resizewindow"
     ];
- };
+  };
 }

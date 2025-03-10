@@ -1,5 +1,8 @@
-{ pkgs, config, ... }:
-let
+{
+  pkgs,
+  config,
+  ...
+}: let
   inherit (config.lib.formats.rasi) mkLiteral;
   # Catppuccin Mocha colors
   colors = {
@@ -30,8 +33,7 @@ let
     mantle = "#181825";
     crust = "#11111b";
   };
-in
-{
+in {
   programs.rofi = {
     enable = true;
     package = pkgs.rofi-wayland;
@@ -72,4 +74,4 @@ in
       };
     };
   };
-} 
+}

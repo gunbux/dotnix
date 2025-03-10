@@ -1,5 +1,9 @@
-{ config, pkgs, lib, ... }:
 {
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   imports = [
     # ./greetd.nix
   ];
@@ -13,7 +17,7 @@
   # Enable XDG Portal
   xdg.portal = {
     enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-hyprland ];
+    extraPortals = [pkgs.xdg-desktop-portal-hyprland];
   };
 
   # Required services for proper Hyprland functionality
@@ -43,11 +47,11 @@
     pamixer # Audio control
     grim # Screenshot
     slurp # Screen selection
-    
+
     # Lock screen and color picker
     hyprlock
     hyprpicker
-    
+
     # System utilities
     nordzy-cursor-theme
     gnome-control-center
@@ -56,4 +60,3 @@
     tesseract
   ];
 }
-

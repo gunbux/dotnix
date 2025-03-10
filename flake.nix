@@ -20,47 +20,58 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixos-hardware, home-manager, ghostty, zen-browser }: {
+  outputs = {
+    self,
+    nixpkgs,
+    nixos-hardware,
+    home-manager,
+    ghostty,
+    zen-browser,
+  }: let
+    system = "x86_64-linux";
+    pkgs = import nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+    };
+    zen = zen-browser.packages."${system}";
+  in {
     nixosConfigurations = {
-      "chun-lappy" =
-        let
-          system = "x86_64-linux";
-          zen = zen-browser.packages."${system}";
-        in nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          modules = [
-            ./base.nix
-            ./hosts/g14/default.nix
-            nixos-hardware.nixosModules.asus-zephyrus-ga402
-            home-manager.nixosModules.home-manager
-            {
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.extraSpecialArgs = { inherit zen-browser; inherit ghostty; };
-              home-manager.users.chun = import ./home.nix;
-            }
-          ];
-        };
-
-      "legion-nix" =
-        let
-          system = "x86_64-linux";
-          zen = zen-browser.packages."${system}";
-        in nixpkgs.lib.nixosSystem {
-          modules = [
-            ./base.nix
-            ./hosts/legion/default.nix
-            nixos-hardware.nixosModules.lenovo-legion-15arh05h
-            home-manager.nixosModules.home-manager
-            {
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.extraSpecialArgs = { inherit zen-browser; inherit ghostty; };
-              home-manager.users.chun = import ./home.nix;
-            }
-          ];
-        };
+      "chun-lappy" = nixpkgs.lib.nixosSystem {
+        modules = [
+          ./base.nix
+          ./hosts/g14/default.nix
+          nixos-hardware.nixosModules.asus-zephyrus-ga402
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.extraSpecialArgs = {
+              inherit zen-browser;
+              inherit ghostty;
+            };
+            home-manager.users.chun = import ./home.nix;
+          }
+        ];
       };
+
+      "legion-nix" = nixpkgs.lib.nixosSystem {
+        modules = [
+          ./base.nix
+          ./hosts/legion/default.nix
+          nixos-hardware.nixosModules.lenovo-legion-15arh05h
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.extraSpecialArgs = {
+              inherit zen-browser;
+              inherit ghostty;
+            };
+            home-manager.users.chun = import ./home.nix;
+          }
+        ];
+      };
+    };
 
     homeConfigurations = {
       "chun@non-nixos" = home-manager.lib.homeManagerConfiguration {

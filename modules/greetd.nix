@@ -1,4 +1,8 @@
-{ pkgs, inputs, ... }: let
+{
+  pkgs,
+  inputs,
+  ...
+}: let
   tuigreet = "${pkgs.greetd.tuigreet}/bin/tuigreet";
   hyprland-session = "${pkgs.hyprland}/share/wayland-sessions";
   gnome-session = "${pkgs.gnome.gnome-session}/share/wayland-sessions";
@@ -27,4 +31,4 @@ in {
     TTYVHangup = true;
     TTYVTDisallocate = true;
   };
-} 
+}

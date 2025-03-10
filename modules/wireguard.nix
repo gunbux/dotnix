@@ -1,6 +1,8 @@
-{ config, pkgs, ... }:
-
 {
+  config,
+  pkgs,
+  ...
+}: {
   # networking.firewall.checkReversePath = false;
   # Enable Wireguard
   networking.wg-quick.interfaces = {
@@ -10,8 +12,8 @@
       autostart = false;
 
       # Determines the IP address and subnet of the client's end of the tunnel interface.
-      address = [ "10.8.0.4/24" ];
-      dns = [ "1.1.1.1" "8.8.8.8" ];
+      address = ["10.8.0.4/24"];
+      dns = ["1.1.1.1" "8.8.8.8"];
 
       # Path to the private key file.
       #
@@ -29,7 +31,7 @@
 
           # List of IPs assigned to this peer within the tunnel subnet. Used to configure routing.
           # For a server peer this should be the whole subnet.
-          allowedIPs = [ "0.0.0.0/0" "::/0" ];
+          allowedIPs = ["0.0.0.0/0" "::/0"];
 
           # Set this to the server IP and port.
           endpoint = "vpn.chunyu.sh:51820";

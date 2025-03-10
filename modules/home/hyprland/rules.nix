@@ -1,5 +1,8 @@
-{ config, lib, ... }:
 {
+  config,
+  lib,
+  ...
+}: {
   wayland.windowManager.hyprland.settings = {
     windowrulev2 = [
       # Picture-in-Picture rules
@@ -19,7 +22,7 @@
       "float,title:^(Save As)(.*)$"
       "float,title:^(Library)(.*)$"
       "float,title:^(File Upload)(.*)$"
-      
+
       # Workspace rules
       "workspace 2 silent,vivaldi"
       "workspace 3 silent,spotify"

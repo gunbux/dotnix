@@ -1,5 +1,11 @@
-{ config, pkgs, lib, ghostty, zen-browser, ... }:
 {
+  config,
+  pkgs,
+  lib,
+  ghostty,
+  zen-browser,
+  ...
+}: {
   imports = [
     # GNOME specific settings
     ./modules/home/dconf.nix
@@ -14,134 +20,135 @@
   home.username = "chun";
   home.homeDirectory = "/home/chun";
 
-  home.packages = with pkgs; [
-    # Linux-related System Utils
-    amdgpu_top
-    ccid
-    git
-    gnupg
-    libbpf
-    libcxx
-    libelf
-    libz
-    marksman
-    nfs-utils
-    pinentry-tty
-    pipewire
-    rcon
-    tectonic
-    wireplumber
-    wl-clipboard
-    xdg-desktop-portal
-    xdg-desktop-portal-wlr
+  home.packages = with pkgs;
+    [
+      # Linux-related System Utils
+      amdgpu_top
+      ccid
+      git
+      gnupg
+      libbpf
+      libcxx
+      libelf
+      libz
+      marksman
+      nfs-utils
+      pinentry-tty
+      pipewire
+      rcon
+      tectonic
+      wireplumber
+      wl-clipboard
+      xdg-desktop-portal
+      xdg-desktop-portal-wlr
 
-    # AI
-    aider-chat
+      # AI
+      aider-chat
 
-    # Docker
-    docker
+      # Docker
+      docker
 
-    # Archiving
-    unrar
-    unzip
-    xz
-    zip
+      # Archiving
+      unrar
+      unzip
+      xz
+      zip
 
-    # PDF
-    evince
+      # PDF
+      evince
 
-    # Web
-    vivaldi
+      # Web
+      vivaldi
 
-    # VPN
-    mullvad-vpn
-    tailscale
+      # VPN
+      mullvad-vpn
+      tailscale
 
-    # Mouse
-    solaar
+      # Mouse
+      solaar
 
-    # DevTools
-    # gcc
-    # libnfc
-    bpftools
-    btop
-    bun
-    cargo
-    clang
-    commitizen
-    conda
-    elfutils
-    geekbench
-    gnumake
-    iperf
-    jq
-    lazygit
-    logiops
-    meson
-    ninja
-    nmap
-    nodejs
-    python312
-    rsync
-    starship
-    termshark
-    tmux
-    tree-sitter
-    tshark
-    uv
-    wget
-    zstd
+      # DevTools
+      # gcc
+      # libnfc
+      bpftools
+      btop
+      bun
+      cargo
+      clang
+      commitizen
+      conda
+      elfutils
+      geekbench
+      gnumake
+      iperf
+      jq
+      lazygit
+      logiops
+      meson
+      ninja
+      nmap
+      nodejs
+      python312
+      rsync
+      starship
+      termshark
+      tmux
+      tree-sitter
+      tshark
+      uv
+      wget
+      zstd
 
-    # Modern Unix
-    # dog
-    bat
-    cheat
-    delta
-    du-dust
-    duf
-    eza
-    fd
-    fzf
-    gping
-    lsd
-    mcfly
-    ncdu
-    ripgrep
-    tldr
-    zoxide
+      # Modern Unix
+      # dog
+      bat
+      cheat
+      delta
+      du-dust
+      duf
+      eza
+      fd
+      fzf
+      gping
+      lsd
+      mcfly
+      ncdu
+      ripgrep
+      tldr
+      zoxide
 
-    # NUS Bloat
-    openfortivpn
+      # NUS Bloat
+      openfortivpn
 
-    # Apps
-    # terminal-typeracer
-    # zed-editor
-    apostrophe
-    bitwarden
-    blender
-    code-cursor
-    davinci-resolve
-    discord
-    glow
-    jetbrains.clion
-    jetbrains.goland
-    jetbrains.idea-ultimate
-    jetbrains.pycharm-professional
-    jetbrains.rust-rover
-    jetbrains.webstorm
-    kitty
-    mpv
-    musescore
-    neomutt
-    obs-studio
-    qbittorrent
-    spotify
-    steam
-    telegram-desktop
-    thunderbird
-    youtube-music
-
-  ] ++ [
+      # Apps
+      # terminal-typeracer
+      # zed-editor
+      apostrophe
+      bitwarden
+      blender
+      code-cursor
+      davinci-resolve
+      discord
+      glow
+      jetbrains.clion
+      jetbrains.goland
+      jetbrains.idea-ultimate
+      jetbrains.pycharm-professional
+      jetbrains.rust-rover
+      jetbrains.webstorm
+      kitty
+      mpv
+      musescore
+      neomutt
+      obs-studio
+      qbittorrent
+      spotify
+      steam
+      telegram-desktop
+      thunderbird
+      youtube-music
+    ]
+    ++ [
       zen-browser.packages.${pkgs.system}.default
       ghostty.packages.${pkgs.system}.default
     ];
@@ -149,7 +156,7 @@
   # Git Configs
   programs.git = {
     enable = true;
-    aliases = { lola = "log --graph --decorate --pretty=oneline --abbrev-commit --all"; };
+    aliases = {lola = "log --graph --decorate --pretty=oneline --abbrev-commit --all";};
     delta.enable = true;
     userName = "Chun Yu";
     userEmail = "lamchunyu00@gmail.com";
@@ -194,14 +201,14 @@
       fi
     '';
     plugins = [
-        {
-          name = "zsh-nix-shell";
-          file = "nix-shell.plugin.zsh";
-          src = pkgs.fetchFromGitHub {
-            owner = "chisui";
-            repo = "zsh-nix-shell";
-            rev = "v0.8.0";
-            sha256 = "1lzrn0n4fxfcgg65v0qhnj7wnybybqzs4adz7xsrkgmcsr0ii8b7";
+      {
+        name = "zsh-nix-shell";
+        file = "nix-shell.plugin.zsh";
+        src = pkgs.fetchFromGitHub {
+          owner = "chisui";
+          repo = "zsh-nix-shell";
+          rev = "v0.8.0";
+          sha256 = "1lzrn0n4fxfcgg65v0qhnj7wnybybqzs4adz7xsrkgmcsr0ii8b7";
         };
       }
     ];

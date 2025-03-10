@@ -1,16 +1,21 @@
 # TODO:
 # asus-nb-wmi power consumption
-{config, pkgs, ... }:
 {
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ./hardware-configuration.nix
   ];
 
   # Swap
-   swapDevices = [ {
-    device = "/var/lib/swapfile";
-    size = 16*1024;
-  } ];
+  swapDevices = [
+    {
+      device = "/var/lib/swapfile";
+      size = 16 * 1024;
+    }
+  ];
 
   # Networking
   networking.hostName = "legion-nix";
@@ -31,11 +36,11 @@
   #chaotic.scx.enable= true;
 
   # Boot correct driver early
-  boot.initrd.kernelModules = [ "amdgpu" ];
-  boot.kernelModules = [ "amd-pstate" ];
+  boot.initrd.kernelModules = ["amdgpu"];
+  boot.kernelModules = ["amd-pstate"];
 
   # NTFS Support
-  boot.supportedFilesystems = [ "ntfs" ];
+  boot.supportedFilesystems = ["ntfs"];
 
   # Hardware Acceleration
   hardware.graphics = {
@@ -81,7 +86,6 @@
   #   };
   # };
 
-
   # Services
   services.upower.enable = true;
 
@@ -93,5 +97,5 @@
 
   # Virtualization
   virtualisation.virtualbox.host.enable = true;
-  users.extraGroups.vboxusers.members = [ "chun" ];
+  users.extraGroups.vboxusers.members = ["chun"];
 }

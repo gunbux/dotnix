@@ -1,9 +1,14 @@
 # Nix OS Configs
 # TODO:
 # Add secure boot support with lanzaboote
-{ config, pkgs, lib, inputs, options, ... }:
-
 {
+  config,
+  pkgs,
+  lib,
+  inputs,
+  options,
+  ...
+}: {
   imports = [
     # Include the results of the hardware scan.
     # /etc/nixos/hardware-configuration.nix
@@ -55,7 +60,7 @@
     layout = "us";
     options = "terminate:ctrl_alt_bksp,caps:swapescape";
   };
-  services.xserver.excludePackages = [ pkgs.xterm ];
+  services.xserver.excludePackages = [pkgs.xterm];
 
   # Services
   services.openssh.enable = true;
@@ -71,8 +76,8 @@
 
   # GPG
   programs.gnupg.agent = {
-     enable = true;
-     enableSSHSupport = true;
+    enable = true;
+    enableSSHSupport = true;
   };
 
   security.sudo.enable = true;
@@ -96,7 +101,8 @@
     enable = true;
     flake = "github:gunbux/dotnix";
     flags = [
-      "--update-input" "nixpkgs"
+      "--update-input"
+      "nixpkgs"
       "-L" # Print build logs
     ];
     dates = "daily";
@@ -161,7 +167,7 @@
 
     optimise = {
       automatic = true;
-      dates = [ "weekly" ];
+      dates = ["weekly"];
     };
   };
 
@@ -177,7 +183,7 @@
     uid = 1000;
     home = "/home/chun";
     description = "Chun Yu";
-    extraGroups = [ "wheel" "networkmanager" "docker" "audio" "video" "input" "disk" "syncthing" "dialout"];
+    extraGroups = ["wheel" "networkmanager" "docker" "audio" "video" "input" "disk" "syncthing" "dialout"];
     shell = pkgs.zsh;
   };
 

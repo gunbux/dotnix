@@ -1,5 +1,8 @@
-{ config, pkgs, ...}:
 {
+  config,
+  pkgs,
+  ...
+}: {
   fonts = {
     fontDir.enable = true;
     packages = with pkgs; [
@@ -11,9 +14,9 @@
     fontconfig = {
       enable = true;
       defaultFonts = {
-        monospace = [ "JetBrainsMono" ];
-        sansSerif = [ "Source Sans Pro" ];
-        serif = [ "Source Serif Pro" ];
+        monospace = ["JetBrainsMono"];
+        sansSerif = ["Source Sans Pro"];
+        serif = ["Source Serif Pro"];
       };
     };
   };

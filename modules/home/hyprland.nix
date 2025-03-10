@@ -1,5 +1,9 @@
-{ config, pkgs, lib, ... }:
 {
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   imports = [
     # Hyprland
     ./hyprland/keybinds.nix
@@ -12,7 +16,7 @@
     enable = true;
     settings = {
       "$mod" = "SUPER";
-      
+
       monitor = [
         "eDP-1,highrr,auto,1"
         "eDP-2,highrr,auto,1.5"

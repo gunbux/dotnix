@@ -1,8 +1,12 @@
 # TODO:
 # Switch to cherry picked zen kernel
 # asus-nb-wmi power consumption
-{config, lib, pkgs, ... }:
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
   imports = [
     ./hardware-configuration.nix
   ];
@@ -11,10 +15,12 @@
   #services.scx.enable = true;
 
   # Swapj
-   swapDevices = [ {
-    device = "/var/lib/swapfile";
-    size = 16*1024;
-  } ];
+  swapDevices = [
+    {
+      device = "/var/lib/swapfile";
+      size = 16 * 1024;
+    }
+  ];
 
   # Networking
   networking.hostName = "chun-lappy";
@@ -31,12 +37,12 @@
   ];
 
   # Boot correct driver early
-  boot.initrd.kernelModules = [ "amdgpu" ];
+  boot.initrd.kernelModules = ["amdgpu"];
 
-  boot.kernelModules = [ "amd-pstate" "vboxdrv" ];
+  boot.kernelModules = ["amd-pstate" "vboxdrv"];
 
   # NTFS Support
-  boot.supportedFilesystems = [ "ntfs" ];
+  boot.supportedFilesystems = ["ntfs"];
 
   # Hardware Acceleration
   hardware.graphics = {
@@ -129,5 +135,5 @@
   virtualisation.virtualbox.host.enable = true;
   # virtualisation.virtualbox.guest.enable = true;
   # virtualisation.virtualbox.guest.x11 = true;
-  users.extraGroups.vboxusers.members = [ "chun" ];
+  users.extraGroups.vboxusers.members = ["chun"];
 }

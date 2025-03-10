@@ -1,5 +1,9 @@
-{ config, pkgs, lib, ... }:
 {
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   # Enable GDM
   services.xserver.enable = true;
   services.xserver.displayManager.gdm.enable = true;
@@ -11,20 +15,20 @@
   programs.dconf.enable = true;
 
   # Gnome Settings
-  environment.gnome.excludePackages = (with pkgs; [
+  environment.gnome.excludePackages = with pkgs; [
     yelp
     gnome-tour
     gnome-characters
     gnome-music
     gnome-contacts
-  ]);
+  ];
 
   # Add Gnome packages that were in home.nix
   environment.systemPackages = with pkgs; [
     # Screen sharing dependencies
     xdg-desktop-portal
     xdg-desktop-portal-gnome
-    
+
     # Gnome Dependencies
     tela-icon-theme
     pop-gtk-theme
@@ -48,17 +52,17 @@
   services.pipewire.enable = true;
   xdg.portal = {
     enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-gnome ];
+    extraPortals = [pkgs.xdg-desktop-portal-gnome];
     config.common.default = "*";
   };
 
   services.xserver.desktopManager.gnome = {
     enable = true;
-    extraGSettingsOverridePackages = [ pkgs.mutter ];
+    extraGSettingsOverridePackages = [pkgs.mutter];
     extraGSettingsOverrides = ''
-     [org.gnome.mutter]
-     experimental-features=['scale-monitor-framebuffer']
-     # experimental-features=['scale-monitor-framebuffer', 'variable-refresh-rate']
+      [org.gnome.mutter]
+      experimental-features=['scale-monitor-framebuffer']
+      # experimental-features=['scale-monitor-framebuffer', 'variable-refresh-rate']
     '';
   };
 
