@@ -8,12 +8,19 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     ghostty.url = "github:ghostty-org/ghostty";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
+    hydenix = {
+      # Available inputs:
+      # Main: github:richen604/hydenix
+      # Dev: github:richen604/hydenix/dev
+      # Commit: github:richen604/hydenix/<commit-hash>
+      # Version: github:richen604/hydenix/v1.0.0
+      url = "github:richen604/hydenix";
+    };
   };
 
-  outputs = { self, nixpkgs, nixos-hardware, home-manager, chaotic, ghostty, zen-browser }: {
+  outputs = { self, nixpkgs, nixos-hardware, home-manager, ghostty, zen-browser }: {
     nixosConfigurations = {
       "chun-lappy" =
         let
@@ -25,7 +32,6 @@
             ./base.nix
             ./hosts/g14/default.nix
             nixos-hardware.nixosModules.asus-zephyrus-ga402
-            chaotic.nixosModules.default
             home-manager.nixosModules.home-manager
             {
               home-manager.useGlobalPkgs = true;
@@ -45,7 +51,6 @@
             ./base.nix
             ./hosts/legion/default.nix
             nixos-hardware.nixosModules.lenovo-legion-15arh05h
-            chaotic.nixosModules.default
             home-manager.nixosModules.home-manager
             {
               home-manager.useGlobalPkgs = true;

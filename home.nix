@@ -15,14 +15,28 @@
   home.homeDirectory = "/home/chun";
 
   home.packages = with pkgs; [
-    # AI
-    aider-chat
-
-    # Screen sharing
+    # Linux-related System Utils
+    amdgpu_top
+    ccid
+    git
+    gnupg
+    libbpf
+    libcxx
+    libelf
+    libz
+    marksman
+    nfs-utils
+    pinentry-tty
+    pipewire
+    rcon
+    tectonic
+    wireplumber
+    wl-clipboard
     xdg-desktop-portal
     xdg-desktop-portal-wlr
-    pipewire
-    wireplumber
+
+    # AI
+    aider-chat
 
     # Docker
     docker
@@ -46,57 +60,37 @@
     # Mouse
     solaar
 
-    # Core
-    git
-    lazygit
-    libcxx
-    nfs-utils
-    tmux
-    uv
-    # power-profiles-daemon # This clashes with TLP
-
-    # System Utils
-    amdgpu_top
-    btop
-    gnupg
-    iperf
-    marksman
-    nmap
-    pinentry-tty
-    rcon
-    rsync
-    starship
-    tectonic
-    termshark
-    tshark
-    wget
-    wl-clipboard
-
     # DevTools
     # gcc
+    # libnfc
     bpftools
+    btop
+    bun
     cargo
     clang
-    conda
     commitizen
-    jq
-    libbpf
-    libelf
+    conda
     elfutils
-    libz
+    geekbench
+    gnumake
+    iperf
+    jq
+    lazygit
+    logiops
     meson
     ninja
+    nmap
     nodejs
-    bun
     python312
+    rsync
+    starship
+    termshark
+    tmux
     tree-sitter
-    # libnfc
-    ccid
-    gnumake
-    kitty
-    geekbench
+    tshark
+    uv
+    wget
     zstd
-    logiops
 
     # Modern Unix
     # dog
@@ -135,6 +129,7 @@
     jetbrains.pycharm-professional
     jetbrains.rust-rover
     jetbrains.webstorm
+    kitty
     mpv
     musescore
     neomutt
