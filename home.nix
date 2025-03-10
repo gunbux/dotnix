@@ -168,7 +168,6 @@
   programs.neovim = {
     enable = true;
     defaultEditor = true;
-    # extraLuaConfig = lib.fileContents ./config/nvim/init.lua;
   };
 
   # LazyVim Config

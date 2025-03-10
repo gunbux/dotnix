@@ -12,32 +12,25 @@
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    nixos-hardware,
-    home-manager,
-    ghostty,
-    zen-browser,
-  }: let
+  outputs = {...} @ inputs: let
     system = "x86_64-linux";
-    pkgs = import nixpkgs {
+    pkgs = import inputs.nixpkgs {
       inherit system;
       config.allowUnfree = true;
     };
-    zen = zen-browser.packages."${system}";
+    zen = inputs.zen-browser.packages."${system}";
   in {
     nixosConfigurations = {
-      "chun-lappy" = nixpkgs.lib.nixosSystem {
+      "chun-lappy" = inputs.nixpkgs.lib.nixosSystem {
         modules = [
           ./base.nix
           ./hosts/g14/default.nix
-          nixos-hardware.nixosModules.asus-zephyrus-ga402
-          home-manager.nixosModules.home-manager
+          inputs.nixos-hardware.nixosModules.asus-zephyrus-ga402
+          inputs.home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = {
+            home-manager.extraSpecialArgs = with inputs; {
               inherit zen-browser;
               inherit ghostty;
             };
@@ -46,16 +39,16 @@
         ];
       };
 
-      "legion-nix" = nixpkgs.lib.nixosSystem {
+      "legion-nix" = inputs.nixpkgs.lib.nixosSystem {
         modules = [
           ./base.nix
           ./hosts/legion/default.nix
-          nixos-hardware.nixosModules.lenovo-legion-15arh05h
-          home-manager.nixosModules.home-manager
+          inputs.nixos-hardware.nixosModules.lenovo-legion-15arh05h
+          inputs.home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = {
+            home-manager.extraSpecialArgs = with inputs; {
               inherit zen-browser;
               inherit ghostty;
             };
@@ -66,8 +59,8 @@
     };
 
     homeConfigurations = {
-      "chun@non-nixos" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      "chun@non-nixos" = inputs.home-manager.lib.homeManagerConfiguration {
+        pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
         modules = [
           ./home.nix
           {
@@ -78,7 +71,7 @@
             };
           }
         ];
-        extraSpecialArgs = {
+        extraSpecialArgs = with inputs; {
           inherit nixpkgs;
         };
       };
