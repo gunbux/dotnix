@@ -128,6 +128,7 @@
     code-cursor
     davinci-resolve
     discord
+    glow
     jetbrains.clion
     jetbrains.goland
     jetbrains.idea-ultimate
