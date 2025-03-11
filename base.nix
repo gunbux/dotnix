@@ -10,12 +10,19 @@
   ...
 }: {
   imports = [
+    # Include the results of the hardware scan.
+    # /etc/nixos/hardware-configuration.nix
+
     # Fonts
     ./modules/fonts.nix
+
+    # Include modular configs here
+    ./modules/gnome.nix
+    ./modules/hyprland.nix
+    # ./modules/wireguard.nix
   ];
 
-  # Deprecated - Remove soon
-  # nixpkgs.config.allowUnfree = true;
+  nixpkgs.config.allowUnfree = true;
 
   # Audio Settings
   security.rtkit.enable = true;
@@ -87,7 +94,7 @@
   services.envfs.enable = true;
 
   # The NixOS release to be compatible with for stateful data such as databases
-  system.stateVersion = lib.mkForce "23.05";
+  system.stateVersion = "23.05";
 
   # Enable automatic system upgrades
   system.autoUpgrade = {
