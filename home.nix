@@ -2,14 +2,13 @@
   config,
   pkgs,
   lib,
-  ghostty,
-  zen-browser,
+  inputs,
   ...
 }: {
   imports = [
     # GNOME specific settings
-    ./modules/home/dconf.nix
-    ./modules/home/hyprland.nix
+    # ./modules/home/dconf.nix
+
     ./modules/home/zed.nix
   ];
 
@@ -32,6 +31,7 @@
       libelf
       libz
       marksman
+      nautilus
       nfs-utils
       pinentry-tty
       pipewire
@@ -70,6 +70,7 @@
       # DevTools
       # gcc
       # libnfc
+      # python312
       alejandra
       bpftools
       btop
@@ -89,7 +90,6 @@
       ninja
       nmap
       nodejs
-      python312
       rsync
       starship
       termshark
@@ -150,8 +150,8 @@
       youtube-music
     ]
     ++ [
-      zen-browser.packages.${pkgs.system}.default
-      ghostty.packages.${pkgs.system}.default
+      inputs.zen-browser.packages.${pkgs.system}.default
+      inputs.ghostty.packages.${pkgs.system}.default
     ];
 
   # Git Configs
@@ -168,7 +168,6 @@
   programs.neovim = {
     enable = true;
     defaultEditor = true;
-    # extraLuaConfig = lib.fileContents ./config/nvim/init.lua;
   };
 
   # LazyVim Config
@@ -182,11 +181,29 @@
     source = ./config/lazygit/config.yml;
   };
 
-  # Shell Config
-  programs.starship = {
+  # Ghostty Config
+  home.file.".config/ghostty/config" = {
+    source = config/ghostty/config;
+    force = true;
+    mutable = true;
+  };
+
+  # Overriding mimeapps
+  xdg.mimeApps = {
     enable = true;
-    enableBashIntegration = true;
-    enableZshIntegration = true;
+    defaultApplications = {
+        # Web
+        "text/html" = lib.mkForce [ "zen.desktop" ];
+        "x-scheme-handler/http" = lib.mkForce [ "zen.desktop" ];
+        "x-scheme-handler/https" = lib.mkForce [ "zen.desktop" ];
+        "x-scheme-handler/chrome" = lib.mkForce [ "zen.desktop" ];
+        "application/x-extension-htm" = lib.mkForce [ "zen.desktop" ];
+        "application/x-extension-html" = lib.mkForce [ "zen.desktop" ];
+        "application/x-extension-shtml" = lib.mkForce [ "zen.desktop" ];
+        "application/xhtml+xml" = lib.mkForce [ "zen.desktop" ];
+        "application/x-extension-xhtml" = lib.mkForce [ "zen.desktop" ];
+        "application/x-extension-xht" = lib.mkForce [ "zen.desktop" ];
+    };
   };
 
   programs.zsh = {
@@ -195,12 +212,6 @@
     autosuggestion.enable = true;
     enableCompletion = true;
     autocd = true;
-    initExtra = ''
-      # Set OPENROUTER_API_KEY from ~/.openrouter if it exists
-      if [ -f "$HOME/.openrouter" ]; then
-        export OPENROUTER_API_KEY=$(cat "$HOME/.openrouter")
-      fi
-    '';
     plugins = [
       {
         name = "zsh-nix-shell";
@@ -221,9 +232,38 @@
       ];
     };
 
+    # Hacky override to hyde configs
+    initExtra = lib.mkForce ''
+      # Set OPENROUTER_API_KEY from ~/.openrouter if it exists
+      if [ -f "$HOME/.openrouter" ]; then
+        export OPENROUTER_API_KEY=$(cat "$HOME/.openrouter")
+      fi
+
+      if [[ $TERM != "dumb" ]]; then
+        eval "$(/etc/profiles/per-user/chun/bin/starship init zsh)"
+      fi
+    '';
+
+    initExtraFirst = lib.mkForce ''
+      #Display Pokemonks
+      pokemon-colorscripts --no-title -r 1-6
+    '';
+
     shellAliases = {
       lg = "lazygit";
+      c = "clear";
+      l = "eza -lh --icons=auto";
+      ls = "eza --icons=auto";
+      ll = "eza -lha --icons=auto --sort=name --group-directories-first";
+      ld = "eza -lhD --icons=auto";
     };
+  };
+
+  # Shell Config
+  programs.starship = {
+    enable = true;
+    enableBashIntegration = true;
+    enableZshIntegration = true;
   };
 
   # Direnv Config
@@ -235,5 +275,5 @@
   # Hyprland config
   wayland.windowManager.hyprland.enable = true;
 
-  home.stateVersion = "23.05";
+  home.stateVersion = lib.mkForce "23.05";
 }
