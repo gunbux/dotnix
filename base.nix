@@ -17,12 +17,12 @@
     ./modules/fonts.nix
 
     # Include modular configs here
-    ./modules/gnome.nix
-    ./modules/hyprland.nix
+    # ./modules/gnome.nix
+    # ./modules/hyprland.nix
     # ./modules/wireguard.nix
   ];
 
-  nixpkgs.config.allowUnfree = true;
+  # nixpkgs.config.allowUnfree = true;
 
   # Audio Settings
   security.rtkit.enable = true;
@@ -94,7 +94,7 @@
   services.envfs.enable = true;
 
   # The NixOS release to be compatible with for stateful data such as databases
-  system.stateVersion = "23.05";
+  system.stateVersion = lib.mkForce "23.05";
 
   # Enable automatic system upgrades
   system.autoUpgrade = {

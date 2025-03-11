@@ -5,16 +5,20 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }: {
   imports = [
+    ../../base.nix
     ./hardware-configuration.nix
+    inputs.nixos-hardware.nixosModules.asus-zephyrus-ga402
+    inputs.home-manager.nixosModules.home-manager
   ];
 
   # scx
   #services.scx.enable = true;
 
-  # Swapj
+  # Swap
   swapDevices = [
     {
       device = "/var/lib/swapfile";
@@ -30,7 +34,7 @@
   };
 
   # Kernel
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
   boot.kernelParams = [
     "initcall_blacklist=acpi_cpufreq_init"
     "amd_pstate=active" # Enables amd_pstate_epp I believe?
@@ -122,7 +126,7 @@
   # Bluetooth
   hardware.bluetooth = {
     enable = true;
-    powerOnBoot = false;
+    powerOnBoot = lib.mkForce false;
     settings = {
       General = {
         Experiemental = true;

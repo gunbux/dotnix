@@ -2,15 +2,17 @@
   config,
   pkgs,
   lib,
-  ghostty,
-  zen-browser,
+  inputs,
   ...
 }: {
   imports = [
     # GNOME specific settings
-    ./modules/home/dconf.nix
-    ./modules/home/hyprland.nix
+    # ./modules/home/dconf.nix
+    # ./modules/home/hyprland.nix
     ./modules/home/zed.nix
+
+    # Hyde override for vscode
+    ./modules/home/hyde-vscode.nix
   ];
 
   # Let Home Manager install & manage itself
@@ -32,6 +34,7 @@
       libelf
       libz
       marksman
+      nautilus
       nfs-utils
       pinentry-tty
       pipewire
@@ -70,6 +73,7 @@
       # DevTools
       # gcc
       # libnfc
+      # python312
       alejandra
       bpftools
       btop
@@ -89,7 +93,6 @@
       ninja
       nmap
       nodejs
-      python312
       rsync
       starship
       termshark
@@ -150,8 +153,8 @@
       youtube-music
     ]
     ++ [
-      zen-browser.packages.${pkgs.system}.default
-      ghostty.packages.${pkgs.system}.default
+      inputs.zen-browser.packages.${pkgs.system}.default
+      inputs.ghostty.packages.${pkgs.system}.default
     ];
 
   # Git Configs
@@ -181,11 +184,50 @@
     source = ./config/lazygit/config.yml;
   };
 
-  # Shell Config
-  programs.starship = {
-    enable = true;
-    enableBashIntegration = true;
-    enableZshIntegration = true;
+  # Ghostty Config
+  home.file.".config/ghostty/config" = {
+    source = config/ghostty/config;
+    force = true;
+    mutable = true;
+  };
+
+  # Swaylock Config
+  home.file.".config/swaylock/config" = {
+    source = config/swaylock/config;
+    force = true;
+    mutable = true;
+  };
+
+  # Additional hyprland configs
+  home.file.".config/hypr/monitors.conf" = lib.mkForce {
+    source = config/hypr/monitors.conf;
+    force = true;
+    mutable = true;
+  };
+
+  home.file.".config/hypr/userprefs.conf" = lib.mkForce {
+    source = config/hypr/userprefs.conf;
+    force = true;
+    mutable = true;
+  };
+
+  home.file.".config/hypr/keybindings.conf" = lib.mkForce {
+    source = config/hypr/keybindings.conf;
+    force = true;
+    mutable = true;
+  };
+
+  home.file.".config/waybar/config.ctl" = lib.mkForce {
+    source = config/waybar/config.ctl;
+    force = true;
+    mutable = true;
+  };
+
+  # Hyde dunst configs
+  home.file.".config/dunst/dunst.conf" = lib.mkForce {
+    source = config/dunst/dunst.conf;
+    force = true;
+    mutable = true;
   };
 
   programs.zsh = {
@@ -194,12 +236,6 @@
     autosuggestion.enable = true;
     enableCompletion = true;
     autocd = true;
-    initExtra = ''
-      # Set OPENROUTER_API_KEY from ~/.openrouter if it exists
-      if [ -f "$HOME/.openrouter" ]; then
-        export OPENROUTER_API_KEY=$(cat "$HOME/.openrouter")
-      fi
-    '';
     plugins = [
       {
         name = "zsh-nix-shell";
@@ -220,9 +256,38 @@
       ];
     };
 
+    # Hacky override to hyde configs
+    initExtra = lib.mkForce ''
+      # Set OPENROUTER_API_KEY from ~/.openrouter if it exists
+      if [ -f "$HOME/.openrouter" ]; then
+        export OPENROUTER_API_KEY=$(cat "$HOME/.openrouter")
+      fi
+
+      if [[ $TERM != "dumb" ]]; then
+        eval "$(/etc/profiles/per-user/chun/bin/starship init zsh)"
+      fi
+    '';
+
+    initExtraFirst = lib.mkForce ''
+      #Display Pokemonks
+      pokemon-colorscripts --no-title -r 1-3
+    '';
+
     shellAliases = {
       lg = "lazygit";
+      c = "clear";
+      l = "eza -lh --icons=auto";
+      ls = "eza --icons=auto";
+      ll = "eza -lha --icons=auto --sort=name --group-directories-first";
+      ld = "eza -lhD --icons=auto";
     };
+  };
+
+  # Shell Config
+  programs.starship = {
+    enable = true;
+    enableBashIntegration = true;
+    enableZshIntegration = true;
   };
 
   # Direnv Config
@@ -234,5 +299,5 @@
   # Hyprland config
   wayland.windowManager.hyprland.enable = true;
 
-  home.stateVersion = "23.05";
+  home.stateVersion = lib.mkForce "23.05";
 }

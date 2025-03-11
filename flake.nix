@@ -10,6 +10,14 @@
     };
     ghostty.url = "github:ghostty-org/ghostty";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
+    hydenix = {
+      # Available inputs:
+      # Main: github:richen604/hydenix
+      # Dev: github:richen604/hydenix/dev
+      # Commit: github:richen604/hydenix/<commit-hash>
+      # Version: github:richen604/hydenix/v1.0.0
+      url = "github:richen604/hydenix";
+    };
   };
 
   outputs = {...} @ inputs: let
@@ -18,26 +26,17 @@
       inherit system;
       config.allowUnfree = true;
     };
-    zen = inputs.zen-browser.packages."${system}";
+
+    # Hyde Configs
+    g14Config = inputs.hydenix.lib.mkConfig {
+      userConfig = import ./hosts/g14/config.nix;
+      extraInputs = inputs;
+      # Pass user's pkgs to be used alongside hydenix's pkgs (eg. userPkgs.kitty)
+      extraPkgs = pkgs;
+    };
   in {
     nixosConfigurations = {
-      "chun-lappy" = inputs.nixpkgs.lib.nixosSystem {
-        modules = [
-          ./base.nix
-          ./hosts/g14/default.nix
-          inputs.nixos-hardware.nixosModules.asus-zephyrus-ga402
-          inputs.home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = with inputs; {
-              inherit zen-browser;
-              inherit ghostty;
-            };
-            home-manager.users.chun = import ./home.nix;
-          }
-        ];
-      };
+      "chun-lappy" = g14Config.nixosConfiguration;
 
       "legion-nix" = inputs.nixpkgs.lib.nixosSystem {
         modules = [
