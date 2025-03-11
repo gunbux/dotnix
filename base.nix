@@ -10,18 +10,11 @@
   ...
 }: {
   imports = [
-    # Include the results of the hardware scan.
-    # /etc/nixos/hardware-configuration.nix
-
     # Fonts
     ./modules/fonts.nix
-
-    # Include modular configs here
-    # ./modules/gnome.nix
-    # ./modules/hyprland.nix
-    # ./modules/wireguard.nix
   ];
 
+  # Deprecated - Remove soon
   # nixpkgs.config.allowUnfree = true;
 
   # Audio Settings

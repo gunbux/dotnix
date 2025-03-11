@@ -8,11 +8,8 @@
   imports = [
     # GNOME specific settings
     # ./modules/home/dconf.nix
-    # ./modules/home/hyprland.nix
-    ./modules/home/zed.nix
 
-    # Hyde override for vscode
-    ./modules/home/hyde-vscode.nix
+    ./modules/home/zed.nix
   ];
 
   # Let Home Manager install & manage itself
@@ -191,43 +188,22 @@
     mutable = true;
   };
 
-  # Swaylock Config
-  home.file.".config/swaylock/config" = {
-    source = config/swaylock/config;
-    force = true;
-    mutable = true;
-  };
-
-  # Additional hyprland configs
-  home.file.".config/hypr/monitors.conf" = lib.mkForce {
-    source = config/hypr/monitors.conf;
-    force = true;
-    mutable = true;
-  };
-
-  home.file.".config/hypr/userprefs.conf" = lib.mkForce {
-    source = config/hypr/userprefs.conf;
-    force = true;
-    mutable = true;
-  };
-
-  home.file.".config/hypr/keybindings.conf" = lib.mkForce {
-    source = config/hypr/keybindings.conf;
-    force = true;
-    mutable = true;
-  };
-
-  home.file.".config/waybar/config.ctl" = lib.mkForce {
-    source = config/waybar/config.ctl;
-    force = true;
-    mutable = true;
-  };
-
-  # Hyde dunst configs
-  home.file.".config/dunst/dunst.conf" = lib.mkForce {
-    source = config/dunst/dunst.conf;
-    force = true;
-    mutable = true;
+  # Overriding mimeapps
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+        # Web
+        "text/html" = lib.mkForce [ "zen.desktop" ];
+        "x-scheme-handler/http" = lib.mkForce [ "zen.desktop" ];
+        "x-scheme-handler/https" = lib.mkForce [ "zen.desktop" ];
+        "x-scheme-handler/chrome" = lib.mkForce [ "zen.desktop" ];
+        "application/x-extension-htm" = lib.mkForce [ "zen.desktop" ];
+        "application/x-extension-html" = lib.mkForce [ "zen.desktop" ];
+        "application/x-extension-shtml" = lib.mkForce [ "zen.desktop" ];
+        "application/xhtml+xml" = lib.mkForce [ "zen.desktop" ];
+        "application/x-extension-xhtml" = lib.mkForce [ "zen.desktop" ];
+        "application/x-extension-xht" = lib.mkForce [ "zen.desktop" ];
+    };
   };
 
   programs.zsh = {
@@ -270,7 +246,7 @@
 
     initExtraFirst = lib.mkForce ''
       #Display Pokemonks
-      pokemon-colorscripts --no-title -r 1-3
+      pokemon-colorscripts --no-title -r 1-6 | fastfetch --file-raw -
     '';
 
     shellAliases = {

@@ -4,65 +4,30 @@
   gitUser = "Chun Yu";
   gitEmail = "lamchunyu00@gmail.com";
   host = "chun-lappy";
-  /*
-  Default password is required for sudo support in systems
-  !REMEMBER TO USE passwd TO CHANGE THE PASSWORD!
-  */
   defaultPassword = "NixOS!";
   timezone = "Asia/Singapore";
   locale = "en_US.UTF-8";
 
-  # hardware config - sudo nixos-generate-config --show-hardware-config > hardware-configuration.nix
   hardwareConfig = toString ./hardware-configuration.nix;
 
-  # Should be able to just use nixos-hardware
-  # List of drivers to install in ./hosts/nixos/drivers.nix
-  # drivers = [
-  #   "amdgpu"
-  #   "intel"
-  #   # "nvidia"
-  #   # "amdcpu"
-  #   # "intel-old"
-  # ];
-
-  /*
-  These will be imported after the default modules and override/merge any conflicting options
-  !Its very possible to break hydenix by overriding options
-  eg:
-    # lets say hydenix has a default of:
-    {
-      services.openssh.enable = true;
-      environment.systemPackages = [ pkgs.vim ];
-    }
-    # your module
-    {
-      services.openssh.enable = false;  #? This wins by default (last definition)
-      environment.systemPackages = [ pkgs.git ];  #? This gets merged with hydenix
-    }
-  */
-  # List of nix modules to import in ./hosts/nixos/default.nix
   nixModules = [
     ./default.nix
-    # (toString ./my-module.nix)
-    # in my-module.nix you can reference this userConfig
-    # ({ userConfig, pkgs, ... }: {
-    #   environment.systemPackages = [ pkgs.git ];
-    # })
   ];
+
   # List of nix modules to import in ./lib/mkConfig.nix
   homeModules = [
     ../../home.nix
+
+    # HyDE-specific modules
+    ../../modules/home/swaylock.nix
+    ../../modules/home/hyprland.nix
+    ../../modules/home/dunst.nix
   ];
 
   hyde = rec {
-    sddmTheme = "Candy"; # or "Corners"
+    sddmTheme = "Corners"; # or "Corners"
 
     enable = true;
-
-    # wallbash config, sets extensions as active
-    # wallbash = {
-    #   vscode = true;
-    # };
 
     # active theme, must be in themes list
     activeTheme = "Catppuccin Mocha";
@@ -81,7 +46,7 @@
       # "Nordic Blue"
       # "Rose Pine"
       # "Synth Wave"
-      # "Tokyo Night"
+      "Tokyo Night"
 
       # -- Themes from hyde-gallery
       # "Abyssal-Wave"
@@ -91,7 +56,7 @@
       # "Crimson Blade"
       # "Dracula"
       # "Edge Runner"
-      # "Green Lush"
+      "Green Lush"
       # "Greenify"
       # "Hack the Box"
       # "Ice Age"

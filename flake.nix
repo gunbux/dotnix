@@ -24,7 +24,6 @@
     system = "x86_64-linux";
     pkgs = import inputs.nixpkgs {
       inherit system;
-      config.allowUnfree = true;
     };
 
     # Hyde Configs
@@ -36,7 +35,7 @@
     };
   in {
     nixosConfigurations = {
-      "chun-lappy" = g14Config.nixosConfiguration;
+      ${g14Config.userConfig.host} = g14Config.nixosConfiguration;
 
       "legion-nix" = inputs.nixpkgs.lib.nixosSystem {
         modules = [
