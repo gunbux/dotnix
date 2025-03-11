@@ -246,7 +246,7 @@
 
     initExtraFirst = lib.mkForce ''
       #Display Pokemonks
-      pokemon-colorscripts --no-title -r 1-6 | fastfetch --file-raw -
+      pokemon-colorscripts --no-title -r 1-6
     '';
 
     shellAliases = {
