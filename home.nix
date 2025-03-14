@@ -35,6 +35,7 @@
       nfs-utils
       pinentry-tty
       pipewire
+      libqalculate
       rcon
       tectonic
       wireplumber
@@ -85,6 +86,7 @@
       iperf
       jq
       lazygit
+      lua-language-server
       logiops
       meson
       ninja

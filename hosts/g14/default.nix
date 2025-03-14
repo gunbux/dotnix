@@ -128,7 +128,7 @@ in {
     enable = true;
     settings = {
       hotplug_type = "Asus";
-      mode = "Hybrid";
+      # mode = "Hybrid";
     };
   };
 
