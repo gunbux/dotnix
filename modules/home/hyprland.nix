@@ -4,7 +4,6 @@
   lib,
   ...
 }: {
-
   # Additional hyprland configs
   home.file.".config/hypr/monitors.conf" = lib.mkForce {
     source = ../../config/hypr/monitors.conf;

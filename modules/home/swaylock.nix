@@ -18,4 +18,3 @@
     mutable = true;
   };
 }
-
