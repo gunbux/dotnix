@@ -15,7 +15,7 @@
   ];
 
   # Deprecated - Remove soon
-  # nixpkgs.config.allowUnfree = true;
+  nixpkgs.config.allowUnfree = true;
 
   # Audio Settings
   security.rtkit.enable = true;

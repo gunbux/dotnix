@@ -40,16 +40,14 @@
       "legion-nix" = inputs.nixpkgs.lib.nixosSystem {
         modules = [
           ./base.nix
+          ./modules/gnome.nix
           ./hosts/legion/default.nix
           inputs.nixos-hardware.nixosModules.lenovo-legion-15arh05h
           inputs.home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = with inputs; {
-              inherit zen-browser;
-              inherit ghostty;
-            };
+            home-manager.extraSpecialArgs = {inherit inputs;};
             home-manager.users.chun = import ./home.nix;
           }
         ];

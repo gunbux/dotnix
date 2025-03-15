@@ -187,7 +187,7 @@
   home.file.".config/ghostty/config" = {
     source = config/ghostty/config;
     force = true;
-    mutable = true;
+    # mutable = true;
   };
 
   # Overriding mimeapps
