@@ -5,7 +5,6 @@
   pkg-config,
   systemd,
 }:
-
 rustPlatform.buildRustPackage rec {
   pname = "supergfxctl";
   version = "5.2.7";
@@ -25,8 +24,8 @@ rustPlatform.buildRustPackage rec {
     substituteInPlace data/99-nvidia-ac.rules --replace /usr/bin/systemctl ${systemd}/bin/systemctl
   '';
 
-  nativeBuildInputs = [ pkg-config ];
-  buildInputs = [ systemd ];
+  nativeBuildInputs = [pkg-config];
+  buildInputs = [systemd];
 
   # upstream doesn't have tests, don't build twice just to find that out
   doCheck = false;
@@ -41,7 +40,7 @@ rustPlatform.buildRustPackage rec {
     description = "GPU switching utility, mostly for ASUS laptops";
     homepage = "https://gitlab.com/asus-linux/supergfxctl";
     license = licenses.mpl20;
-    platforms = [ "x86_64-linux" ];
-    maintainers = [ maintainers.k900 ];
+    platforms = ["x86_64-linux"];
+    maintainers = [maintainers.k900];
   };
 }

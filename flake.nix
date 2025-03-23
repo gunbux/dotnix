@@ -11,32 +11,42 @@
     ghostty.url = "github:ghostty-org/ghostty";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     hydenix = {
-      # Available inputs:
-      # Main: github:richen604/hydenix
-      # Dev: github:richen604/hydenix/dev
-      # Commit: github:richen604/hydenix/<commit-hash>
-      # Version: github:richen604/hydenix/v1.0.0
       url = "github:richen604/hydenix";
     };
   };
 
   outputs = {...} @ inputs: let
     system = "x86_64-linux";
-    pkgs = import inputs.nixpkgs {
-      inherit system;
-      config.allowUnfree = true;
-    };
 
     # Hyde Configs
-    g14Config = inputs.hydenix.lib.mkConfig {
-      userConfig = import ./hosts/g14/config.nix;
-      extraInputs = inputs;
-      # Pass user's pkgs to be used alongside hydenix's pkgs (eg. userPkgs.kitty)
-      extraPkgs = pkgs;
+    g14Config = inputs.hydenix.inputs.hydenix-nixpkgs.lib.nixosSystem {
+      inherit (inputs.hydenix.lib) system;
+      specialArgs = {
+        inherit inputs;
+      };
+      modules = [
+        ./hosts/g14/default.nix
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.extraSpecialArgs = {inherit inputs;};
+          home-manager.backupFileExtension = "bak";
+          home-manager.users.chun.imports = [
+            inputs.hydenix.lib.homeModules
+            ./home.nix
+
+            ./modules/home/hydenix.nix
+            # HyDE-specific modules
+            ./modules/home/swaylock.nix
+            ./modules/home/hyprland.nix
+            ./modules/home/dunst.nix
+          ];
+        }
+      ];
     };
   in {
     nixosConfigurations = {
-      ${g14Config.userConfig.host} = g14Config.nixosConfiguration;
+      "chun-lappy" = g14Config;
 
       "legion-nix" = inputs.nixpkgs.lib.nixosSystem {
         modules = [

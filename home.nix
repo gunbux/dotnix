@@ -167,10 +167,11 @@
   };
 
   # Neovim Configs
-  programs.neovim = {
-    enable = true;
-    defaultEditor = true;
-  };
+  # TODO: Fix this
+  # programs.neovim = {
+  #   enable = true;
+  #   defaultEditor = true;
+  # };
 
   # LazyVim Config
   home.file."./.config/nvim/" = {
@@ -187,24 +188,24 @@
   home.file.".config/ghostty/config" = {
     source = config/ghostty/config;
     force = true;
-    # mutable = true;
   };
 
+  # TODO: Remove this
   # Overriding mimeapps
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {
       # Web
-      "text/html" = lib.mkForce ["zen.desktop"];
-      "x-scheme-handler/http" = lib.mkForce ["zen.desktop"];
-      "x-scheme-handler/https" = lib.mkForce ["zen.desktop"];
-      "x-scheme-handler/chrome" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-htm" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-html" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-shtml" = lib.mkForce ["zen.desktop"];
-      "application/xhtml+xml" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-xhtml" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-xht" = lib.mkForce ["zen.desktop"];
+      "text/html" = ["zen.desktop"];
+      "x-scheme-handler/http" = ["zen.desktop"];
+      "x-scheme-handler/https" = ["zen.desktop"];
+      "x-scheme-handler/chrome" = ["zen.desktop"];
+      "application/x-extension-htm" = ["zen.desktop"];
+      "application/x-extension-html" = ["zen.desktop"];
+      "application/x-extension-shtml" = ["zen.desktop"];
+      "application/xhtml+xml" = ["zen.desktop"];
+      "application/x-extension-xhtml" = ["zen.desktop"];
+      "application/x-extension-xht" = ["zen.desktop"];
     };
   };
 
@@ -234,8 +235,7 @@
       ];
     };
 
-    # Hacky override to hyde configs
-    initExtra = lib.mkForce ''
+    initExtra = ''
       # Set OPENROUTER_API_KEY from ~/.openrouter if it exists
       if [ -f "$HOME/.openrouter" ]; then
         export OPENROUTER_API_KEY=$(cat "$HOME/.openrouter")
@@ -246,9 +246,10 @@
       fi
     '';
 
-    initExtraFirst = lib.mkForce ''
+    # TODO: Move this over to hydenix speicifc config
+    initExtraFirst = ''
       #Display Pokemonks
-      pokemon-colorscripts --no-title -r 1-6
+      pokego --no-title -r 1-6
     '';
 
     shellAliases = {
@@ -275,7 +276,8 @@
   };
 
   # Hyprland config
-  wayland.windowManager.hyprland.enable = true;
+  # wayland.windowManager.hyprland.enable = true;
 
+  # TODO: Try removing the mkForce
   home.stateVersion = lib.mkForce "23.05";
 }

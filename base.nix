@@ -14,6 +14,7 @@
     ./modules/fonts.nix
   ];
 
+  # TODO: Fix this
   # nixpkgs = {
   #   config = {
   #     allowUnfree = true;
@@ -90,6 +91,7 @@
   services.envfs.enable = true;
 
   # The NixOS release to be compatible with for stateful data such as databases
+  # TODO: Try removing the mkForce
   system.stateVersion = lib.mkForce "23.05";
 
   # Enable automatic system upgrades
