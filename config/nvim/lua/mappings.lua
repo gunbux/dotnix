@@ -42,10 +42,9 @@ vim.api.nvim_set_keymap('n', '<leader>c', ':Calendar -view=days -split=vertical 
 
 -- Helper function to prefix a zero to single-digit numbers
 local function prefix_zero(num)
-    return num < 10 and '0' .. num or tostring(num)
+  return num < 10 and '0' .. num or tostring(num)
 end
 
--- TODO: Fix this
 -- Callback function for Calendar.vim, integrated with Vimwiki's diary feature
 -- function DiaryDay(day, month, year, week, dir, wnum)
 --     day = prefix_zero(day)
@@ -132,4 +131,3 @@ vim.api.nvim_set_keymap('n', ',', '<Plug>(easymotion-prefix)', {})
 
 -- Avante mappings
 vim.api.nvim_set_keymap('n', '<leader>ai', ':AvanteAsk<CR>', { noremap = true, silent = true })
-

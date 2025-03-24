@@ -20,7 +20,16 @@
     ./hardware-configuration.nix
     inputs.nixos-hardware.nixosModules.asus-zephyrus-ga402
     inputs.home-manager.nixosModules.home-manager
+    inputs.hydenix.lib.nixOsModules
   ];
+
+  # Enable hydenix
+  hydenix = {
+    enable = true;
+    hostname = "chun-lappy";
+    timezone = "Asia/Singapore";
+    locale = "en_US.UTF-8";
+  };
 
   # scx
   #services.scx.enable = true;
