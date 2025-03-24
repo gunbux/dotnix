@@ -249,6 +249,5 @@
     nix-direnv.enable = true;
   };
 
-  # TODO: Try removing the mkForce
   home.stateVersion = lib.mkForce "23.05";
 }
