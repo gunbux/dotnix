@@ -18,7 +18,6 @@
     shell = {
       enable = true; # enable shell module
       zsh.enable = false; # enable zsh shell
-      # TODO: send PR for this
       zsh.configText = ""; # zsh config text
       bash.enable = false; # enable bash shell
       fish.enable = false; # enable fish shell
@@ -54,7 +53,6 @@
       satty.enable = true; # enable satty screenshot annotation tool
       swappy.enable = false; # enable swappy screenshot editor
     };
-    # TODO: pr to remove wallpapers
     social = {
       enable = true; # enable social module
       discord = true; # enable discord module
@@ -66,7 +64,6 @@
     terminals = {
       enable = false; # enable terminals module
       kitty.enable = true; # enable kitty terminal
-      # TODO: send pr for this also
       kitty.configText = ""; # kitty config text
     };
     theme = {
