@@ -23,6 +23,12 @@
     mutable = true;
   };
 
+  home.file.".config/hypr/hypridle.conf" = lib.mkForce {
+    source = ../../config/hypr/hypridle.conf;
+    force = true;
+    mutable = true;
+  };
+
   home.file.".config/waybar/config.ctl" = lib.mkForce {
     source = ../../config/waybar/config.ctl;
     force = true;

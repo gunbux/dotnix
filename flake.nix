@@ -25,12 +25,12 @@
         inherit inputs;
       };
       modules = [
+        ./modules/hyde.nix
         ./hosts/g14/default.nix
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
-          home-manager.backupFileExtension = "bak";
           home-manager.users.chun.imports = [
             inputs.hydenix.lib.homeModules
             ./home.nix

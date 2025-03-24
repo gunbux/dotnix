@@ -4,26 +4,10 @@
 {
   config,
   lib,
+  pkgs,
   inputs,
   ...
-}: let
-  # TODO: Move this to flake?
-  # Package declaration
-  # ---------------------
-  pkgs = import inputs.hydenix.inputs.hydenix-nixpkgs {
-    inherit (inputs.hydenix.lib) system;
-    config.allowUnfree = true;
-    overlays = [
-      inputs.hydenix.lib.overlays
-    ];
-
-    # Include your own package set to be used eg. pkgs.userPkgs.bash
-    userPkgs = inputs.nixpkgs {
-      config.allowUnfree = true;
-    };
-  };
-in {
-  nixpkgs.pkgs = pkgs;
+}: {
   # Override the supergfxd package
   nixpkgs.overlays = [
     (final: prev: {

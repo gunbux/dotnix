@@ -14,13 +14,6 @@
     ./modules/fonts.nix
   ];
 
-  # TODO: Fix this
-  # nixpkgs = {
-  #   config = {
-  #     allowUnfree = true;
-  #   };
-  # };
-
   # Audio Settings
   security.rtkit.enable = true;
   services.pipewire = {

@@ -1,27 +1,20 @@
-{...}: {
+{pkgs, ...}: {
+  # Additional hyde speific config
+  programs.zsh = {
+    initExtraFirst = ''
+      #Display Pokemonks
+      pokego --no-title -r 1-6
+    '';
+  };
+
   # hydenix home-manager options go here
   hydenix.hm = {
     #! Important options
     enable = true;
 
-    editors = {
-      enable = true; # enable editors module
-      neovim = true; # enable neovim module
-      vscode = {
-        enable = true; # enable vscode module
-        wallbash = true; # enable wallbash extension for vscode
-      };
-      vim = true; # enable vim module
-      default = "nvim"; # default text editor
-    };
-
-    git = {
-      enable = true; # enable git module
-      name = "Chun Yu"; # git user name eg "John Doe"
-      email = "lamchunyu00@gmail.com"; # git user email eg "john.doe@example.com"
-    };
-
-    # Let personal home modules handle shell
+    # NOT MANAGED BY HYDENIX
+    editors.enable = false;
+    git.enable = false;
     shell = {
       enable = true; # enable shell module
       zsh.enable = false; # enable zsh shell
@@ -32,23 +25,8 @@
       pokego.enable = true; # enable Pokemon ASCII art scripts
     };
 
-    notifications.enable = false;
-    /*
-    ! Below are defaults
-
-    comma.enable = true; # useful nix tool to run software without installing it first
-    dolphin.enable = true; # file manager
-    editors = {
-      enable = true; # enable editors module
-      TODO: Send a PR correcting this
-      neovim.enable = true; # enable neovim module
-      vscode = {
-        enable = true; # enable vscode module
-        wallbash = true; # enable wallbash extension for vscode
-      };
-      vim.enable = true; # enable vim module
-      default = "vim"; # default text editor
-    };
+    comma.enable = true;
+    dolphin.enable = true;
     fastfetch.enable = true; # fastfetch configuration
     firefox = {
       enable = true; # enable firefox module
@@ -58,20 +36,16 @@
       useExtensions = true; # if useHydeConfig is true, install hyde firefox extensions
     };
     gaming.enable = true; # enable gaming module
-    git = {
-      enable = true; # enable git module
-      name = null; # git user name eg "John Doe"
-      email = null; # git user email eg "john.doe@example.com"
-    };
     hyde.enable = true; # enable hyde module
     hyprland.enable = true; # enable hyprland module
     lockscreen = {
       enable = true; # enable lockscreen module
-      hyprlock = true; # enable hyprlock lockscreen
-      swaylock = false; # enable swaylock lockscreen
+      hyprlock = false; # enable hyprlock lockscreen
+      swaylock = true; # enable swaylock lockscreen
     };
-    notifications.enable = true; # enable notifications module
+    notifications.enable = false;
     qt.enable = true; # enable qt module
+    gtk.enable = true;
     rofi.enable = true; # enable rofi module
     screenshots = {
       enable = true; # enable screenshots module
@@ -80,27 +54,20 @@
       satty.enable = true; # enable satty screenshot annotation tool
       swappy.enable = false; # enable swappy screenshot editor
     };
-    wallpapers.enable = true; # enable wallpapers module
-    shell = {
-      enable = true; # enable shell module
-      zsh.enable = true; # enable zsh shell
-      configText = ""; # zsh config text
-      bash.enable = false; # enable bash shell
-      fish.enable = false; # enable fish shell
-      pokego.enable = true; # enable Pokemon ASCII art scripts
-    };
+    # TODO: pr to remove wallpapers
     social = {
       enable = true; # enable social module
-      discord.enable = true; # enable discord module
-      webcord.enable = true; # enable webcord module
-      vesktop.enable = true; # enable vesktop module
+      discord = true; # enable discord module
+      webcord = true; # enable webcord module
+      vesktop = true; # enable vesktop module
     };
     spotify.enable = true; # enable spotify module
     swww.enable = true; # enable swww wallpaper daemon
     terminals = {
-      enable = true; # enable terminals module
+      enable = false; # enable terminals module
       kitty.enable = true; # enable kitty terminal
-      configText = ""; # kitty config text
+      # TODO: send pr for this also
+      kitty.configText = ""; # kitty config text
     };
     theme = {
       enable = true; # enable theme module
@@ -113,6 +80,5 @@
     waybar.enable = true; # enable waybar module
     wlogout.enable = true; # enable wlogout module
     xdg.enable = true; # enable xdg module
-    */
   };
 }

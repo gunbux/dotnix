@@ -167,11 +167,10 @@
   };
 
   # Neovim Configs
-  # TODO: Fix this
-  # programs.neovim = {
-  #   enable = true;
-  #   defaultEditor = true;
-  # };
+  programs.neovim = {
+    enable = true;
+    defaultEditor = true;
+  };
 
   # LazyVim Config
   home.file."./.config/nvim/" = {
@@ -188,25 +187,6 @@
   home.file.".config/ghostty/config" = {
     source = config/ghostty/config;
     force = true;
-  };
-
-  # TODO: Remove this
-  # Overriding mimeapps
-  xdg.mimeApps = {
-    enable = true;
-    defaultApplications = {
-      # Web
-      "text/html" = ["zen.desktop"];
-      "x-scheme-handler/http" = ["zen.desktop"];
-      "x-scheme-handler/https" = ["zen.desktop"];
-      "x-scheme-handler/chrome" = ["zen.desktop"];
-      "application/x-extension-htm" = ["zen.desktop"];
-      "application/x-extension-html" = ["zen.desktop"];
-      "application/x-extension-shtml" = ["zen.desktop"];
-      "application/xhtml+xml" = ["zen.desktop"];
-      "application/x-extension-xhtml" = ["zen.desktop"];
-      "application/x-extension-xht" = ["zen.desktop"];
-    };
   };
 
   programs.zsh = {
@@ -246,12 +226,6 @@
       fi
     '';
 
-    # TODO: Move this over to hydenix speicifc config
-    initExtraFirst = ''
-      #Display Pokemonks
-      pokego --no-title -r 1-6
-    '';
-
     shellAliases = {
       lg = "lazygit";
       c = "clear";
@@ -274,9 +248,6 @@
     enable = true;
     nix-direnv.enable = true;
   };
-
-  # Hyprland config
-  # wayland.windowManager.hyprland.enable = true;
 
   # TODO: Try removing the mkForce
   home.stateVersion = lib.mkForce "23.05";
