@@ -141,8 +141,6 @@
         "test_get_commit_message_with_custom_prompt"
         # FileNotFoundError
         "test_get_commit_message"
-        # Expected 'launch_gui' to have been called once
-        "test_browser_flag_imports_streamlit"
         # AttributeError
         "test_simple_send_with_retries"
         # Expected 'check_version' to have been called once

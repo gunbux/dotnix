@@ -44,7 +44,10 @@
       xdg-desktop-portal-wlr
 
       # AI
-      aider-chat.withPlaywright
+      (import ./pkgs/aider/default.nix {
+        inherit lib stdenv python312 fetchFromGitHub gitMinimal portaudio playwright-driver;
+      })
+      .withOptional
 
       # Docker
       docker
