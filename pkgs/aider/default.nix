@@ -173,7 +173,7 @@
         pyee
         typing-extensions
       ];
-      web = [
+      browser = [
         streamlit
       ];
     };
@@ -197,9 +197,9 @@
         }
       );
 
-      withWeb = aider-chat.overridePythonAttrs (
+      withBrowser = aider-chat.overridePythonAttrs (
         {dependencies, ...}: {
-          dependencies = dependencies ++ aider-chat.optional-dependencies.web;
+          dependencies = dependencies ++ aider-chat.optional-dependencies.browser;
         }
       );
 
