@@ -1,17 +1,18 @@
 {
   lib,
   stdenv,
-  python311,
+  python312,
   fetchFromGitHub,
   gitMinimal,
   portaudio,
+  playwright-driver,
 }: let
-  python3 = python311.override {
+  python3 = python312.override {
     self = python3;
     packageOverrides = _: super: {tree-sitter = super.tree-sitter_0_21;};
   };
-  version = "0.62.0";
-  aider-chat = python3.pkgs.buildPythonApplication {
+  version = "0.75.2";
+  aider-chat = python3.pkgs.buildPythonPackage {
     pname = "aider-chat";
     inherit version;
     pyproject = true;
@@ -20,7 +21,7 @@
       owner = "Aider-AI";
       repo = "aider";
       tag = "v${version}";
-      hash = "sha256-o5vyOaJSUcdwuHBbzgpo5RDpZLnIur5dM+b7Y7PVBXA=";
+      hash = "sha256-+XpvAnxsv6TbsJwTAgNdJtZxxoPXQ9cxRVUaFZCnS8w=";
     };
 
     pythonRelaxDeps = true;
@@ -98,6 +99,7 @@
       smmap
       sniffio
       sounddevice
+      socksio
       soundfile
       soupsieve
       tiktoken
@@ -107,9 +109,11 @@
       tree-sitter-languages
       typing-extensions
       urllib3
+      watchfiles
       wcwidth
       yarl
       zipp
+      pip
 
       # Not listed in requirements
       mixpanel
@@ -143,16 +147,25 @@
         "test_simple_send_with_retries"
         # Expected 'check_version' to have been called once
         "test_main_exit_calls_version_check"
+        # AssertionError: assert 2 == 1
+        "test_simple_send_non_retryable_error"
       ]
       ++ lib.optionals stdenv.hostPlatform.isDarwin [
         # Tests fails on darwin
         "test_dark_mode_sets_code_theme"
         "test_default_env_file_sets_automatic_variable"
+        # FileNotFoundError: [Errno 2] No such file or directory: 'vim'
+        "test_pipe_editor"
       ];
+
+    makeWrapperArgs = [
+      "--set AIDER_CHECK_UPDATE false"
+      "--set AIDER_ANALYTICS false"
+    ];
 
     preCheck = ''
       export HOME=$(mktemp -d)
-      export AIDER_CHECK_UPDATE=false
+      export AIDER_ANALYTICS="false"
     '';
 
     optional-dependencies = with python3.pkgs; {
@@ -162,12 +175,51 @@
         pyee
         typing-extensions
       ];
+      web = [
+        streamlit
+      ];
     };
 
     passthru = {
       withPlaywright = aider-chat.overridePythonAttrs (
-        {dependencies, ...}: {
+        {
+          dependencies,
+          makeWrapperArgs,
+          propagatedBuildInputs ? [],
+          ...
+        }: {
           dependencies = dependencies ++ aider-chat.optional-dependencies.playwright;
+          propagatedBuildInputs = propagatedBuildInputs ++ [playwright-driver.browsers];
+          makeWrapperArgs =
+            makeWrapperArgs
+            ++ [
+              "--set PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers}"
+              "--set PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
+            ];
+        }
+      );
+
+      withWeb = aider-chat.overridePythonAttrs (
+        {dependencies, ...}: {
+          dependencies = dependencies ++ aider-chat.optional-dependencies.web;
+        }
+      );
+
+      withOptional = aider-chat.overridePythonAttrs (
+        {
+          dependencies,
+          makeWrapperArgs,
+          propagatedBuildInputs ? [],
+          ...
+        }: {
+          dependencies = dependencies ++ aider-chat.optional-dependencies.playwright ++ aider-chat.optional-dependencies.web;
+          propagatedBuildInputs = propagatedBuildInputs ++ [playwright-driver.browsers];
+          makeWrapperArgs =
+            makeWrapperArgs
+            ++ [
+              "--set PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers}"
+              "--set PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
+            ];
         }
       );
     };
@@ -177,7 +229,7 @@
       homepage = "https://github.com/paul-gauthier/aider";
       changelog = "https://github.com/paul-gauthier/aider/blob/v${version}/HISTORY.md";
       license = lib.licenses.asl20;
-      maintainers = with lib.maintainers; [taha-yassine];
+      maintainers = with lib.maintainers; [happysalada];
       mainProgram = "aider";
     };
   };
