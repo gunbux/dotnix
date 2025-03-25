@@ -210,7 +210,7 @@
           propagatedBuildInputs ? [],
           ...
         }: {
-          dependencies = dependencies ++ aider-chat.optional-dependencies.playwright ++ aider-chat.optional-dependencies.web;
+          dependencies = dependencies ++ aider-chat.optional-dependencies.playwright ++ aider-chat.optional-dependencies.browser;
           propagatedBuildInputs = propagatedBuildInputs ++ [playwright-driver.browsers];
           makeWrapperArgs =
             makeWrapperArgs
