@@ -55,14 +55,14 @@
     };
     social = {
       enable = true; # enable social module
-      discord = true; # enable discord module
-      webcord = true; # enable webcord module
-      vesktop = true; # enable vesktop module
+      discord.enable = true; # enable discord module
+      webcord.enable = true; # enable webcord module
+      vesktop.enable = true; # enable vesktop module
     };
     spotify.enable = true; # enable spotify module
     swww.enable = true; # enable swww wallpaper daemon
     terminals = {
-      enable = false; # enable terminals module
+      enable = true; # enable terminals module
       kitty.enable = true; # enable kitty terminal
       kitty.configText = ""; # kitty config text
     };

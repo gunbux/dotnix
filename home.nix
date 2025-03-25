@@ -44,7 +44,7 @@
       xdg-desktop-portal-wlr
 
       # AI
-      aider-chat
+      aider-chat.withPlaywright
 
       # Docker
       docker
@@ -132,6 +132,7 @@
       code-cursor
       davinci-resolve
       discord
+      ghostty
       glow
       jetbrains.clion
       jetbrains.goland
@@ -153,7 +154,6 @@
     ]
     ++ [
       inputs.zen-browser.packages.${pkgs.system}.default
-      inputs.ghostty.packages.${pkgs.system}.default
     ];
 
   # Git Configs

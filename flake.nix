@@ -8,7 +8,6 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    ghostty.url = "github:ghostty-org/ghostty";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     hydenix = {
       url = "github:richen604/hydenix";
@@ -31,7 +30,6 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
-          home-manager.backupFileExtension = "bak";
           home-manager.users.chun.imports = [
             inputs.hydenix.lib.homeModules
             ./home.nix
