@@ -6,10 +6,12 @@
   gitMinimal,
   portaudio,
   playwright-driver,
-}: let
+}:
+
+let
   python3 = python312.override {
     self = python3;
-    packageOverrides = _: super: {tree-sitter = super.tree-sitter_0_21;};
+    packageOverrides = _: super: { tree-sitter = super.tree-sitter_0_21; };
   };
   version = "0.75.2";
   aider-chat = python3.pkgs.buildPythonPackage {
@@ -26,7 +28,7 @@
 
     pythonRelaxDeps = true;
 
-    build-system = with python3.pkgs; [setuptools-scm];
+    build-system = with python3.pkgs; [ setuptools-scm ];
 
     dependencies = with python3.pkgs; [
       aiohappyeyeballs
@@ -123,9 +125,9 @@
       python-dateutil
     ];
 
-    buildInputs = [portaudio];
+    buildInputs = [ portaudio ];
 
-    nativeCheckInputs = (with python3.pkgs; [pytestCheckHook]) ++ [gitMinimal];
+    nativeCheckInputs = (with python3.pkgs; [ pytestCheckHook ]) ++ [ gitMinimal ];
 
     disabledTestPaths = [
       # Tests require network access
@@ -176,6 +178,11 @@
       browser = [
         streamlit
       ];
+      help = [
+        llama-index-core
+        llama-index-embeddings-huggingface
+        torch
+      ];
     };
 
     passthru = {
@@ -183,17 +190,16 @@
         {
           dependencies,
           makeWrapperArgs,
-          propagatedBuildInputs ? [],
+          propagatedBuildInputs ? [ ],
           ...
-        }: {
+        }:
+        {
           dependencies = dependencies ++ aider-chat.optional-dependencies.playwright;
-          propagatedBuildInputs = propagatedBuildInputs ++ [playwright-driver.browsers];
-          makeWrapperArgs =
-            makeWrapperArgs
-            ++ [
-              "--set PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers}"
-              "--set PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
-            ];
+          propagatedBuildInputs = propagatedBuildInputs ++ [ playwright-driver.browsers ];
+          makeWrapperArgs = makeWrapperArgs ++ [
+            "--set PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers}"
+            "--set PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
+          ];
         }
       );
 
@@ -203,21 +209,15 @@
         }
       );
 
+      withHelp = aider-chat.overridePythonAttrs (
+        {dependencies, ...}: {
+          dependencies = dependencies ++ aider-chat.optional-dependencies.help;
+        }
+      );
+
       withOptional = aider-chat.overridePythonAttrs (
-        {
-          dependencies,
-          makeWrapperArgs,
-          propagatedBuildInputs ? [],
-          ...
-        }: {
-          dependencies = dependencies ++ aider-chat.optional-dependencies.playwright ++ aider-chat.optional-dependencies.browser;
-          propagatedBuildInputs = propagatedBuildInputs ++ [playwright-driver.browsers];
-          makeWrapperArgs =
-            makeWrapperArgs
-            ++ [
-              "--set PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers}"
-              "--set PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
-            ];
+        {dependencies, ...}: {
+          dependencies = dependencies ++ aider-chat.optional-dependencies.playwright ++ aider-chat.optional-dependencies.browser ++ aider-chat.optional-dependencies.help;
         }
       );
     };
@@ -227,9 +227,9 @@
       homepage = "https://github.com/paul-gauthier/aider";
       changelog = "https://github.com/paul-gauthier/aider/blob/v${version}/HISTORY.md";
       license = lib.licenses.asl20;
-      maintainers = with lib.maintainers; [happysalada];
+      maintainers = with lib.maintainers; [ happysalada ];
       mainProgram = "aider";
     };
   };
 in
-  aider-chat
+aider-chat
