@@ -82,6 +82,7 @@
       conda
       elfutils
       geekbench
+      ghostscript_headless
       gnumake
       iperf
       jq
@@ -150,6 +151,7 @@
       steam
       telegram-desktop
       thunderbird
+      yazi
       youtube-music
     ]
     ++ [

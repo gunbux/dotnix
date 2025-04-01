@@ -217,7 +217,7 @@ let
 
       withOptional = aider-chat.overridePythonAttrs (
         {dependencies, ...}: {
-          dependencies = dependencies ++ aider-chat.optional-dependencies.playwright ++ aider-chat.optional-dependencies.browser ++ aider-chat.optional-dependencies.help;
+          dependencies = dependencies ++ aider-chat.optional-dependencies.playwright ++ aider-chat.optional-dependencies.browser;
         }
       );
     };
