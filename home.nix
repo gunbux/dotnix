@@ -44,7 +44,7 @@
       xdg-desktop-portal-wlr
 
       # AI
-      aider-chat
+      aider-chat.withPlaywright
 
       # Docker
       docker
@@ -132,6 +132,7 @@
       code-cursor
       davinci-resolve
       discord
+      ghostty
       glow
       jetbrains.clion
       jetbrains.goland
@@ -153,7 +154,6 @@
     ]
     ++ [
       inputs.zen-browser.packages.${pkgs.system}.default
-      inputs.ghostty.packages.${pkgs.system}.default
     ];
 
   # Git Configs
@@ -187,25 +187,6 @@
   home.file.".config/ghostty/config" = {
     source = config/ghostty/config;
     force = true;
-    # mutable = true;
-  };
-
-  # Overriding mimeapps
-  xdg.mimeApps = {
-    enable = true;
-    defaultApplications = {
-      # Web
-      "text/html" = lib.mkForce ["zen.desktop"];
-      "x-scheme-handler/http" = lib.mkForce ["zen.desktop"];
-      "x-scheme-handler/https" = lib.mkForce ["zen.desktop"];
-      "x-scheme-handler/chrome" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-htm" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-html" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-shtml" = lib.mkForce ["zen.desktop"];
-      "application/xhtml+xml" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-xhtml" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-xht" = lib.mkForce ["zen.desktop"];
-    };
   };
 
   programs.zsh = {
@@ -234,8 +215,7 @@
       ];
     };
 
-    # Hacky override to hyde configs
-    initExtra = lib.mkForce ''
+    initExtra = ''
       # Set OPENROUTER_API_KEY from ~/.openrouter if it exists
       if [ -f "$HOME/.openrouter" ]; then
         export OPENROUTER_API_KEY=$(cat "$HOME/.openrouter")
@@ -244,11 +224,6 @@
       if [[ $TERM != "dumb" ]]; then
         eval "$(/etc/profiles/per-user/chun/bin/starship init zsh)"
       fi
-    '';
-
-    initExtraFirst = lib.mkForce ''
-      #Display Pokemonks
-      pokemon-colorscripts --no-title -r 1-6
     '';
 
     shellAliases = {
@@ -273,9 +248,6 @@
     enable = true;
     nix-direnv.enable = true;
   };
-
-  # Hyprland config
-  wayland.windowManager.hyprland.enable = true;
 
   home.stateVersion = lib.mkForce "23.05";
 }
