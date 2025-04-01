@@ -44,7 +44,7 @@
       xdg-desktop-portal-wlr
 
       # AI
-      aider-chat.withOptional
+      (aider-chat.withOptional {withAll = true;})
 
       # Docker
       docker

@@ -6,12 +6,19 @@
   gitMinimal,
   portaudio,
   playwright-driver,
-}:
-
-let
+  symlinkJoin,
+  nltk-data,
+}: let
+  aider-nltk-data = symlinkJoin {
+    name = "aider-nltk-data";
+    paths = [
+      nltk-data.punkt_tab
+      nltk-data.stopwords
+    ];
+  };
   python3 = python312.override {
     self = python3;
-    packageOverrides = _: super: { tree-sitter = super.tree-sitter_0_21; };
+    packageOverrides = _: super: {tree-sitter = super.tree-sitter_0_21;};
   };
   version = "0.75.2";
   aider-chat = python3.pkgs.buildPythonPackage {
@@ -28,7 +35,7 @@ let
 
     pythonRelaxDeps = true;
 
-    build-system = with python3.pkgs; [ setuptools-scm ];
+    build-system = with python3.pkgs; [setuptools-scm];
 
     dependencies = with python3.pkgs; [
       aiohappyeyeballs
@@ -125,9 +132,9 @@ let
       python-dateutil
     ];
 
-    buildInputs = [ portaudio ];
+    buildInputs = [portaudio];
 
-    nativeCheckInputs = (with python3.pkgs; [ pytestCheckHook ]) ++ [ gitMinimal ];
+    nativeCheckInputs = (with python3.pkgs; [pytestCheckHook]) ++ [gitMinimal];
 
     disabledTestPaths = [
       # Tests require network access
@@ -143,6 +150,8 @@ let
         "test_get_commit_message_with_custom_prompt"
         # FileNotFoundError
         "test_get_commit_message"
+        # Expected 'launch_gui' to have been called once
+        "test_browser_flag_imports_streamlit"
         # AttributeError
         "test_simple_send_with_retries"
         # Expected 'check_version' to have been called once
@@ -159,8 +168,12 @@ let
       ];
 
     makeWrapperArgs = [
-      "--set AIDER_CHECK_UPDATE false"
-      "--set AIDER_ANALYTICS false"
+      "--set"
+      "AIDER_CHECK_UPDATE"
+      "false"
+      "--set"
+      "AIDER_ANALYTICS"
+      "false"
     ];
 
     preCheck = ''
@@ -182,44 +195,75 @@ let
         llama-index-core
         llama-index-embeddings-huggingface
         torch
+        nltk
+      ];
+      bedrock = [
+        boto3
       ];
     };
 
     passthru = {
-      withPlaywright = aider-chat.overridePythonAttrs (
-        {
-          dependencies,
-          makeWrapperArgs,
-          propagatedBuildInputs ? [ ],
-          ...
-        }:
-        {
-          dependencies = dependencies ++ aider-chat.optional-dependencies.playwright;
-          propagatedBuildInputs = propagatedBuildInputs ++ [ playwright-driver.browsers ];
-          makeWrapperArgs = makeWrapperArgs ++ [
-            "--set PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers}"
-            "--set PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
-          ];
-        }
-      );
+      withOptional = {
+        withPlaywright ? false,
+        withBrowser ? false,
+        withHelp ? false,
+        withBedrock ? false,
+        withAll ? false,
+        ...
+      }:
+        aider-chat.overridePythonAttrs (
+          {
+            dependencies,
+            makeWrapperArgs,
+            propagatedBuildInputs ? [],
+            ...
+          }: let
+            playwrightDeps =
+              if withPlaywright || withAll
+              then aider-chat.optional-dependencies.playwright
+              else [];
+            browserDeps =
+              if withBrowser || withAll
+              then aider-chat.optional-dependencies.browser
+              else [];
+            helpDeps =
+              if withHelp || withAll
+              then aider-chat.optional-dependencies.help
+              else [];
+            bedrockDeps =
+              if withBedrock || withAll
+              then aider-chat.optional-dependencies.bedrock
+              else [];
 
-      withBrowser = aider-chat.overridePythonAttrs (
-        {dependencies, ...}: {
-          dependencies = dependencies ++ aider-chat.optional-dependencies.browser;
-        }
-      );
-
-      withHelp = aider-chat.overridePythonAttrs (
-        {dependencies, ...}: {
-          dependencies = dependencies ++ aider-chat.optional-dependencies.help;
-        }
-      );
-
-      withOptional = aider-chat.overridePythonAttrs (
-        {dependencies, ...}: {
-          dependencies = dependencies ++ aider-chat.optional-dependencies.playwright ++ aider-chat.optional-dependencies.browser;
-        }
-      );
+            playwrightInputs =
+              if withPlaywright || withAll
+              then [playwright-driver.browsers]
+              else [];
+            playwrightArgs =
+              if withPlaywright || withAll
+              then [
+                "--set"
+                "PLAYWRIGHT_BROWSERS_PATH"
+                "${playwright-driver.browsers}"
+                "--set"
+                "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS"
+                "true"
+              ]
+              else [];
+            helpArgs =
+              if withHelp || withAll
+              then [
+                "--set"
+                "NLTK_DATA"
+                "${aider-nltk-data}"
+              ]
+              else [];
+          in {
+            dependencies = dependencies ++ playwrightDeps ++ browserDeps ++ helpDeps ++ bedrockDeps;
+            propagatedBuildInputs = propagatedBuildInputs ++ playwrightInputs;
+            makeWrapperArgs = makeWrapperArgs ++ playwrightArgs ++ helpArgs;
+          }
+        );
     };
 
     meta = {
@@ -227,9 +271,9 @@ let
       homepage = "https://github.com/paul-gauthier/aider";
       changelog = "https://github.com/paul-gauthier/aider/blob/v${version}/HISTORY.md";
       license = lib.licenses.asl20;
-      maintainers = with lib.maintainers; [ happysalada ];
+      maintainers = with lib.maintainers; [happysalada];
       mainProgram = "aider";
     };
   };
 in
-aider-chat
+  aider-chat
