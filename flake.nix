@@ -17,6 +17,12 @@
   outputs = {...} @ inputs: let
     system = "x86_64-linux";
 
+    overlays = {
+      aider = final: prev: {
+        aider-chat = final.callPackage ./pkgs/aider/default.nix {};
+      };
+    };
+
     # Hyde Configs
     g14Config = inputs.hydenix.inputs.hydenix-nixpkgs.lib.nixosSystem {
       inherit (inputs.hydenix.lib) system;
@@ -27,6 +33,7 @@
         ./modules/hyde.nix
         ./hosts/g14/default.nix
         {
+          nixpkgs.overlays = [overlays.aider];
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
@@ -55,6 +62,7 @@
           inputs.nixos-hardware.nixosModules.lenovo-legion-15arh05h
           inputs.home-manager.nixosModules.home-manager
           {
+            nixpkgs.overlays = [overlays.aider];
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.extraSpecialArgs = {inherit inputs;};
@@ -66,7 +74,10 @@
 
     homeConfigurations = {
       "chun@non-nixos" = inputs.home-manager.lib.homeManagerConfiguration {
-        pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
+        pkgs = import inputs.nixpkgs {
+          inherit system;
+          overlays = [overlays.aider];
+        };
         modules = [
           ./home.nix
           {

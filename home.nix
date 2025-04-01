@@ -44,7 +44,7 @@
       xdg-desktop-portal-wlr
 
       # AI
-      aider-chat.withPlaywright
+      aider-chat.withOptional
 
       # Docker
       docker
@@ -82,6 +82,7 @@
       conda
       elfutils
       geekbench
+      ghostscript_headless
       gnumake
       iperf
       jq
@@ -150,6 +151,7 @@
       steam
       telegram-desktop
       thunderbird
+      yazi
       youtube-music
     ]
     ++ [
@@ -187,6 +189,23 @@
   home.file.".config/ghostty/config" = {
     source = config/ghostty/config;
     force = true;
+  };
+
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      # Web
+      "text/html" = lib.mkForce ["zen.desktop"];
+      "x-scheme-handler/http" = lib.mkForce ["zen.desktop"];
+      "x-scheme-handler/https" = lib.mkForce ["zen.desktop"];
+      "x-scheme-handler/chrome" = lib.mkForce ["zen.desktop"];
+      "application/x-extension-htm" = lib.mkForce ["zen.desktop"];
+      "application/x-extension-html" = lib.mkForce ["zen.desktop"];
+      "application/x-extension-shtml" = lib.mkForce ["zen.desktop"];
+      "application/xhtml+xml" = lib.mkForce ["zen.desktop"];
+      "application/x-extension-xhtml" = lib.mkForce ["zen.desktop"];
+      "application/x-extension-xht" = lib.mkForce ["zen.desktop"];
+    };
   };
 
   programs.zsh = {

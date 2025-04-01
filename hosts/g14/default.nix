@@ -9,11 +9,11 @@
   ...
 }: {
   # Override the supergfxd package
-  nixpkgs.overlays = [
-    (final: prev: {
-      supergfxctl = prev.callPackage ../../pkgs/supergfxctl {};
-    })
-  ];
+  # nixpkgs.overlays = [
+  #   (final: prev: {
+  #     supergfxctl = prev.callPackage ../../pkgs/supergfxctl {};
+  #   })
+  # ];
 
   imports = [
     ../../base.nix
