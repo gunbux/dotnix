@@ -101,6 +101,7 @@
       tshark
       uv
       wget
+      zls
       zstd
 
       # Modern Unix
