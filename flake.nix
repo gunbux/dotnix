@@ -21,6 +21,9 @@
       aider = final: prev: {
         aider-chat = final.callPackage ./pkgs/aider/default.nix {};
       };
+      supergfxctl = final: prev: {
+        supergfxctl = prev.callPackage ./pkgs/supergfxctl/default.nix {};
+      };
     };
 
     # Hyde Configs
@@ -33,7 +36,7 @@
         ./modules/hyde.nix
         ./hosts/g14/default.nix
         {
-          nixpkgs.overlays = [overlays.aider];
+          nixpkgs.overlays = [overlays.aider overlays.supergfxctl];
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
