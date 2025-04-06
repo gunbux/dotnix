@@ -34,7 +34,6 @@
       useUserJs = true; # if useHydeConfig is true, apply hyde user.js preferences
       useExtensions = true; # if useHydeConfig is true, install hyde firefox extensions
     };
-    gaming.enable = true; # enable gaming module
     hyde.enable = true; # enable hyde module
     hyprland.enable = true; # enable hyprland module
     lockscreen = {

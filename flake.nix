@@ -34,6 +34,7 @@
       };
       modules = [
         ./modules/hyde.nix
+        ./modules/gnome.nix
         ./hosts/g14/default.nix
         {
           nixpkgs.overlays = [overlays.aider overlays.supergfxctl];
@@ -49,6 +50,8 @@
             ./modules/home/swaylock.nix
             ./modules/home/hyprland.nix
             ./modules/home/dunst.nix
+            # GNOME specific settings
+            ./modules/home/dconf.nix
           ];
         }
       ];

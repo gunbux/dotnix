@@ -29,6 +29,7 @@
     hostname = "chun-lappy";
     timezone = "Asia/Singapore";
     locale = "en_US.UTF-8";
+    sddm.enable = false;
   };
 
   # scx
