@@ -11,6 +11,11 @@
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     hydenix = {
       url = "github:richen604/hydenix";
+      inputs.hydenix-nixpkgs.follows = "nixpkgs";
+    };
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -18,9 +23,6 @@
     system = "x86_64-linux";
 
     overlays = {
-      aider = final: prev: {
-        aider-chat = final.callPackage ./pkgs/aider/default.nix {};
-      };
       supergfxctl = final: prev: {
         supergfxctl = prev.callPackage ./pkgs/supergfxctl/default.nix {};
       };
@@ -37,12 +39,13 @@
         ./modules/gnome.nix
         ./hosts/g14/default.nix
         {
-          nixpkgs.overlays = [overlays.aider overlays.supergfxctl];
+          nixpkgs.overlays = [overlays.supergfxctl];
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.users.chun.imports = [
             inputs.hydenix.lib.homeModules
+            inputs.nix-index-database.hmModules.nix-index
             ./home.nix
 
             ./modules/home/hydenix.nix
@@ -68,7 +71,6 @@
           inputs.nixos-hardware.nixosModules.lenovo-legion-15arh05h
           inputs.home-manager.nixosModules.home-manager
           {
-            nixpkgs.overlays = [overlays.aider];
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.extraSpecialArgs = {inherit inputs;};
@@ -82,7 +84,6 @@
       "chun@non-nixos" = inputs.home-manager.lib.homeManagerConfiguration {
         pkgs = import inputs.nixpkgs {
           inherit system;
-          overlays = [overlays.aider];
         };
         modules = [
           ./home.nix

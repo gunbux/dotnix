@@ -44,7 +44,7 @@
       xdg-desktop-portal-wlr
 
       # AI
-      (aider-chat.withOptional {withAll = true;})
+      aider-chat-full
 
       # Docker
       docker
@@ -90,7 +90,9 @@
       lua-language-server
       logiops
       meson
+      nh
       ninja
+      nix-output-monitor
       nmap
       nodejs
       rsync
@@ -196,16 +198,16 @@
     enable = true;
     defaultApplications = {
       # Web
-      "text/html" = lib.mkForce ["zen.desktop"];
-      "x-scheme-handler/http" = lib.mkForce ["zen.desktop"];
-      "x-scheme-handler/https" = lib.mkForce ["zen.desktop"];
-      "x-scheme-handler/chrome" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-htm" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-html" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-shtml" = lib.mkForce ["zen.desktop"];
-      "application/xhtml+xml" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-xhtml" = lib.mkForce ["zen.desktop"];
-      "application/x-extension-xht" = lib.mkForce ["zen.desktop"];
+      "text/html" = lib.mkForce ["zen-beta.desktop"];
+      "x-scheme-handler/http" = lib.mkForce ["zen-beta.desktop"];
+      "x-scheme-handler/https" = lib.mkForce ["zen-beta.desktop"];
+      "x-scheme-handler/chrome" = lib.mkForce ["zen-beta.desktop"];
+      "application/x-extension-htm" = lib.mkForce ["zen-beta.desktop"];
+      "application/x-extension-html" = lib.mkForce ["zen-beta.desktop"];
+      "application/x-extension-shtml" = lib.mkForce ["zen-beta.desktop"];
+      "application/xhtml+xml" = lib.mkForce ["zen-beta.desktop"];
+      "application/x-extension-xhtml" = lib.mkForce ["zen-beta.desktop"];
+      "application/x-extension-xht" = lib.mkForce ["zen-beta.desktop"];
     };
   };
 
