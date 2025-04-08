@@ -143,7 +143,7 @@
   # Bluetooth
   hardware.bluetooth = {
     enable = true;
-    powerOnBoot = lib.mkForce false;
+    powerOnBoot = true;
     settings = {
       General = {
         Experiemental = true;
