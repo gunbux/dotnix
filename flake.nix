@@ -59,25 +59,42 @@
         }
       ];
     };
+
+    legionConfig = inputs.hydenix.inputs.hydenix-nixpkgs.lib.nixosSystem {
+      inherit (inputs.hydenix.lib) system;
+      specialArgs = {
+        inherit inputs;
+      };
+      modules = [
+        ./modules/hyde.nix
+        ./modules/gnome.nix
+        ./hosts/legion/default.nix
+        {
+          nixpkgs.overlays = [overlays.supergfxctl];
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.extraSpecialArgs = {inherit inputs;};
+          home-manager.users.chun.imports = [
+            inputs.hydenix.lib.homeModules
+            inputs.nix-index-database.hmModules.nix-index
+            ./home.nix
+
+            ./modules/home/hydenix.nix
+            # HyDE-specific modules
+            ./modules/home/swaylock.nix
+            ./modules/home/hyprland.nix
+            ./modules/home/dunst.nix
+            # GNOME specific settings
+            ./modules/home/dconf.nix
+          ];
+        }
+      ];
+    };
   in {
     nixosConfigurations = {
       "chun-lappy" = g14Config;
 
-      "legion-nix" = inputs.nixpkgs.lib.nixosSystem {
-        modules = [
-          ./base.nix
-          ./modules/gnome.nix
-          ./hosts/legion/default.nix
-          inputs.nixos-hardware.nixosModules.lenovo-legion-15arh05h
-          inputs.home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = {inherit inputs;};
-            home-manager.users.chun = import ./home.nix;
-          }
-        ];
-      };
+      "legion-nix" = legionConfig;
     };
 
     homeConfigurations = {

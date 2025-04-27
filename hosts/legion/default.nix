@@ -2,12 +2,27 @@
 # asus-nb-wmi power consumption
 {
   config,
+  lib,
   pkgs,
+  inputs,
   ...
 }: {
   imports = [
+    ../../base.nix
     ./hardware-configuration.nix
+    inputs.nixos-hardware.nixosModules.lenovo-legion-15arh05h
+    inputs.home-manager.nixosModules.home-manager
+    inputs.hydenix.lib.nixOsModules
   ];
+
+  # Enable hydenix
+  hydenix = {
+    enable = true;
+    hostname = "legion-nix";
+    timezone = "Asia/Singapore";
+    locale = "en_US.UTF-8";
+    sddm.enable = false;
+  };
 
   # Swap
   swapDevices = [
@@ -26,7 +41,7 @@
 
   # Kernel
   # boot.kernelPackages = pkgs.linuxPackages_cachyos;
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
   boot.kernelParams = [
     "initcall_blacklist=acpi_cpufreq_init"
     "amd_pstate=active"
@@ -93,7 +108,7 @@
     brightnessctl
   ];
   hardware.bluetooth.enable = true;
-  hardware.bluetooth.powerOnBoot = false;
+  hardware.bluetooth.powerOnBoot = true;
 
   # Virtualization
   virtualisation.virtualbox.host.enable = true;

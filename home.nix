@@ -10,6 +10,7 @@
     # ./modules/home/dconf.nix
 
     ./modules/home/zed.nix
+    ./modules/home/kitty.nix
   ];
 
   # Let Home Manager install & manage itself
@@ -25,6 +26,7 @@
       amdgpu_top
       ccid
       git
+      git-filter-repo
       gnupg
       libbpf
       libcxx
@@ -78,7 +80,7 @@
       bun
       cargo
       clang
-      commitizen
+      # commitizen
       conda
       elfutils
       geekbench
@@ -123,6 +125,7 @@
       ripgrep
       tldr
       zoxide
+      presenterm
 
       # NUS Bloat
       openfortivpn
