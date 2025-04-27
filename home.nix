@@ -46,7 +46,7 @@
       xdg-desktop-portal-wlr
 
       # AI
-      aider-chat-full
+      # aider-chat-full
 
       # Docker
       docker

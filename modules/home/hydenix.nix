@@ -1,11 +1,5 @@
 {pkgs, ...}: {
   # Additional hyde speific config
-  programs.zsh = {
-    initExtraFirst = ''
-      #Display Pokemonks
-      pokego --no-title -r 1-6
-    '';
-  };
 
   # hydenix home-manager options go here
   hydenix.hm = {
