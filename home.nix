@@ -241,6 +241,7 @@
     };
 
     initExtra = ''
+      pokego --no-title -r 1-6
       # Set OPENROUTER_API_KEY from ~/.openrouter if it exists
       if [ -f "$HOME/.openrouter" ]; then
         export OPENROUTER_API_KEY=$(cat "$HOME/.openrouter")
