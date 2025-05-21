@@ -53,6 +53,7 @@
   services.xserver.excludePackages = [pkgs.xterm];
 
   # Services
+  programs.mosh.enable = true;
   services.openssh.enable = true;
   services.printing.enable = true;
   services.udisks2.enable = true;
