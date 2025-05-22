@@ -17,6 +17,7 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nowify.url = "github:surprisetalk/nowify";
   };
 
   outputs = {...} @ inputs: let

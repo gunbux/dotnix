@@ -159,9 +159,11 @@
       thunderbird
       yazi
       youtube-music
+      yt-dlp
     ]
     ++ [
       inputs.zen-browser.packages.${pkgs.system}.default
+      inputs.nowify.packages.${pkgs.system}.nowify
     ];
 
   # Git Configs
@@ -240,7 +242,7 @@
       ];
     };
 
-    initExtra = ''
+    initContent = ''
       pokego --no-title -r 1-6
       # Set OPENROUTER_API_KEY from ~/.openrouter if it exists
       if [ -f "$HOME/.openrouter" ]; then
