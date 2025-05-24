@@ -152,6 +152,7 @@
       musescore
       neomutt
       obs-studio
+      prismlauncher
       qbittorrent
       spotify
       steam
