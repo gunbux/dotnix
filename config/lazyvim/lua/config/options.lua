@@ -25,7 +25,7 @@ vim.opt.mouse = 'a'
 -- integration works automatically. Requires Neovim >= 0.10.0
 vim.opt.clipboard = vim.env.SSH_TTY and "" or "unnamedplus" -- Sync with system clipboard
 vim.opt.history = 500
-vim.opt.autoread = true -- autoload if file is changed
+vim.opt.autoread = true                                     -- autoload if file is changed
 -- vim.opt.autochdir = true
 
 -- Set mapleader
