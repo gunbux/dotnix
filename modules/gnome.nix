@@ -6,8 +6,8 @@
 }: {
   # Enable GDM
   services.xserver.enable = true;
-  services.xserver.displayManager.gdm.enable = lib.mkForce true;
-  services.xserver.displayManager.gdm.wayland = true;
+  services.displayManager.gdm.enable = lib.mkForce true;
+  services.displayManager.gdm.wayland = true;
   # services.displayManager.autoLogin = {
   #   enable = true;
   #   user = "chun";
@@ -38,7 +38,7 @@
     gnome-tweaks
     gnomeExtensions.blur-my-shell
     gnomeExtensions.vitals
-    gnomeExtensions.supergfxctl-gex
+    gnomeExtensions.gpu-supergfxctl-switch
     gnomeExtensions.user-avatar-in-quick-settings
     gnomeExtensions.just-perfection
     gnomeExtensions.space-bar
@@ -56,7 +56,7 @@
     config.common.default = "*";
   };
 
-  services.xserver.desktopManager.gnome = {
+  services.desktopManager.gnome = {
     enable = true;
     extraGSettingsOverridePackages = [pkgs.mutter];
     extraGSettingsOverrides = ''

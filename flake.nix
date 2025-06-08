@@ -69,6 +69,7 @@
       modules = [
         ./modules/hyde.nix
         ./modules/gnome.nix
+        ./modules/cosmic.nix
         ./hosts/legion/default.nix
         {
           nixpkgs.overlays = [overlays.supergfxctl];

@@ -11,7 +11,14 @@ return {
 
     require("avante").setup({
       provider = "openrouter",
-      vendors = {
+      providers = {
+        copilot = {
+          model = "claude-3.7-sonnet",
+          extra_request_body = {
+            temperature = 0,
+            max_tokens = 8192,
+          }
+        },
         deepseek = {
           __inherited_from = "openai",
           endpoint = "https://openrouter.ai/api/v1",
@@ -41,11 +48,6 @@ return {
         auto_apply_diff_after_generation = false,
         support_paste_from_clipboard = true,
         minimize_diff = false,
-      },
-      copilot = {
-        model = "claude-3.7-sonnet",
-        temperature = 0,
-        max_tokens = 8192,
       },
     })
   end,
