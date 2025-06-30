@@ -38,6 +38,7 @@
     enable = true;
     wifi.powersave = true;
   };
+  networking.firewall.checkReversePath = "loose";
 
   # Kernel
   # boot.kernelPackages = pkgs.linuxPackages_cachyos;

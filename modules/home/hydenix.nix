@@ -45,8 +45,8 @@
     social = {
       enable = true; # enable social module
       discord.enable = true; # enable discord module
-      webcord.enable = true; # enable webcord module
-      vesktop.enable = true; # enable vesktop module
+      webcord.enable = false; # enable webcord module
+      vesktop.enable = false; # enable vesktop module
     };
     spotify.enable = true; # enable spotify module
     swww.enable = true; # enable swww wallpaper daemon

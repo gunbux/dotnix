@@ -80,6 +80,7 @@
       bun
       cargo
       clang
+      clang-tools
       # commitizen
       conda
       elfutils
@@ -97,7 +98,10 @@
       nix-output-monitor
       nmap
       nodejs
+      postman
       rsync
+      rust-analyzer
+      rustfmt
       starship
       termshark
       tmux
@@ -164,7 +168,7 @@
     ]
     ++ [
       inputs.zen-browser.packages.${pkgs.system}.default
-      inputs.nowify.packages.${pkgs.system}.nowify
+      inputs.quickshell.packages.${pkgs.system}.default
     ];
 
   # Git Configs
