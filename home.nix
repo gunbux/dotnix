@@ -145,12 +145,13 @@
       discord
       ghostty
       glow
-      jetbrains.clion
-      jetbrains.goland
-      jetbrains.idea-ultimate
-      jetbrains.pycharm-professional
-      jetbrains.rust-rover
-      jetbrains.webstorm
+      # NOTE: Build failure, remove comments when resolved
+      # jetbrains.clion
+      # jetbrains.goland
+      # jetbrains.idea-ultimate
+      # jetbrains.pycharm-professional
+      # jetbrains.rust-rover
+      # jetbrains.webstorm
       kitty
       mpv
       musescore
