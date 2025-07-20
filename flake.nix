@@ -112,26 +112,26 @@
       "legion-nix" = legionConfig;
     };
 
-    ## WARN: This is a configuration for just the home-manager, but is not tested.
-    homeConfigurations = {
-      "chun@non-nixos" = inputs.home-manager.lib.homeManagerConfiguration {
-        pkgs = import inputs.nixpkgs {
-          inherit system;
-        };
-        modules = [
-          ./home.nix
-          {
-            home = {
-              username = "chun";
-              homeDirectory = "/home/chun";
-              stateVersion = "23.05";
-            };
-          }
-        ];
-        extraSpecialArgs = with inputs; {
-          inherit nixpkgs;
-        };
-      };
-    };
+    #  WARN: This is a configuration for just the home-manager, but is not tested.
+    # homeConfigurations = {
+    #   "chun@non-nixos" = inputs.home-manager.lib.homeManagerConfiguration {
+    #     pkgs = import inputs.nixpkgs {
+    #       inherit system;
+    #     };
+    #     modules = [
+    #       ./home.nix
+    #       {
+    #         home = {
+    #           username = "chun";
+    #           homeDirectory = "/home/chun";
+    #           stateVersion = "23.05";
+    #         };
+    #       }
+    #     ];
+    #     extraSpecialArgs = with inputs; {
+    #       inherit nixpkgs;
+    #     };
+    #   };
+    # };
   };
 }
