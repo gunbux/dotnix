@@ -8,15 +8,18 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    zen-browser.url = "github:0xc000022070/zen-browser-flake";
-    hydenix = {
-      url = "github:richen604/hydenix";
-      inputs.hydenix-nixpkgs.follows = "nixpkgs";
-    };
+    ## allows nix-locate to find binaries and comma for one-time runs.
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    ## Sane hyprland defaults
+    hydenix = {
+      url = "github:richen604/hydenix";
+      inputs.hydenix-nixpkgs.follows = "nixpkgs";
+    };
+    ## Non-nixpkgs Applications
+    zen-browser.url = "github:0xc000022070/zen-browser-flake";
     quickshell = {
       url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -49,7 +52,7 @@
           home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.users.chun.imports = [
             inputs.hydenix.lib.homeModules
-            inputs.nix-index-database.hmModules.nix-index
+            inputs.nix-index-database.homeModules.nix-index
             ./home.nix
 
             ./modules/home/hydenix.nix
@@ -82,7 +85,7 @@
           home-manager.backupFileExtension = ".bak";
           home-manager.users.chun.imports = [
             inputs.hydenix.lib.homeModules
-            inputs.nix-index-database.hmModules.nix-index
+            inputs.nix-index-database.homeModules.nix-index
             ./home.nix
 
             ./modules/home/hydenix.nix

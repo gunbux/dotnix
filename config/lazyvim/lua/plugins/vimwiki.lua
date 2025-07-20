@@ -1,16 +1,15 @@
 return {
   'vimwiki/vimwiki',
-  event = VeryLazy,
   lazy = true,
   keys = {
-    { "<leader>ww", ":VimwikiIndex 1<CR>", desc = "Open main wiki" },
+    { "<leader>ww", ":VimwikiIndex 1<CR>", desc = "Open life wiki" },
     { "<leader>ee", ":VimwikiIndex 2<CR>", desc = "Open neuro wiki" },
   },
   ft = { "vimwiki", "markdown" },
   init = function()
     vim.g.vimwiki_list = {
       {
-        path = '~/vimwiki/',
+        path = '~/vimwiki/work-life',
         syntax = 'markdown',
         ext = '.md'
       },
