@@ -205,6 +205,12 @@
     force = true;
   };
 
+  # Mutt Configs
+  home.file.".config/mutt/" = {
+    source = ./config/mutt;
+    recursive = true;
+  };
+
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {

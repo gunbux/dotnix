@@ -1,6 +1,7 @@
 {
   description = "Chun's flake";
 
+  ## NOTE: As much as possible, all of the inputs should just follow nixpkgs so everything is a consistent build.
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
@@ -29,13 +30,15 @@
   outputs = {...} @ inputs: let
     system = "x86_64-linux";
 
+    ## Custom overlays for specific packages
     overlays = {
+      ## supergfxctl with a reverted version because of a regression in latest.
       supergfxctl = final: prev: {
         supergfxctl = prev.callPackage ./pkgs/supergfxctl/default.nix {};
       };
     };
 
-    # Hyde Configs
+    ## Configs for ASUS Zephyrus G14
     g14Config = inputs.hydenix.inputs.hydenix-nixpkgs.lib.nixosSystem {
       inherit (inputs.hydenix.lib) system;
       specialArgs = {
@@ -51,15 +54,16 @@
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.users.chun.imports = [
-            inputs.hydenix.lib.homeModules
             inputs.nix-index-database.homeModules.nix-index
             ./home.nix
 
-            ./modules/home/hydenix.nix
             # HyDE-specific modules
+            inputs.hydenix.lib.homeModules
+            ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
             ./modules/home/hyprland.nix
             ./modules/home/dunst.nix
+
             # GNOME specific settings
             ./modules/home/dconf.nix
           ];
@@ -67,6 +71,7 @@
       ];
     };
 
+    ## Configs for Lenovo Legion 5 (2021)
     legionConfig = inputs.hydenix.inputs.hydenix-nixpkgs.lib.nixosSystem {
       inherit (inputs.hydenix.lib) system;
       specialArgs = {
@@ -84,15 +89,16 @@
           home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.backupFileExtension = ".bak";
           home-manager.users.chun.imports = [
-            inputs.hydenix.lib.homeModules
             inputs.nix-index-database.homeModules.nix-index
             ./home.nix
 
-            ./modules/home/hydenix.nix
             # HyDE-specific modules
+            inputs.hydenix.lib.homeModules
+            ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
             ./modules/home/hyprland.nix
             ./modules/home/dunst.nix
+
             # GNOME specific settings
             ./modules/home/dconf.nix
           ];
@@ -100,12 +106,13 @@
       ];
     };
   in {
+    ## Build both nixos configurations
     nixosConfigurations = {
       "chun-lappy" = g14Config;
-
       "legion-nix" = legionConfig;
     };
 
+    ## WARN: This is a configuration for just the home-manager, but is not tested.
     homeConfigurations = {
       "chun@non-nixos" = inputs.home-manager.lib.homeManagerConfiguration {
         pkgs = import inputs.nixpkgs {
