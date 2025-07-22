@@ -112,14 +112,13 @@
       "legion-nix" = legionConfig;
     };
 
-    #  WARN: This is a configuration for just the home-manager, but is not tested.
     homeConfigurations = {
-      "chun@non-nixos" = inputs.home-manager.lib.homeManagerConfiguration {
+      "non-nixos" = inputs.home-manager.lib.homeManagerConfiguration {
         pkgs = import inputs.nixpkgs {
           inherit system;
+          config.allowUnfree = true;
         };
         modules = [
-          ./home.nix
           {
             home = {
               username = "chun";
@@ -127,9 +126,10 @@
               stateVersion = "23.05";
             };
           }
+          ./home.nix
         ];
-        extraSpecialArgs = with inputs; {
-          inherit nixpkgs;
+        extraSpecialArgs = {
+          inherit inputs;
         };
       };
     };
