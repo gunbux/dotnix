@@ -8,8 +8,10 @@
   ...
 }: {
   imports = [
-    ./modules/home/zed.nix
+    ./modules/home/git.nix
     ./modules/home/kitty.nix
+    ./modules/home/neovim.nix
+    ./modules/home/zed.nix
   ];
 
   # Let Home Manager install & manage itself
@@ -170,30 +172,6 @@
       inputs.zen-browser.packages.${pkgs.system}.default
       inputs.quickshell.packages.${pkgs.system}.default
     ];
-
-  # Git Configs
-  programs.git = {
-    enable = true;
-    aliases = {lola = "log --graph --decorate --pretty=oneline --abbrev-commit --all";};
-    delta.enable = true;
-    userName = "Chun Yu";
-    userEmail = "lamchunyu00@gmail.com";
-    # TODO: Add signing
-  };
-
-  ## Symlinks
-
-  # Neovim Configs
-  programs.neovim = {
-    enable = true;
-    defaultEditor = true;
-  };
-
-  # LazyVim Config
-  home.file.".config/nvim/" = {
-    source = ./config/lazyvim;
-    recursive = true;
-  };
 
   # LazyGit Config
   home.file.".config/lazygit/config.yml" = {
