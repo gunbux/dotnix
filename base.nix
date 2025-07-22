@@ -1,6 +1,6 @@
-# Nix OS Configs
-# TODO:
-# Add secure boot support with lanzaboote
+# Base nix configs
+# Common configurations across all machines go here.
+# TODO: Eventually having secure boot support.
 {
   config,
   pkgs,
@@ -58,12 +58,8 @@
   services.printing.enable = true;
   services.udisks2.enable = true;
 
-  # For NFC
-  # services.pcscd.enable = true;
-
   # VPN
   services.tailscale.enable = true;
-  #services.mullvad-vpn.enable = true;
 
   # GPG
   programs.gnupg.agent = {

@@ -1,3 +1,5 @@
+# home-manager configurations
+# Ideally, OS-agnostic configurations should go here.
 {
   config,
   pkgs,
@@ -6,9 +8,6 @@
   ...
 }: {
   imports = [
-    # GNOME specific settings
-    # ./modules/home/dconf.nix
-
     ./modules/home/zed.nix
     ./modules/home/kitty.nix
   ];
@@ -182,6 +181,8 @@
     # TODO: Add signing
   };
 
+  ## Symlinks
+
   # Neovim Configs
   programs.neovim = {
     enable = true;
@@ -189,19 +190,19 @@
   };
 
   # LazyVim Config
-  home.file."./.config/nvim/" = {
+  home.file.".config/nvim/" = {
     source = ./config/lazyvim;
     recursive = true;
   };
 
   # LazyGit Config
-  home.file."./.config/lazygit/config.yml" = {
+  home.file.".config/lazygit/config.yml" = {
     source = ./config/lazygit/config.yml;
   };
 
   # Ghostty Config
   home.file.".config/ghostty/config" = {
-    source = config/ghostty/config;
+    source = ./config/ghostty/config;
     force = true;
   };
 
@@ -211,6 +212,7 @@
     recursive = true;
   };
 
+  # Defaults for browser
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {
