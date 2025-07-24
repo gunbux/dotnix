@@ -59,6 +59,7 @@
 
             # HyDE-specific modules
             inputs.hydenix.lib.homeModules
+            ./modules/home/linux.nix
             ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
             ./modules/home/hyprland.nix
@@ -94,6 +95,7 @@
 
             # HyDE-specific modules
             inputs.hydenix.lib.homeModules
+            ./modules/home/linux.nix
             ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
             ./modules/home/hyprland.nix

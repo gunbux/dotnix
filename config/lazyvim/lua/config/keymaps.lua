@@ -12,8 +12,8 @@ vim.api.nvim_set_keymap('i', 'jj', '<Esc>', { noremap = true })
 vim.api.nvim_set_keymap('i', 'kk', '<Esc>', { noremap = true })
 
 -- Calling splits
-vim.api.nvim_set_keymap('n', '<leader>h', ':split ', { noremap = true })
-vim.api.nvim_set_keymap('n', '<leader>v', ':vsplit ', { noremap = true })
+-- vim.api.nvim_set_keymap('n', '<leader>h', ':split ', { noremap = true })
+-- vim.api.nvim_set_keymap('n', '<leader>v', ':vsplit ', { noremap = true })
 
 -- Quick save/quit options
 vim.api.nvim_set_keymap('n', '<leader>w', ':w!<CR>', { noremap = true })

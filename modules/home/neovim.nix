@@ -1,3 +1,4 @@
+# Lazy/Neovim Configs
 {...}: {
   # Neovim Configs
   programs.neovim = {
@@ -6,7 +7,7 @@
   };
 
   # LazyVim Config
-  home.file.".config/nvim/" = {
+  home.file.".config/nvim" = {
     source = ../../config/lazyvim;
     recursive = true;
   };
