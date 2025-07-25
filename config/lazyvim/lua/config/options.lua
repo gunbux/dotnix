@@ -30,6 +30,7 @@ vim.opt.autoread = true                                     -- autoload if file 
 
 -- Set mapleader
 vim.g.mapleader = ' '
+vim.g.maplocalleader = ','
 
 -- Fix splitting
 vim.opt.splitbelow = true

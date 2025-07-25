@@ -2,30 +2,46 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
     # Modern Unix
+    alejandra
     bat
+    bpftools
+    btop
     cheat
+    clang
+    clang-tools
+    commitizen
     delta
     docker
     dog
     du-dust
     duf
+    elfutils
     eza
     fd
     fzf
     gping
+    iperf
+    jq
     lsd
     mcfly
     ncdu
     nh
     nix-output-monitor
+    nmap
     presenterm
     ripgrep
+    rsync
+    starship
+    termshark
     tldr
+    tmux
     unrar
     unzip
+    wget
     xz
     zip
     zoxide
+    zstd
   ];
 
   # Mutt Configs

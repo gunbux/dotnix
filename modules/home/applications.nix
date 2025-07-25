@@ -31,6 +31,7 @@
       neomutt # Email Client
       obs-studio # Recording
       prismlauncher # Minecraft
+      postman # Postman
       qbittorrent # Torrent
       solaar # Mouse Utilities
       spotify # Music

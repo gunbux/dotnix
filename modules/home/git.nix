@@ -2,6 +2,7 @@
 # TODO: Add signing
 {pkgs, ...}: {
   home.packages = with pkgs; [
+    gh
     git
     git-filter-repo
     lazygit
