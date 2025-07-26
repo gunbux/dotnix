@@ -1,5 +1,9 @@
 # WSL-specific nix configs
 {pkgs, ...}: {
+  imports = [
+    ./syncthing.nix
+  ];
+
   networking.hostName = "wsl";
   system.stateVersion = "24.11";
   wsl.enable = true;

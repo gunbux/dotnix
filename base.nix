@@ -13,6 +13,7 @@
     # Fonts
     ./modules/fonts.nix
     ./modules/nix.nix
+    ./modules/syncthing.nix
   ];
 
   # Audio Settings
@@ -70,13 +71,6 @@
 
   security.sudo.enable = true;
   security.sudo.wheelNeedsPassword = false;
-
-  services.syncthing = {
-    enable = true;
-    user = "chun";
-    dataDir = "/home/chun/Documents";
-    configDir = "/home/chun/.config/syncthing";
-  };
 
   # For better shebang
   services.envfs.enable = true;
