@@ -9,6 +9,8 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # WSL Support
+    nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
     ## allows nix-locate to find binaries and comma for one-time runs.
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
@@ -36,6 +38,9 @@
       supergfxctl = final: prev: {
         supergfxctl = prev.callPackage ./pkgs/supergfxctl/default.nix {};
       };
+      pokego = final: prev: {
+        pokego = prev.callPackage ./pkgs/pokego/default.nix {};
+      };
     };
 
     ## Configs for ASUS Zephyrus G14
@@ -60,6 +65,7 @@
             # HyDE-specific modules
             inputs.hydenix.lib.homeModules
             ./modules/home/linux.nix
+            ./modules/home/applications.nix
             ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
             ./modules/home/hyprland.nix
@@ -96,6 +102,7 @@
             # HyDE-specific modules
             inputs.hydenix.lib.homeModules
             ./modules/home/linux.nix
+            ./modules/home/applications.nix
             ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
             ./modules/home/hyprland.nix
@@ -107,11 +114,36 @@
         }
       ];
     };
+
+    ## WSL Configs
+    wsl = inputs.nixpkgs.lib.nixosSystem {
+      inherit system;
+      pkgs = import inputs.nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+      };
+      modules = [
+        inputs.nixos-wsl.nixosModules.default
+        inputs.home-manager.nixosModules.home-manager
+        ./modules/nix.nix
+        ./modules/wsl.nix
+        {
+          nixpkgs.overlays = [overlays.pokego];
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.extraSpecialArgs = {inherit inputs;};
+          home-manager.users.chun.imports = [
+            ./home.nix
+          ];
+        }
+      ];
+    };
   in {
-    ## Build both nixos configurations
+    ## Build all these nixos configs.
     nixosConfigurations = {
       "chun-lappy" = g14Config;
       "legion-nix" = legionConfig;
+      "wsl" = wsl;
     };
 
     homeConfigurations = {
