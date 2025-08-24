@@ -7,15 +7,6 @@
 }: {
   home.packages = with pkgs;
     [
-      # NOTE: Build failure, remove comments when resolved
-      # jetbrains.clion
-      # jetbrains.goland
-      # jetbrains.idea-ultimate
-      # jetbrains.pycharm-professional
-      # jetbrains.rust-rover
-      # jetbrains.webstorm
-      # terminal-typeracer
-      # zed-editor
       apostrophe # Markdown Editor
       bitwarden # Password Manager
       blender # Blender
@@ -25,13 +16,19 @@
       evince # PDF
       ghostty # Terminal
       glow # Markdown Viewer
+      jetbrains.clion # Jetbrains
+      jetbrains.goland # Jetbrains
+      jetbrains.idea-ultimate # Jetbrains
+      jetbrains.pycharm-professional # Jetbrains
+      jetbrains.rust-rover # Jetbrains
+      jetbrains.webstorm # Jetbrains
       kitty # Terminal
       mpv # Video Player
       musescore # Musescore
       neomutt # Email Client
       obs-studio # Recording
-      prismlauncher # Minecraft
       postman # Postman
+      prismlauncher # Minecraft
       qbittorrent # Torrent
       solaar # Mouse Utilities
       spotify # Music
@@ -39,10 +36,12 @@
       tailscale # VPN/Wireguard
       telegram-desktop # Telegram
       thunderbird # Email Client
+      veloren # Veloren
       vivaldi # Browser
       yazi # File Manager
       youtube-music # Music
       yt-dlp # Downloader
+      zed-editor # Zed
     ]
     ++ [
       inputs.zen-browser.packages.${pkgs.system}.default
