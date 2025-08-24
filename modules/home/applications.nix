@@ -16,6 +16,7 @@
       evince # PDF
       ghostty # Terminal
       glow # Markdown Viewer
+      godot # Godot Game Engine
       jetbrains.clion # Jetbrains
       jetbrains.goland # Jetbrains
       jetbrains.idea-ultimate # Jetbrains
@@ -36,7 +37,6 @@
       tailscale # VPN/Wireguard
       telegram-desktop # Telegram
       thunderbird # Email Client
-      veloren # Veloren
       vivaldi # Browser
       yazi # File Manager
       youtube-music # Music
