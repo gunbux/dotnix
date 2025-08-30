@@ -14,6 +14,7 @@
       davinci-resolve # Video Editor
       discord # Discord
       evince # PDF
+      gdtoolkit_4 # Godot Toolkit
       ghostty # Terminal
       glow # Markdown Viewer
       godot # Godot Game Engine

@@ -15,7 +15,7 @@
     pipewire
     libqalculate
     rcon
-    tectonic
+    # tectonic
     wireplumber
     wl-clipboard
     xdg-desktop-portal
