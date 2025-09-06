@@ -6,7 +6,7 @@
 --
 -- Or remove existing autocmds by their group name (which is prefixed with `lazyvim_` for the defaults)
 -- e.g. vim.api.nvim_del_augroup_by_name("lazyvim_wrap_spell")
-vim.api.nvim_create_autocmd({'FocusGained', 'BufEnter'}, { command = 'checktime' })
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter' }, { command = 'checktime' })
 
 -- Remember last edit position
 vim.api.nvim_create_autocmd('BufReadPost', {
@@ -23,3 +23,14 @@ vim.api.nvim_create_autocmd('BufWritePre', { command = '%s/\\s\\+$//e' })
 -- Center document when entering insert mode
 vim.api.nvim_create_autocmd('InsertEnter', { command = 'norm zz' })
 
+-- proper tab settings for gdscript
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = { "gdscript" },
+    callback = function()
+        vim.bo.sw = 4
+        vim.bo.sts = 4
+        vim.bo.ts = 4
+        vim.bo.expandtab = false
+        vim.bo.softtabstop = 4
+    end,
+})
