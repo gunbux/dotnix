@@ -10,9 +10,8 @@
   ...
 }: {
   imports = [
-    # Fonts
-    ./modules/fonts.nix
     ./modules/nix.nix
+    ./modules/fonts.nix
     ./modules/syncthing.nix
   ];
 

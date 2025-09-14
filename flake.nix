@@ -50,9 +50,9 @@
         inherit inputs;
       };
       modules = [
+        ./hosts/g14/default.nix
         ./modules/hyde.nix
         ./modules/cosmic.nix
-        ./hosts/g14/default.nix
         {
           nixpkgs.overlays = [overlays.supergfxctl];
           home-manager.useGlobalPkgs = true;
@@ -85,9 +85,9 @@
         inherit inputs;
       };
       modules = [
+        ./hosts/legion/default.nix
         ./modules/hyde.nix
         ./modules/cosmic.nix
-        ./hosts/legion/default.nix
         {
           nixpkgs.overlays = [overlays.supergfxctl];
           home-manager.useGlobalPkgs = true;
