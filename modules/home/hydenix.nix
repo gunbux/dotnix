@@ -65,6 +65,6 @@
     };
     waybar.enable = true; # enable waybar module
     wlogout.enable = true; # enable wlogout module
-    xdg.enable = true; # enable xdg module
+    xdg.enable = false; # enable xdg module
   };
 }
