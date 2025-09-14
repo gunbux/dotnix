@@ -66,6 +66,7 @@
             inputs.hydenix.lib.homeModules
             ./modules/home/linux.nix
             ./modules/home/applications.nix
+            ./modules/home/mpv.nix
             ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
             ./modules/home/hyprland.nix
@@ -102,6 +103,7 @@
             inputs.hydenix.lib.homeModules
             ./modules/home/linux.nix
             ./modules/home/applications.nix
+            ./modules/home/mpv.nix
             ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
             ./modules/home/hyprland.nix
