@@ -1,11 +1,10 @@
 # DevTools
 {pkgs, ...}: {
   home.packages = with pkgs; [
-    # AI
-    # aider-chat-full
     # gcc
     # libnfc
     # python312
+    aider-chat-full
     bun
     cargo
     conda
