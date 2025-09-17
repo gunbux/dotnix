@@ -19,7 +19,7 @@
     };
 
     comma.enable = true;
-    dolphin.enable = true;
+    dolphin.enable = false;
     fastfetch.enable = true; # fastfetch configuration
     firefox = {
       enable = true; # enable firefox module
@@ -34,7 +34,7 @@
     notifications.enable = false;
     qt.enable = true; # enable qt module
     gtk.enable = true;
-    rofi.enable = true; # enable rofi module
+    rofi.enable = false; # enable rofi module
     screenshots = {
       enable = true; # enable screenshots module
       grim.enable = true; # enable grim screenshot tool
