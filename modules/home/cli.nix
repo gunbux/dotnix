@@ -86,6 +86,8 @@
       if [[ $TERM != "dumb" ]]; then
         eval "$(/etc/profiles/per-user/chun/bin/starship init zsh)"
       fi
+
+      if [ "$TMUX" = "" ]; then tmux; fi
     '';
 
     shellAliases = {
