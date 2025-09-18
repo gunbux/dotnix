@@ -15,6 +15,7 @@
     pipewire
     libqalculate
     rcon
+    scx.full
     tectonic
     wireplumber
     wl-clipboard
