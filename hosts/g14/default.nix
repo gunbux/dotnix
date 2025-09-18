@@ -17,6 +17,7 @@
 
   imports = [
     ../../base.nix
+    ../../nixos_modules/scx_loader
     ./hardware-configuration.nix
     inputs.nixos-hardware.nixosModules.asus-zephyrus-ga402
     inputs.home-manager.nixosModules.home-manager
@@ -33,7 +34,7 @@
   };
 
   # scx
-  #services.scx.enable = true;
+  gunbux.services.scx_loader.enable = true;
 
   # Swap
   swapDevices = [
