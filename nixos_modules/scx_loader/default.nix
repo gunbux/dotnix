@@ -25,20 +25,69 @@ in {
       '';
     };
 
-    extraArgs = lib.mkOption {
-      type = lib.types.listOf lib.types.singleLineStr;
-      default = [];
-      example = [
-        "--slice-us 5000"
-        "--verbose"
-      ];
+    default_sched = lib.mkOption {
+      type =
+        lib.types.enum
+        [
+          "bpfland"
+          "cosmos"
+          "flash"
+          "lavd"
+          "p2dq"
+          "tickless"
+          "rustland"
+          "rusty"
+        ];
+      default = "flash";
+      example = "lavd";
       description = ''
-        Parameters passed to the chosen scheduler at runtime.
+        Which scheduler to use. See [SCX documentation](https://github.com/sched-ext/scx/tree/main/scheds)
+        for details on each scheduler and guidance on selecting the most suitable one.
+      '';
+    };
 
-        ::: {.note}
-        Run `chosen-scx-scheduler --help` to see the available options. Generally,
-        each scheduler has its own set of options, and they are incompatible with each other.
-        :::
+    default_mode = lib.mkOption {
+      type =
+        lib.types.enum
+        [
+          "Auto"
+          "Gaming"
+          "LowLatency"
+          "PowerSave"
+          "Server"
+        ];
+      default = "Auto";
+      example = "Gaming";
+      description = ''
+        Which mode to use. See [scx_loader documentation](https://github.com/sched-ext/scx/blob/main/tools/scx_loader/configuration.md)
+        for details on how to the different modes.
+      '';
+    };
+
+    sceduler_config = lib.mkOption {
+      type = lib.type.lines;
+      default = "";
+      example = ''
+        [scheds.scx_rustland]
+        auto_mode = []
+        gaming_mode = []
+        lowlatency_mode = []
+        powersave_mode = []
+        server_mode = []
+
+        [scheds.scx_lavd]
+        auto_mode = []
+        gaming_mode = ["--performance"]
+        lowlatency_mode = ["--performance"]
+        powersave_mode = ["--powersave"]
+        server_mode = []
+
+        [scheds.scx_flash]
+        auto_mode = []
+        gaming_mode = ["-m", "all"]
+        lowlatency_mode = ["-m", "performance", "-w", "-C", "0"]
+        powersave_mode = ["-m", "powersave", "-I", "10000", "-t", "10000", "-s", "10000", "-S", "1000"]
+        server_mode = ["-m", "all", "-s", "20000", "-S", "1000", "-I", "-1", "-D", "-L"]
       '';
     };
   };
@@ -54,12 +103,9 @@ in {
         Type = "dbus";
         BusName = "org.scx.Loader";
         Environment = "RUST_LOG=trace";
-        ExecStart = utils.escapeSystemdExecArgs (
-          [
-            (lib.getExe' cfg.package "scx_loader")
-          ]
-          ++ cfg.extraArgs
-        );
+        ExecStart = utils.escapeSystemdExecArgs [
+          (lib.getExe' cfg.package "scx_loader")
+        ];
         KillSignal = "SIGINT";
       };
 
@@ -76,12 +122,9 @@ in {
           text = ''
             [D-BUS Service]
             Name=org.scx.Loader
-            Exec=${utils.escapeSystemdExecArgs (
-              [
-                (lib.getExe' cfg.package "scx_loader")
-              ]
-              ++ cfg.extraArgs
-            )}
+            Exec=${utils.escapeSystemdExecArgs [
+              (lib.getExe' cfg.package "scx_loader")
+            ]}
             User=root
             SystemdService=scx_loader.service
           '';
@@ -94,7 +137,6 @@ in {
              "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
              "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
             <busconfig>
-            <!-- why do we allow receive_sender here?? -->
                 <policy user="root">
                     <allow own="org.scx.Loader"/>
                     <allow send_destination="org.scx.Loader"/>

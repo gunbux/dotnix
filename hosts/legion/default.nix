@@ -10,6 +10,7 @@
 }: {
   imports = [
     ../../base.nix
+    ../../nixos_modules/scx_loader
     ./hardware-configuration.nix
     inputs.nixos-hardware.nixosModules.lenovo-legion-15arh05h
     inputs.home-manager.nixosModules.home-manager
@@ -31,6 +32,9 @@
       size = 16 * 1024;
     }
   ];
+
+  # scx
+  gunbux.services.scx_loader.enable = true;
 
   # Networking
   networking.hostName = "legion-nix";
