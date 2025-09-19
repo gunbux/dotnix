@@ -29,17 +29,17 @@ in {
       type =
         lib.types.enum
         [
-          "bpfland"
-          "cosmos"
-          "flash"
-          "lavd"
-          "p2dq"
-          "tickless"
-          "rustland"
-          "rusty"
+          "scx_bpfland"
+          "scx_cosmos"
+          "scx_flash"
+          "scx_lavd"
+          "scx_p2dq"
+          "scx_tickless"
+          "scx_rustland"
+          "scx_rusty"
         ];
-      default = "flash";
-      example = "lavd";
+      default = "scx_flash";
+      example = "scx_lavd";
       description = ''
         Which scheduler to use. See [SCX documentation](https://github.com/sched-ext/scx/tree/main/scheds)
         for details on each scheduler and guidance on selecting the most suitable one.
@@ -64,8 +64,8 @@ in {
       '';
     };
 
-    sceduler_config = lib.mkOption {
-      type = lib.type.lines;
+    scheduler_config = lib.mkOption {
+      type = lib.types.lines;
       default = "";
       example = ''
         [scheds.scx_rustland]
@@ -89,10 +89,22 @@ in {
         powersave_mode = ["-m", "powersave", "-I", "10000", "-t", "10000", "-s", "10000", "-S", "1000"]
         server_mode = ["-m", "all", "-s", "20000", "-S", "1000", "-I", "-1", "-D", "-L"]
       '';
+      description = ''
+        Scheduler configuration in TOML format. This will be added to the generated config file
+        after the default_sched and default_mode settings.
+      '';
     };
   };
 
   config = lib.mkIf cfg.enable {
+    # Generate the scx_loader configuration file
+    environment.etc."scx_loader/config.toml".text = ''
+      default_sched = "${cfg.default_sched}"
+      default_mode = "${cfg.default_mode}"
+
+      ${cfg.scheduler_config}
+    '';
+
     systemd.services.scx_loader = {
       description = "DBUS on-demand loader of sched_ext schedulers";
 

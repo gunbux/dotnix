@@ -34,7 +34,10 @@
   ];
 
   # scx
-  gunbux.services.scx_loader.enable = true;
+  gunbux.services.scx_loader = {
+    enable = true;
+    default_sched = "scx_rusty";
+  };
 
   # Networking
   networking.hostName = "legion-nix";
