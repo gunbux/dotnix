@@ -5,9 +5,9 @@
   utils,
   ...
 }: let
-  cfg = config.gunbux.services.scx_loader;
+  cfg = config.services.scx_loader;
 in {
-  options.gunbux.services.scx_loader = {
+  options.services.scx_loader = {
     enable = lib.mkEnableOption "Enable scx_loader";
 
     package = lib.mkOption {
@@ -20,24 +20,22 @@ in {
         You may choose a minimal package, such as `pkgs.scx.rustscheds`.
 
         ::: {.note}
-        Overriding this does not change the default scheduler; you should set `services.scx.scheduler` for it.
+        Overriding this does not change the default scheduler; you should set `services.scx_loader.default_sched` for it.
         :::
       '';
     };
 
     default_sched = lib.mkOption {
-      type =
-        lib.types.enum
-        [
-          "scx_bpfland"
-          "scx_cosmos"
-          "scx_flash"
-          "scx_lavd"
-          "scx_p2dq"
-          "scx_tickless"
-          "scx_rustland"
-          "scx_rusty"
-        ];
+      type = lib.types.enum [
+        "scx_bpfland"
+        "scx_cosmos"
+        "scx_flash"
+        "scx_lavd"
+        "scx_p2dq"
+        "scx_tickless"
+        "scx_rustland"
+        "scx_rusty"
+      ];
       default = "scx_flash";
       example = "scx_lavd";
       description = ''
@@ -47,15 +45,13 @@ in {
     };
 
     default_mode = lib.mkOption {
-      type =
-        lib.types.enum
-        [
-          "Auto"
-          "Gaming"
-          "LowLatency"
-          "PowerSave"
-          "Server"
-        ];
+      type = lib.types.enum [
+        "Auto"
+        "Gaming"
+        "LowLatency"
+        "PowerSave"
+        "Server"
+      ];
       default = "Auto";
       example = "Gaming";
       description = ''
@@ -97,7 +93,6 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    # Generate the scx_loader configuration file
     environment.etc."scx_loader/config.toml".text = ''
       default_sched = "${cfg.default_sched}"
       default_mode = "${cfg.default_mode}"
@@ -134,9 +129,11 @@ in {
           text = ''
             [D-BUS Service]
             Name=org.scx.Loader
-            Exec=${utils.escapeSystemdExecArgs [
-              (lib.getExe' cfg.package "scx_loader")
-            ]}
+            Exec=${
+              utils.escapeSystemdExecArgs [
+                (lib.getExe' cfg.package "scx_loader")
+              ]
+            }
             User=root
             SystemdService=scx_loader.service
           '';
@@ -163,5 +160,19 @@ in {
         })
       ];
     };
+    assertions = [
+      {
+        assertion = lib.versionAtLeast config.boot.kernelPackages.kernel.version "6.12";
+        message = "SCX is only supported on kernel version >= 6.12.";
+      }
+      {
+        assertion = !(cfg.enable && config.services.scx.enable);
+        message = "services.scx_loader and services.scx cannot be enabled simultaneously. Please enable only one.";
+      }
+    ];
+  };
+
+  meta = {
+    inherit (pkgs.scx.full.meta) maintainers;
   };
 }

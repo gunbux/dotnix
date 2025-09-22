@@ -10,7 +10,7 @@
 }: {
   imports = [
     ../../base.nix
-    ../../nixos_modules/scx_loader
+    ../../nixos_modules/scx-loader
     ./hardware-configuration.nix
     inputs.nixos-hardware.nixosModules.lenovo-legion-15arh05h
     inputs.home-manager.nixosModules.home-manager
@@ -34,9 +34,17 @@
   ];
 
   # scx
-  gunbux.services.scx_loader = {
+  services.scx-loader = {
     enable = true;
-    default_sched = "scx_rusty";
+    default_sched = "scx_lavd";
+    scheduler_config = ''
+      [scheds.scx_lavd]
+      auto_mode = []
+      gaming_mode = ["--performance"]
+      lowlatency_mode = ["--performance"]
+      powersave_mode = ["--powersave"]
+      server_mode = []
+    '';
   };
 
   # Networking
