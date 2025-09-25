@@ -89,6 +89,7 @@
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
 
+  # NOTE: VirtualBox tends to cause recompilations of the kernel, enable only where neccessary.
   # Virtualization
   # virtualisation.virtualbox.host.enable = true;
   # users.extraGroups.vboxusers.members = ["chun"];

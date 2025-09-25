@@ -153,9 +153,8 @@
     };
   };
 
+  # NOTE: VirtualBox tends to cause recompilations of the kernel, enable only where neccessary.
   # Virtualization
-  virtualisation.virtualbox.host.enable = true;
-  # virtualisation.virtualbox.guest.enable = true;
-  # virtualisation.virtualbox.guest.x11 = true;
-  users.extraGroups.vboxusers.members = ["chun"];
+  # virtualisation.virtualbox.host.enable = true;
+  # users.extraGroups.vboxusers.members = ["chun"];
 }
