@@ -34,18 +34,18 @@
   ];
 
   # scx
-  services.scx-loader = {
-    enable = true;
-    default_sched = "scx_lavd";
-    scheduler_config = ''
-      [scheds.scx_lavd]
-      auto_mode = []
-      gaming_mode = ["--performance"]
-      lowlatency_mode = ["--performance"]
-      powersave_mode = ["--powersave"]
-      server_mode = []
-    '';
-  };
+  # services.scx_loader = {
+  #   enable = true;
+  #   default_sched = "scx_lavd";
+  #   scheduler_config = ''
+  #     [scheds.scx_lavd]
+  #     auto_mode = []
+  #     gaming_mode = ["--performance"]
+  #     lowlatency_mode = ["--performance"]
+  #     powersave_mode = ["--powersave"]
+  #     server_mode = []
+  #   '';
+  # };
 
   # Networking
   networking.hostName = "legion-nix";
@@ -56,7 +56,7 @@
 
   # Kernel
   # NOTE: A lot of the kernel configs that I used to care about are now all in nixos-hardware (amd-pstate, amdgpu initrd).
-  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_cachyos;
 
   # NTFS Support
   boot.supportedFilesystems = ["ntfs"];
@@ -90,6 +90,6 @@
   hardware.bluetooth.powerOnBoot = true;
 
   # Virtualization
-  virtualisation.virtualbox.host.enable = true;
-  users.extraGroups.vboxusers.members = ["chun"];
+  # virtualisation.virtualbox.host.enable = true;
+  # users.extraGroups.vboxusers.members = ["chun"];
 }

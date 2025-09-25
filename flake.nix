@@ -4,6 +4,7 @@
   ## NOTE: As much as possible, all of the inputs should just follow nixpkgs so everything is a consistent build.
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -23,10 +24,6 @@
     };
     ## Non-nixpkgs Applications
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
-    quickshell = {
-      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs = {...} @ inputs: let
@@ -50,6 +47,7 @@
         inherit inputs;
       };
       modules = [
+        inputs.chaotic.nixosModules.default
         ./hosts/g14/default.nix
         ./modules/hyde.nix
         ./modules/cosmic.nix
@@ -87,6 +85,7 @@
         inherit inputs;
       };
       modules = [
+        inputs.chaotic.nixosModules.default
         ./hosts/legion/default.nix
         ./modules/hyde.nix
         ./modules/cosmic.nix

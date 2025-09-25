@@ -25,6 +25,7 @@
       jetbrains.rust-rover # Jetbrains
       jetbrains.webstorm # Jetbrains
       kitty # Terminal
+      localsend # Global Airdrop
       loupe # GTK Image Viewer
       musescore # Musescore
       neomutt # Email Client
@@ -46,7 +47,7 @@
     ]
     ++ [
       inputs.zen-browser.packages.${pkgs.system}.default
-      inputs.quickshell.packages.${pkgs.system}.default
+      ## inputs.quickshell.packages.${pkgs.system}.default
     ];
 
   # Ghostty Config
