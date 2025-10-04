@@ -8,6 +8,7 @@
   home.packages = with pkgs;
     [
       apostrophe # Markdown Editor
+      audacity # Audio Editor
       bitwarden # Password Manager
       blender # Blender
       code-cursor # Cursor
@@ -27,6 +28,7 @@
       kitty # Terminal
       localsend # Global Airdrop
       loupe # GTK Image Viewer
+      miraclecast # Open Source Miracast
       musescore # Musescore
       neomutt # Email Client
       obs-studio # Recording
