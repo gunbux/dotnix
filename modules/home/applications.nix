@@ -18,6 +18,7 @@
       gdtoolkit_4 # Godot Toolkit
       ghostty # Terminal
       glow # Markdown Viewer
+      gnome-network-displays # Gnome Miracast
       godot # Godot Game Engine
       jetbrains.clion # Jetbrains
       jetbrains.goland # Jetbrains
@@ -28,7 +29,6 @@
       kitty # Terminal
       localsend # Global Airdrop
       loupe # GTK Image Viewer
-      miraclecast # Open Source Miracast
       musescore # Musescore
       neomutt # Email Client
       obs-studio # Recording
