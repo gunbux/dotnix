@@ -10,7 +10,6 @@
 }: {
   imports = [
     ../../base.nix
-    ../../nixos_modules/scx-loader
     ./hardware-configuration.nix
     inputs.nixos-hardware.nixosModules.lenovo-legion-15arh05h
     inputs.home-manager.nixosModules.home-manager
