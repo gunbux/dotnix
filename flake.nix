@@ -98,12 +98,12 @@
           home-manager.users.chun.imports = [
             inputs.nix-index-database.homeModules.nix-index
             ./home.nix
-
-            # HyDE-specific modules
             inputs.hydenix.lib.homeModules
             ./modules/home/linux.nix
             ./modules/home/applications.nix
             ./modules/home/mpv.nix
+
+            # HyDE-specific modules
             ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
             ./modules/home/hyprland.nix
