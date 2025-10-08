@@ -70,6 +70,12 @@
     powerManagement.enable = true;
   };
 
+  # Logitech
+  hardware.logitech.wireless = {
+    enable = true;
+    enableGraphical = true;
+  };
+
   # Power Mangement
   # We remove power-profiles-daemon because it clashes with powerManagement, I think.
   powerManagement = {
