@@ -47,11 +47,23 @@
   # Keyboard Settings
   services.libinput.enable = true;
   services.xserver.enable = true;
-  services.xserver.xkb = {
-    layout = "us";
-    options = "terminate:ctrl_alt_bksp,caps:swapescape";
-  };
+  services.xserver.xkb.layout = "us";
   services.xserver.excludePackages = [pkgs.xterm];
+
+  services.keyd = {
+    enable = true;
+    keyboards = {
+      default = {
+        ids = ["*"];
+        settings = {
+          main = {
+            capslock = "escape";
+            escape = "capslock";
+          };
+        };
+      };
+    };
+  };
 
   # Services
   programs.mosh.enable = true;
