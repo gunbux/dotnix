@@ -4,7 +4,7 @@
     # gcc
     # libnfc
     # python312
-    aider-chat-full
+    # aider-chat-full
     bun
     cargo
     conda
