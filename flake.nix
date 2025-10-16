@@ -20,7 +20,7 @@
     ## Sane hyprland defaults
     hydenix = {
       url = "github:richen604/hydenix";
-      inputs.hydenix-nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     ## Non-nixpkgs Applications
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
@@ -41,13 +41,14 @@
     };
 
     ## Configs for ASUS Zephyrus G14
-    g14Config = inputs.hydenix.inputs.hydenix-nixpkgs.lib.nixosSystem {
-      inherit (inputs.hydenix.lib) system;
+    g14Config = inputs.nixpkgs.lib.nixosSystem {
+      inherit system;
       specialArgs = {
         inherit inputs;
       };
       modules = [
         inputs.chaotic.nixosModules.default
+        inputs.hydenix.nixosModules.default
         ./hosts/g14/default.nix
         ./modules/hyde.nix
         ./modules/cosmic.nix
@@ -62,7 +63,7 @@
             ./home.nix
 
             # HyDE-specific modules
-            inputs.hydenix.lib.homeModules
+            inputs.hydenix.homeModules.default
             ./modules/home/linux.nix
             ./modules/home/applications.nix
             ./modules/home/mpv.nix
@@ -79,26 +80,29 @@
     };
 
     ## Configs for Lenovo Legion 5 (2021)
-    legionConfig = inputs.hydenix.inputs.hydenix-nixpkgs.lib.nixosSystem {
-      inherit (inputs.hydenix.lib) system;
+    legionConfig = inputs.nixpkgs.lib.nixosSystem {
+      inherit system;
       specialArgs = {
         inherit inputs;
       };
       modules = [
         inputs.chaotic.nixosModules.default
+        inputs.hydenix.nixosModules.default
         ./hosts/legion/default.nix
         ./modules/hyde.nix
         ./modules/cosmic.nix
         {
-          nixpkgs.overlays = [overlays.supergfxctl];
+          nixpkgs.overlays = [
+            overlays.supergfxctl
+            inputs.hydenix.overlays.default
+          ];
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.backupFileExtension = ".bak";
           home-manager.users.chun.imports = [
-            inputs.nix-index-database.homeModules.nix-index
+            inputs.hydenix.homeModules.default
             ./home.nix
-            inputs.hydenix.lib.homeModules
             ./modules/home/linux.nix
             ./modules/home/applications.nix
             ./modules/home/mpv.nix

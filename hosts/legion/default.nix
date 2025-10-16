@@ -13,7 +13,6 @@
     ./hardware-configuration.nix
     inputs.nixos-hardware.nixosModules.lenovo-legion-15arh05h
     inputs.home-manager.nixosModules.home-manager
-    inputs.hydenix.lib.nixOsModules
   ];
 
   hydenix = {

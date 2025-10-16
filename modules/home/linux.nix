@@ -14,7 +14,6 @@
     pinentry-tty
     pipewire
     libqalculate
-    rcon
     scx.full
     tectonic
     wireplumber

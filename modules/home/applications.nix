@@ -7,12 +7,13 @@
 }: {
   home.packages = with pkgs;
     [
+      # davinci-resolve # Video Editor
       apostrophe # Markdown Editor
       audacity # Audio Editor
       bitwarden # Password Manager
       blender # Blender
       code-cursor # Cursor
-      davinci-resolve # Video Editor
+      crush # Crush
       discord # Discord
       evince # PDF
       gdtoolkit_4 # Godot Toolkit

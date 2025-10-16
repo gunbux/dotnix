@@ -1,9 +1,9 @@
 {inputs, ...}: {
-  nixpkgs.pkgs = import inputs.hydenix.inputs.hydenix-nixpkgs {
-    inherit (inputs.hydenix.lib) system;
+  nixpkgs.pkgs = import inputs.nixpkgs {
+    system = "x86_64-linux";
     config.allowUnfree = true;
     overlays = [
-      inputs.hydenix.lib.overlays
+      inputs.hydenix.overlays.default
     ];
 
     userPkgs = inputs.nixpkgs {
