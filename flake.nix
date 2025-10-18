@@ -12,11 +12,6 @@
     };
     # WSL Support
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
-    ## allows nix-locate to find binaries and comma for one-time runs.
-    nix-index-database = {
-      url = "github:nix-community/nix-index-database";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     ## Sane hyprland defaults
     hydenix = {
       url = "github:richen604/hydenix";
@@ -59,7 +54,6 @@
           home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.backupFileExtension = ".bak";
           home-manager.users.chun.imports = [
-            inputs.nix-index-database.homeModules.nix-index
             ./home.nix
 
             # HyDE-specific modules

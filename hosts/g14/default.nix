@@ -20,7 +20,6 @@
     ./hardware-configuration.nix
     inputs.nixos-hardware.nixosModules.asus-zephyrus-ga402
     inputs.home-manager.nixosModules.home-manager
-    inputs.hydenix.lib.nixOsModules
   ];
 
   # Enable hydenix

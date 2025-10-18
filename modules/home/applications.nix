@@ -21,12 +21,6 @@
       glow # Markdown Viewer
       gnome-network-displays # Gnome Miracast
       godot # Godot Game Engine
-      jetbrains.clion # Jetbrains
-      jetbrains.goland # Jetbrains
-      jetbrains.idea-ultimate # Jetbrains
-      jetbrains.pycharm-professional # Jetbrains
-      jetbrains.rust-rover # Jetbrains
-      jetbrains.webstorm # Jetbrains
       kitty # Terminal
       localsend # Global Airdrop
       loupe # GTK Image Viewer
