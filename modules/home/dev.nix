@@ -5,6 +5,7 @@
     # libnfc
     # python312
     # aider-chat-full
+    # marksman
     bun
     cargo
     conda
@@ -13,7 +14,6 @@
     gnumake
     lua-language-server
     logiops
-    marksman
     meson
     ninja
     nodejs

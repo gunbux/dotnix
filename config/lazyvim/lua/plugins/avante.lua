@@ -4,6 +4,7 @@ return {
   lazy = true,
   version = false,
   disable_tools = true,
+  enabled = false,
   config = function()
     -- Read API key from ~/.openrouter and remove any whitespace/newlines
     local api_key = vim.fn.trim(vim.fn.readfile(vim.fn.expand('~/.openrouter'))[1])
