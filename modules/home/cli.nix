@@ -9,7 +9,7 @@
     cheat
     clang
     clang-tools
-    # commitizen
+    commitizen
     delta
     docker
     dog
