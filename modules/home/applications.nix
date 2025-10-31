@@ -49,8 +49,9 @@
     ];
 
   # Ghostty Config
-  home.file.".config/ghostty/config" = {
-    source = ../../config/ghostty/config;
+  home.file.".config/ghostty" = {
+    source = ../../config/ghostty;
+    recursive = true;
     force = true;
   };
 

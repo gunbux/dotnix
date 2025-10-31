@@ -8,12 +8,17 @@
     lazygit
   ];
   # Git Configs
-  programs.git = {
+  programs.git.settings = {
     enable = true;
     aliases = {lola = "log --graph --decorate --pretty=oneline --abbrev-commit --all";};
-    delta.enable = true;
     userName = "Chun Yu";
     userEmail = "lamchunyu00@gmail.com";
+  };
+
+  # Delta
+  programs.delta = {
+    enable = true;
+    enableGitIntegration = true;
   };
 
   # LazyGit Config
