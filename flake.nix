@@ -19,6 +19,7 @@
     };
     ## Non-nixpkgs Applications
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
+    hyprlauncher.url = "github:hyprwm/hyprlauncher";
   };
 
   outputs = {...} @ inputs: let

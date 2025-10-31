@@ -34,7 +34,7 @@
     notifications.enable = false;
     qt.enable = true; # enable qt module
     gtk.enable = true;
-    rofi.enable = false; # enable rofi module
+    rofi.enable = true; # enable rofi module
     screenshots = {
       enable = true; # enable screenshots module
       grim.enable = true; # enable grim screenshot tool
