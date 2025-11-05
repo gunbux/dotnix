@@ -21,6 +21,7 @@
       glow # Markdown Viewer
       gnome-network-displays # Gnome Miracast
       godot # Godot Game Engine
+      gparted # Disk
       kitty # Terminal
       localsend # Global Airdrop
       loupe # GTK Image Viewer

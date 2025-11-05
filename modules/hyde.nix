@@ -10,4 +10,15 @@
       config.allowUnfree = true;
     };
   };
+
+  # Enable hydenix
+  hydenix = {
+    enable = true;
+    timezone = "Asia/Singapore";
+    locale = "en_US.UTF-8";
+    sddm.enable = false;
+    boot = {
+      enable = false; # enable boot module
+    };
+  };
 }

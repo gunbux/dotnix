@@ -16,11 +16,7 @@
   ];
 
   hydenix = {
-    enable = true;
     hostname = "legion-nix";
-    timezone = "Asia/Singapore";
-    locale = "en_US.UTF-8";
-    sddm.enable = false;
   };
 
   # Swap

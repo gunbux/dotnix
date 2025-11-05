@@ -20,6 +20,8 @@
     ## Non-nixpkgs Applications
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     hyprlauncher.url = "github:hyprwm/hyprlauncher";
+    minegrub-theme.url = "github:Lxtharia/minegrub-theme";
+    minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
   };
 
   outputs = {...} @ inputs: let
@@ -45,6 +47,7 @@
       modules = [
         inputs.chaotic.nixosModules.default
         inputs.hydenix.nixosModules.default
+        inputs.minegrub-theme.nixosModules.default
         ./hosts/g14/default.nix
         ./modules/hyde.nix
         ./modules/cosmic.nix
@@ -64,7 +67,6 @@
             ./modules/home/mpv.nix
             ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
-            ./modules/home/hyprland.nix
             ./modules/home/dunst.nix
 
             # GNOME specific settings
@@ -83,6 +85,7 @@
       modules = [
         inputs.chaotic.nixosModules.default
         inputs.hydenix.nixosModules.default
+        inputs.minegrub-theme.nixosModules.default
         ./hosts/legion/default.nix
         ./modules/hyde.nix
         ./modules/cosmic.nix
@@ -105,7 +108,6 @@
             # HyDE-specific modules
             ./modules/home/hydenix.nix
             ./modules/home/swaylock.nix
-            ./modules/home/hyprland.nix
             ./modules/home/dunst.nix
 
             # GNOME specific settings

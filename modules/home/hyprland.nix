@@ -4,6 +4,7 @@
   lib,
   ...
 }: {
+  ## NOTE: These are old and kept for archival purposes only
   # Additional hyprland configs
   home.file.".config/hypr/monitors.conf" = lib.mkForce {
     source = ../../config/hypr/monitors.conf;
@@ -13,12 +14,6 @@
 
   home.file.".config/hypr/userprefs.conf" = lib.mkForce {
     source = ../../config/hypr/userprefs.conf;
-    force = true;
-    mutable = true;
-  };
-
-  home.file.".config/hypr/keybindings.conf" = lib.mkForce {
-    source = ../../config/hypr/keybindings.conf;
     force = true;
     mutable = true;
   };

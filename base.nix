@@ -11,6 +11,7 @@
 }: {
   imports = [
     ./modules/nix.nix
+    ./modules/boot.nix
     ./modules/fonts.nix
     ./modules/syncthing.nix
   ];
@@ -25,9 +26,8 @@
     jack.enable = true;
   };
 
-  # Boot Loader Settings
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
+  # Hardware Clock Sync
+  time.hardwareClockInLocalTime = true;
 
   # Systemd Settings - Workaround to Gnome
   systemd.services."getty@tty1".enable = false;
