@@ -1,5 +1,8 @@
 {pkgs, ...}: {
   # Additional hyde speific config
+  imports = [
+    ./hyprland.nix
+  ];
 
   # hydenix home-manager options go here
   hydenix.hm = {
@@ -34,7 +37,6 @@
       shaders = {
         enable = true; # enable shader configurations
         active = "paper"; # string from override or default: "disable" # or "blue-light-filter", "color-vision", "custom", "grayscale", "invert-colors", "oled", "oled-saver", "paper", "vibrance", "wallbash"
-        overrides = {}; # override or add custom shaders
       };
       # Workflow configurations
       workflows = {
@@ -51,13 +53,6 @@
       # Keybindings configurations
       keybindings = {
         enable = true; # enable keybindings configurations
-        extraConfig = ''
-          $TERMINAL = kitty
-          $EDITOR = nvim
-          $EXPLORER = nautilus
-          $BROWSER = zen
-          bindd = $mainMod, Return, $d terminal emulator, exec, $TERMINAL
-        ''; # additional keybindings configuration
         overrideConfig = null; # complete keybindings configuration override (null or lib.types.lines)
       };
       # Window rules configurations
