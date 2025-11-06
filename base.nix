@@ -73,6 +73,7 @@
 
   # VPN
   services.tailscale.enable = true;
+  networking.firewall.checkReversePath = "loose"; # NOTE: This is for exit nodes to work properly
 
   # GPG
   programs.gnupg.agent = {
