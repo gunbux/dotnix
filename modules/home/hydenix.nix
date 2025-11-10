@@ -35,8 +35,7 @@
       };
       # Shader configurations
       shaders = {
-        enable = true; # enable shader configurations
-        active = "paper"; # string from override or default: "disable" # or "blue-light-filter", "color-vision", "custom", "grayscale", "invert-colors", "oled", "oled-saver", "paper", "vibrance", "wallbash"
+        enable = false; # enable shader configurations
       };
       # Workflow configurations
       workflows = {
@@ -125,8 +124,8 @@
     social = {
       enable = true; # enable social module
       discord.enable = true; # enable discord module
-      webcord.enable = true; # enable webcord module
-      vesktop.enable = false; # enable vesktop module
+      webcord.enable = false; # enable webcord module
+      vesktop.enable = true; # enable vesktop module
     };
     spotify.enable = true; # enable spotify module
     swww.enable = true; # enable swww wallpaper daemon
