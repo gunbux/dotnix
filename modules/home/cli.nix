@@ -13,7 +13,7 @@
     delta
     docker
     dog
-    du-dust
+    dust
     duf
     elfutils
     eza

@@ -10,7 +10,7 @@
       # davinci-resolve # Video Editor
       apostrophe # Markdown Editor
       audacity # Audio Editor
-      bitwarden # Password Manager
+      bitwarden-desktop # Password Manager
       blender # Blender
       code-cursor # Cursor
       crush # Crush
