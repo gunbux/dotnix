@@ -19,9 +19,12 @@
     };
     ## Non-nixpkgs Applications
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
-    hyprlauncher.url = "github:hyprwm/hyprlauncher";
     minegrub-theme.url = "github:Lxtharia/minegrub-theme";
     minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
+    quickshell = {
+      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {...} @ inputs: let

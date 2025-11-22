@@ -46,8 +46,6 @@
     ]
     ++ [
       inputs.zen-browser.packages.${pkgs.system}.default
-      inputs.hyprlauncher.packages.${pkgs.system}.default
-      ## inputs.quickshell.packages.${pkgs.system}.default
     ];
 
   # Ghostty Config
