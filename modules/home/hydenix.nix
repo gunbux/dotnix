@@ -124,7 +124,6 @@
     social = {
       enable = true; # enable social module
       discord.enable = true; # enable discord module
-      webcord.enable = false; # enable webcord module
       vesktop.enable = true; # enable vesktop module
     };
     spotify.enable = true; # enable spotify module

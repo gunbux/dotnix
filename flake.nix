@@ -15,7 +15,7 @@
     ## Sane hyprland defaults
     hydenix = {
       url = "github:richen604/hydenix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      # inputs.nixpkgs.follows = "nixpkgs";
     };
     ## Non-nixpkgs Applications
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
