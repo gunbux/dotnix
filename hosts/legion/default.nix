@@ -50,7 +50,7 @@
 
   # Kernel
   # NOTE: A lot of the kernel configs that I used to care about are now all in nixos-hardware (amd-pstate, amdgpu initrd).
-  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_cachyos;
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
 
   # NTFS Support
   boot.supportedFilesystems = ["ntfs"];
