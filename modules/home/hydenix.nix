@@ -22,7 +22,7 @@
             natural_scroll = true
             scroll_factor = 0.5
           }
-          sensitivity = -0.3
+          sensitivity = -0.6
         }
 
       '';
