@@ -32,12 +32,13 @@
 
     ## Custom overlays for specific packages
     overlays = {
-      ## supergfxctl with a reverted version because of a regression in latest.
-      supergfxctl = final: prev: {
+      custom-packages = final: prev: {
+        ## supergfxctl with a reverted version because of a regression in latest.
         supergfxctl = prev.callPackage ./pkgs/supergfxctl/default.nix {};
-      };
-      pokego = final: prev: {
+        ## So shell doesn't break outside of hyde
         pokego = prev.callPackage ./pkgs/pokego/default.nix {};
+        ## Fun cursor
+        banana-cursor-dreams = prev.callPackage ./pkgs/pokego/default.nix {};
       };
     };
 
@@ -55,7 +56,7 @@
         ./modules/hyde.nix
         ./modules/cosmic.nix
         {
-          nixpkgs.overlays = [overlays.supergfxctl];
+          nixpkgs.overlays = [overlays.custom-packages];
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
@@ -93,7 +94,7 @@
         ./modules/cosmic.nix
         {
           nixpkgs.overlays = [
-            overlays.supergfxctl
+            overlays.custom-packages
             inputs.hydenix.overlays.default
           ];
           home-manager.useGlobalPkgs = true;
@@ -131,7 +132,7 @@
         ./modules/nix.nix
         ./modules/wsl.nix
         {
-          nixpkgs.overlays = [overlays.pokego];
+          nixpkgs.overlays = [overlays.custom-packages];
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
