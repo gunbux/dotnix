@@ -55,6 +55,7 @@
         ./hosts/g14/default.nix
         ./modules/hyde.nix
         ./modules/cosmic.nix
+        ./modules/niri.nix
         {
           nixpkgs.overlays = [overlays.custom-packages];
           home-manager.useGlobalPkgs = true;
@@ -92,6 +93,7 @@
         ./hosts/legion/default.nix
         ./modules/hyde.nix
         ./modules/cosmic.nix
+        ./modules/niri.nix
         {
           nixpkgs.overlays = [
             overlays.custom-packages
