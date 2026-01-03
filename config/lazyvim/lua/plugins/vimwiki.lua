@@ -9,7 +9,7 @@ return {
   init = function()
     vim.g.vimwiki_list = {
       {
-        path = '~/vimwiki/work-life',
+        path = '~/vimwiki/work-life/2026',
         syntax = 'markdown',
         ext = '.md'
       },
