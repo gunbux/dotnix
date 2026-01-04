@@ -121,6 +121,42 @@
       ];
     };
 
+    ## Configs for Framework 12
+    fw12Config = inputs.nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = {
+        inherit inputs;
+      };
+      modules = [
+        inputs.chaotic.nixosModules.default
+        inputs.hydenix.nixosModules.default
+        inputs.minegrub-theme.nixosModules.default
+        ./hosts/fw12/default.nix
+        ./modules/hyde.nix
+        ./modules/cosmic.nix
+        {
+          nixpkgs.overlays = [overlays.custom-packages];
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.extraSpecialArgs = {inherit inputs;};
+          home-manager.users.chun.imports = [
+            ./home.nix
+
+            # HyDE-specific modules
+            inputs.hydenix.homeModules.default
+            ./modules/home/linux.nix
+            ./modules/home/applications.nix
+            ./modules/home/mpv.nix
+            ./modules/home/hydenix.nix
+            ./modules/home/dunst.nix
+
+            # GNOME specific settings
+            ./modules/home/dconf.nix
+          ];
+        }
+      ];
+    };
+
     ## WSL Configs
     wsl = inputs.nixpkgs.lib.nixosSystem {
       inherit system;
@@ -149,6 +185,7 @@
     nixosConfigurations = {
       "chun-lappy" = g14Config;
       "legion-nix" = legionConfig;
+      "fw12" = fw12Config;
       "wsl" = wsl;
     };
 
