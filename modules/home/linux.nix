@@ -7,7 +7,6 @@
   home.packages = with pkgs;
     [
       # Linux-related System Utils
-      amdgpu_top
       ccid
       gnupg
       libbpf

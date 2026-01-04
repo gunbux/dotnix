@@ -66,6 +66,7 @@
 
             # HyDE-specific modules
             inputs.hydenix.homeModules.default
+            ./modules/home/amd.nix
             ./modules/home/linux.nix
             ./modules/home/applications.nix
             ./modules/home/mpv.nix
@@ -105,6 +106,7 @@
           home-manager.users.chun.imports = [
             inputs.hydenix.homeModules.default
             ./home.nix
+            ./modules/home/amd.nix
             ./modules/home/linux.nix
             ./modules/home/applications.nix
             ./modules/home/mpv.nix
