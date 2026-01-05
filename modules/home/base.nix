@@ -8,13 +8,13 @@
   ...
 }: {
   imports = [
-    ./modules/home/cli.nix
-    ./modules/home/dev.nix
-    ./modules/home/git.nix
-    ./modules/home/kitty.nix
-    ./modules/home/neovim.nix
-    ./modules/home/tmux.nix
-    ./modules/home/zed.nix
+    ./cli.nix
+    ./dev.nix
+    ./git.nix
+    ./kitty.nix
+    ./neovim.nix
+    ./tmux.nix
+    ./zed.nix
   ];
 
   # Let Home Manager install & manage itself

@@ -61,22 +61,7 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
-          home-manager.users.chun.imports = [
-            ./home.nix
-
-            # HyDE-specific modules
-            inputs.hydenix.homeModules.default
-            ./modules/home/amd.nix
-            ./modules/home/linux.nix
-            ./modules/home/applications.nix
-            ./modules/home/mpv.nix
-            ./modules/home/hydenix.nix
-            ./modules/home/swaylock.nix
-            ./modules/home/dunst.nix
-
-            # GNOME specific settings
-            ./modules/home/dconf.nix
-          ];
+          home-manager.users.chun.imports = [./hosts/g14/home.nix];
         }
       ];
     };
@@ -103,22 +88,7 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
-          home-manager.users.chun.imports = [
-            inputs.hydenix.homeModules.default
-            ./home.nix
-            ./modules/home/amd.nix
-            ./modules/home/linux.nix
-            ./modules/home/applications.nix
-            ./modules/home/mpv.nix
-
-            # HyDE-specific modules
-            ./modules/home/hydenix.nix
-            ./modules/home/swaylock.nix
-            ./modules/home/dunst.nix
-
-            # GNOME specific settings
-            ./modules/home/dconf.nix
-          ];
+          home-manager.users.chun.imports = [./hosts/legion/home.nix];
         }
       ];
     };
@@ -141,20 +111,7 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
-          home-manager.users.chun.imports = [
-            ./home.nix
-
-            # HyDE-specific modules
-            inputs.hydenix.homeModules.default
-            ./modules/home/linux.nix
-            ./modules/home/applications.nix
-            ./modules/home/mpv.nix
-            ./modules/home/hydenix.nix
-            ./modules/home/dunst.nix
-
-            # GNOME specific settings
-            ./modules/home/dconf.nix
-          ];
+          home-manager.users.chun.imports = [./hosts/fw12/home.nix];
         }
       ];
     };
@@ -177,7 +134,7 @@
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.users.chun.imports = [
-            ./home.nix
+            ./modules/home/base.nix
           ];
         }
       ];
@@ -205,7 +162,7 @@
               stateVersion = "23.05";
             };
           }
-          ./home.nix
+          ./modules/home/base.nix
         ];
         extraSpecialArgs = {
           inherit inputs;
