@@ -16,8 +16,8 @@
     mutable = true;
   };
 
-  home.file.".config/hypr/shaders.conf" = lib.mkForce {
-    source = ../../config/hypr/shaders.conf;
+  home.file.".config/hypr/shaders/paper-fw.frag" = lib.mkForce {
+    source = ../../config/hypr/shaders/paper-fw.frag;
     force = true;
     mutable = true;
   };
