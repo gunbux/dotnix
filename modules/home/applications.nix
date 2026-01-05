@@ -31,7 +31,7 @@
       opencode # Opencode
       postman # Postman
       prismlauncher # Minecraft
-      qbittorrent # Torrent
+      qui # Torrent
       solaar # Mouse Utilities
       spotify # Music
       steam # Games
