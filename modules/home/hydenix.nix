@@ -1,4 +1,13 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  osConfig,
+  ...
+}: let
+  sensitivity =
+    if osConfig.networking.hostName == "fw12"
+    then "-0.2"
+    else "-0.6";
+in {
   # Additional hyde speific config
   imports = [
     ./hyprland.nix
@@ -22,7 +31,7 @@
             natural_scroll = true
             scroll_factor = 0.5
           }
-          sensitivity = -0.6
+          sensitivity = ${sensitivity}
         }
 
       '';
