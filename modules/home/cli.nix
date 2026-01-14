@@ -29,6 +29,7 @@
     nh
     nix-output-monitor
     nmap
+    opencode
     presenterm
     ripgrep
     rsync

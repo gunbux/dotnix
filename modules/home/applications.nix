@@ -28,7 +28,6 @@
       musescore # Musescore
       neomutt # Email Client
       obs-studio # Recording
-      opencode # Opencode
       postman # Postman
       prismlauncher # Minecraft
       qui # Torrent
