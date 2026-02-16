@@ -28,6 +28,7 @@
       musescore # Musescore
       neomutt # Email Client
       obs-studio # Recording
+      pear-desktop # Music
       postman # Postman
       prismlauncher # Minecraft
       qui # Torrent
@@ -39,7 +40,6 @@
       thunderbird # Email Client
       vivaldi # Browser
       yazi # File Manager
-      youtube-music # Music
       yt-dlp # Downloader
       zed-editor # Zed
     ]

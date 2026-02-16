@@ -33,7 +33,6 @@ in {
           }
           sensitivity = ${sensitivity}
         }
-
       '';
       # Animation configurations
       animations = {
@@ -67,9 +66,13 @@ in {
       windowrules = {
         enable = true; # enable window rules configurations
         extraConfig = ''
-          windowrulev2 = float, title:^(omnia)$
-          windowrulev2 = size 50% 50%, title:^(omnia)$
-          windowrulev2 = center, title:^(omnia)$
+          windowrule {
+            name = windowrule-1
+            float = on
+            size = (monitor_w*0.5) (monitor_h*0.5)
+            center = on
+            match:title = ^(omnia)$
+          }
         ''; # additional window rules configuration
         overrideConfig = null; # complete window rules configuration override (null or lib.types.lines)
       };
