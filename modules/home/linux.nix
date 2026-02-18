@@ -12,12 +12,13 @@
       libbpf
       libcxx
       libelf
+      libqalculate
       libz
+      logiops
       nautilus
       nfs-utils
       pinentry-tty
       pipewire
-      libqalculate
       scx.full
       tectonic
       wireplumber

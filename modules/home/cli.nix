@@ -2,13 +2,10 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
     # Modern Unix
-    alejandra
     bat
     bpftools
     btop
     cheat
-    clang
-    clang-tools
     commitizen
     delta
     docker

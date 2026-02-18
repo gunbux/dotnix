@@ -1,19 +1,21 @@
 # DevTools
 {pkgs, ...}: {
   home.packages = with pkgs; [
-    # gcc
-    # libnfc
-    # python312
     # aider-chat-full
+    # gcc
+    # geekbench
+    # libnfc
     # marksman
+    # python312
+    alejandra
     bun
     cargo
+    clang
+    clang-tools
     conda
-    geekbench
     ghostscript_headless
     gnumake
     lua-language-server
-    logiops
     meson
     ninja
     nodejs
