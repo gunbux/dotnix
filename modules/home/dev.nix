@@ -15,6 +15,7 @@
     conda
     ghostscript_headless
     gnumake
+    kdlfmt
     lua-language-server
     meson
     ninja
