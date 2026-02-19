@@ -1,4 +1,3 @@
-## TODO: Move this over to home modules
 {inputs, ...}: {
   programs.niri.enable = true;
   programs.dank-material-shell.enable = true;
