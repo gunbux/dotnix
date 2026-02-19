@@ -21,6 +21,10 @@
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     minegrub-theme.url = "github:Lxtharia/minegrub-theme";
     minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
+    dms = {
+      url = "github:AvengeMedia/DankMaterialShell/stable";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     quickshell = {
       url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -6,6 +6,7 @@
 
     # HyDE-specific modules
     inputs.hydenix.homeModules.default
+    inputs.dms.homeModules.dank-material-shell
     ../../modules/home/amd.nix
     ../../modules/home/linux.nix
     ../../modules/home/applications.nix
