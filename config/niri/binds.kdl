@@ -20,6 +20,7 @@ binds {
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+Return hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
+    Mod+B hotkey-overlay-title="Open a Browser: zen" { spawn "zen-beta"; }
     Mod+Space hotkey-overlay-title="Run an Application: omnia" { spawn "kitty" "-T" "omnia" "/home/chun/repo/omnia/omnia"; }
     Mod+Escape hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
 

@@ -20,7 +20,7 @@
     x11.enable = true;
     gtk.enable = true;
     package = pkgs.banana-cursor-dreams;
-    size = 96;
+    size = 128;
     name = "Banana-Catppuccin-Mocha";
   };
 

@@ -1,7 +1,6 @@
 # Command Line Applications
 {pkgs, ...}: {
   home.packages = with pkgs; [
-    # Modern Unix
     bat
     bpftools
     btop
@@ -10,8 +9,8 @@
     delta
     docker
     dog
-    dust
     duf
+    dust
     elfutils
     eza
     fd
@@ -27,6 +26,7 @@
     nix-output-monitor
     nmap
     opencode
+    pokego
     presenterm
     ripgrep
     rsync
