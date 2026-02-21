@@ -15,10 +15,6 @@
     inputs.home-manager.nixosModules.home-manager
   ];
 
-  hydenix = {
-    hostname = "legion-nix";
-  };
-
   # Swap
   swapDevices = [
     {

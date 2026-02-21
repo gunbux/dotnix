@@ -12,11 +12,6 @@
     inputs.home-manager.nixosModules.home-manager
   ];
 
-  # Enable hydenix
-  hydenix = {
-    hostname = "fw12";
-  };
-
   # Swap
   swapDevices = [
     {

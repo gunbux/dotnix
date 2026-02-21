@@ -16,6 +16,9 @@
     ./modules/syncthing.nix
   ];
 
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
+
   # Audio Settings
   security.rtkit.enable = true;
   services.pipewire = {

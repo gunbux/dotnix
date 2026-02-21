@@ -12,11 +12,6 @@
     };
     # WSL Support
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
-    ## Sane hyprland defaults
-    hydenix = {
-      url = "github:richen604/hydenix";
-      # inputs.nixpkgs.follows = "nixpkgs";
-    };
     ## Non-nixpkgs Applications
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     minegrub-theme.url = "github:Lxtharia/minegrub-theme";
@@ -50,10 +45,8 @@
       };
       modules = [
         inputs.chaotic.nixosModules.default
-        inputs.hydenix.nixosModules.default
         inputs.minegrub-theme.nixosModules.default
         ./hosts/g14/default.nix
-        ./modules/hyde.nix
         ./modules/cosmic.nix
         ./modules/niri.nix
         {
@@ -74,16 +67,13 @@
       };
       modules = [
         inputs.chaotic.nixosModules.default
-        inputs.hydenix.nixosModules.default
         inputs.minegrub-theme.nixosModules.default
         ./hosts/legion/default.nix
-        ./modules/hyde.nix
         ./modules/cosmic.nix
         ./modules/niri.nix
         {
           nixpkgs.overlays = [
             overlays.custom-packages
-            inputs.hydenix.overlays.default
           ];
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
@@ -101,10 +91,8 @@
       };
       modules = [
         inputs.chaotic.nixosModules.default
-        inputs.hydenix.nixosModules.default
         inputs.minegrub-theme.nixosModules.default
         ./hosts/fw12/default.nix
-        ./modules/hyde.nix
         ./modules/cosmic.nix
         {
           nixpkgs.overlays = [overlays.custom-packages];
