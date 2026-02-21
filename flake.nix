@@ -33,7 +33,7 @@
         ## So shell doesn't break outside of hyde
         pokego = prev.callPackage ./pkgs/pokego/default.nix {};
         ## Fun cursor
-        banana-cursor-dreams = prev.callPackage ./pkgs/pokego/default.nix {};
+        banana-cursor-dreams = prev.callPackage ./pkgs/banana-cursor-dreams/default.nix {};
       };
     };
 

@@ -1,4 +1,8 @@
-{inputs, ...}: {
+{
+  inputs,
+  pkgs,
+  ...
+}: {
   imports = [
     inputs.noctalia.homeModules.default
   ];
@@ -10,6 +14,14 @@
 
   programs.noctalia-shell = {
     enable = true;
+  };
+
+  home.pointerCursor = {
+    x11.enable = true;
+    gtk.enable = true;
+    package = pkgs.banana-cursor-dreams;
+    size = 96;
+    name = "Banana-Catppuccin-Mocha";
   };
 
   # Niri Config
