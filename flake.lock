@@ -23,6 +23,28 @@
         "type": "github"
       }
     },
+    "dms": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "quickshell": "quickshell"
+      },
+      "locked": {
+        "lastModified": 1771429561,
+        "narHash": "sha256-abNemkJQxp8E9bCNyTlAcFxKx+t1Wsc49J5NRZuyCgs=",
+        "owner": "AvengeMedia",
+        "repo": "DankMaterialShell",
+        "rev": "db4de55338f8e708814929ff94590c91ca1bdbd2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "AvengeMedia",
+        "ref": "stable",
+        "repo": "DankMaterialShell",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -594,9 +616,32 @@
         "type": "github"
       }
     },
+    "quickshell": {
+      "inputs": {
+        "nixpkgs": [
+          "dms",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1766725085,
+        "narHash": "sha256-O2aMFdDUYJazFrlwL7aSIHbUSEm3ADVZjmf41uBJfHs=",
+        "ref": "refs/heads/master",
+        "rev": "41828c4180fb921df7992a5405f5ff05d2ac2fff",
+        "revCount": 715,
+        "type": "git",
+        "url": "https://git.outfoxxed.me/quickshell/quickshell"
+      },
+      "original": {
+        "rev": "41828c4180fb921df7992a5405f5ff05d2ac2fff",
+        "type": "git",
+        "url": "https://git.outfoxxed.me/quickshell/quickshell"
+      }
+    },
     "root": {
       "inputs": {
         "chaotic": "chaotic",
+        "dms": "dms",
         "home-manager": "home-manager_2",
         "hydenix": "hydenix",
         "minecraft-plymouth-theme": "minecraft-plymouth-theme",
