@@ -342,7 +342,6 @@ window-rule {
 window-rule {
     match title="^omnia$"
     open-floating true
-    default-floating-position center
     default-column-width { proportion 0.5; }
     default-window-height { proportion 0.5; }
 }
@@ -382,9 +381,9 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
-    Mod+Enter hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
+    Mod+Return hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
     Mod+Space hotkey-overlay-title="Run an Application: omnia" { spawn "kitty -T omnia /home/chun/repo/omnia/omnia"; }
-    Mod+Esc hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+    Mod+Escape hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.

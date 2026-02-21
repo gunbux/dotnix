@@ -1,5 +1,8 @@
 {inputs, ...}: {
-  programs.dank-material-shell.enable = true;
+  # Noctalia Shell
+  programs.noctalia-shell = {
+    enable = true;
+  };
 
   # Niri Config
   home.file.".config/niri" = {
