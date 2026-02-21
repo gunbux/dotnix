@@ -67,6 +67,13 @@
           "usePadding": false
         },
         {
+          "defaultSettings": {
+            "errorIcon": "alert-circle",
+            "iconColor": "primary",
+            "loadingIcon": "loader",
+            "refreshInterval": 300,
+            "successIcon": "network"
+          },
           "id": "plugin:ip-monitor"
         }
       ],
@@ -109,6 +116,10 @@
           "visualizerType": "linear"
         },
         {
+          "defaultSettings": {
+            "hideBackground": false,
+            "minimumThreshold": 10
+          },
           "id": "plugin:catwalk"
         }
       ],
@@ -132,7 +143,20 @@
           "textColor": "none"
         },
         {
+          "defaultSettings": {
+            "compactMode": false,
+            "defaultPeerAction": "copy-ip",
+            "hideDisconnected": false,
+            "pingCount": 5,
+            "refreshInterval": 5000,
+            "showIpAddress": true,
+            "showPeerCount": true,
+            "terminalCommand": ""
+          },
           "id": "plugin:tailscale"
+        },
+        {
+          "id": "plugin:kde-connect"
         },
         {
           "displayMode": "alwaysShow",
@@ -274,12 +298,12 @@
   },
   "wallpaper": {
     "enabled": true,
-    "overviewEnabled": false,
+    "overviewEnabled": true,
     "directory": "/home/chun/Pictures/Wallpapers",
     "monitorDirectories": [],
     "enableMultiMonitorDirectories": false,
     "showHiddenFiles": false,
-    "viewMode": "single",
+    "viewMode": "browse",
     "setWallpaperOnAllMonitors": true,
     "fillMode": "crop",
     "fillColor": "#000000",
@@ -294,7 +318,7 @@
     "transitionEdgeSmoothness": 0.05,
     "panelPosition": "follow_bar",
     "hideWallpaperFilenames": false,
-    "overviewBlur": 0.4,
+    "overviewBlur": 0.5,
     "overviewTint": 0.6,
     "useWallhaven": false,
     "wallhavenQuery": "",

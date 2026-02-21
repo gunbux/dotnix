@@ -29,7 +29,7 @@ input {
 
 layout {
     gaps 4
-    background-color "transparent"
+    // background-color "transparent"
 
 
     // - "never", default behavior, focusing an off-screen column will keep at the left
@@ -190,8 +190,19 @@ window-rule {
 // Example: enable rounded corners for all windows.
 // (This example rule is commented out with a "/-" in front.)
 window-rule {
-    geometry-corner-radius 12
+    geometry-corner-radius 20
     clip-to-geometry true
+}
+
+// Noctalia Window Rules
+layer-rule {
+  match namespace="^noctalia-overview*"
+  place-within-backdrop true
+}
+
+debug {
+  // Allows notification actions and window activation from Noctalia.
+  honor-xdg-activation-with-invalid-serial
 }
 
 include "binds.kdl"

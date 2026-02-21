@@ -10,8 +10,15 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # WSL Support
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
+
     ## Non-nixpkgs Applications
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     minegrub-theme.url = "github:Lxtharia/minegrub-theme";

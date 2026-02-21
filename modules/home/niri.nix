@@ -7,7 +7,7 @@
     inputs.noctalia.homeModules.default
   ];
 
-  # Noctalia Shell Systemd Service
+  # Noctalia Shell
   programs.noctalia-shell.systemd = {
     enable = true;
   };
@@ -16,6 +16,15 @@
     enable = true;
   };
 
+  services.kdeconnect.enable = true;
+
+  ## Packages for plugins and stuff
+  home.packages = [
+    pkgs.mpvpaper
+    pkgs.kdePackages.qttools
+  ];
+
+  # Banana Cursor
   home.pointerCursor = {
     x11.enable = true;
     gtk.enable = true;

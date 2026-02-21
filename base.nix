@@ -14,7 +14,12 @@
     ./modules/boot.nix
     ./modules/fonts.nix
     ./modules/syncthing.nix
+
+    # For comma
+    inputs.nix-index-database.nixosModules.default
   ];
+
+  programs.nix-index-database.comma.enable = true;
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
@@ -77,6 +82,22 @@
   # VPN
   services.tailscale.enable = true;
   networking.firewall.checkReversePath = "loose"; # NOTE: This is for exit nodes to work properly
+
+  # Networking for KDE Connect
+  networking.firewall = rec {
+    allowedTCPPortRanges = [
+      {
+        from = 1714;
+        to = 1764;
+      }
+    ];
+    allowedUDPPortRanges = [
+      {
+        from = 1714;
+        to = 1764;
+      }
+    ];
+  };
 
   # GPG
   programs.gnupg.agent = {

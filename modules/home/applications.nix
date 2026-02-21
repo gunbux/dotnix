@@ -16,6 +16,7 @@
       crush # Crush
       discord # Discord
       evince # PDF
+      fastfetch # Fastfetch
       gdtoolkit_4 # Godot Toolkit
       ghostty # Terminal
       glow # Markdown Viewer
