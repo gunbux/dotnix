@@ -50,40 +50,24 @@
           "diskPath": "/",
           "iconColor": "none",
           "id": "SystemMonitor",
-          "showCpuFreq": true,
+          "showCpuFreq": false,
           "showCpuTemp": false,
           "showCpuUsage": true,
           "showDiskAvailable": false,
           "showDiskUsage": true,
-          "showDiskUsageAsPercent": true,
+          "showDiskUsageAsPercent": false,
           "showGpuTemp": false,
           "showLoadAverage": false,
           "showMemoryAsPercent": false,
           "showMemoryUsage": true,
           "showNetworkStats": true,
-          "showSwapUsage": true,
+          "showSwapUsage": false,
           "textColor": "none",
           "useMonospaceFont": true,
           "usePadding": false
         },
         {
-          "compactMode": true,
-          "compactShowAlbumArt": true,
-          "compactShowVisualizer": false,
-          "hideMode": "hidden",
-          "hideWhenIdle": false,
-          "id": "MediaMini",
-          "maxWidth": 145,
-          "panelShowAlbumArt": true,
-          "panelShowVisualizer": true,
-          "scrollingMode": "hover",
-          "showAlbumArt": true,
-          "showArtistFirst": true,
-          "showProgressRing": true,
-          "showVisualizer": false,
-          "textColor": "none",
-          "useFixedWidth": false,
-          "visualizerType": "linear"
+          "id": "plugin:ip-monitor"
         }
       ],
       "center": [
@@ -106,24 +90,49 @@
           "useCustomFont": false
         },
         {
-          "colorName": "primary",
-          "hideWhenIdle": true,
-          "id": "AudioVisualizer",
-          "width": 100
+          "compactMode": true,
+          "compactShowAlbumArt": true,
+          "compactShowVisualizer": false,
+          "hideMode": "hidden",
+          "hideWhenIdle": false,
+          "id": "MediaMini",
+          "maxWidth": 145,
+          "panelShowAlbumArt": true,
+          "panelShowVisualizer": true,
+          "scrollingMode": "hover",
+          "showAlbumArt": true,
+          "showArtistFirst": true,
+          "showProgressRing": true,
+          "showVisualizer": true,
+          "textColor": "none",
+          "useFixedWidth": false,
+          "visualizerType": "linear"
+        },
+        {
+          "id": "plugin:catwalk"
         }
       ],
       "right": [
         {
-          "displayMode": "alwaysShow",
+          "hideWhenZero": false,
+          "hideWhenZeroUnread": false,
           "iconColor": "none",
-          "id": "Network",
-          "textColor": "none"
+          "id": "NotificationHistory",
+          "showUnreadBadge": true,
+          "unreadBadgeColor": "primary"
+        },
+        {
+          "iconColor": "none",
+          "id": "NightLight"
         },
         {
           "displayMode": "onhover",
           "iconColor": "none",
           "id": "Bluetooth",
           "textColor": "none"
+        },
+        {
+          "id": "plugin:tailscale"
         },
         {
           "displayMode": "alwaysShow",
@@ -149,26 +158,17 @@
           "showPowerProfiles": true
         },
         {
-          "hideWhenZero": false,
-          "hideWhenZeroUnread": false,
+          "displayMode": "alwaysShow",
           "iconColor": "none",
-          "id": "NotificationHistory",
-          "showUnreadBadge": true,
-          "unreadBadgeColor": "primary"
-        },
-        {
-          "iconColor": "none",
-          "id": "NightLight"
-        },
-        {
-          "id": "plugin:catwalk"
+          "id": "Network",
+          "textColor": "none"
         }
       ]
     },
     "screenOverrides": []
   },
   "general": {
-    "avatarImage": "/home/chun/.face",
+    "avatarImage": "~/.face",
     "dimmerOpacity": 0.2,
     "showScreenCorners": false,
     "forceBlackScreenCorners": false,
@@ -348,10 +348,10 @@
           "id": "Bluetooth"
         },
         {
-          "id": "WallpaperSelector"
+          "id": "NoctaliaPerformance"
         },
         {
-          "id": "NoctaliaPerformance"
+          "id": "AirplaneMode"
         }
       ],
       "right": [
@@ -359,13 +359,13 @@
           "id": "Notifications"
         },
         {
-          "id": "PowerProfile"
-        },
-        {
           "id": "KeepAwake"
         },
         {
           "id": "NightLight"
+        },
+        {
+          "id": "WallpaperSelector"
         }
       ]
     },
@@ -563,7 +563,7 @@
     "volumeStep": 5,
     "volumeOverdrive": false,
     "cavaFrameRate": 30,
-    "visualizerType": "linear",
+    "visualizerType": "mirrored",
     "mprisBlacklist": [],
     "preferredPlayer": "",
     "volumeFeedback": false
@@ -575,7 +575,7 @@
   },
   "colorSchemes": {
     "useWallpaperColors": false,
-    "predefinedScheme": "Eldritch",
+    "predefinedScheme": "Catppuccin",
     "darkMode": true,
     "schedulingMode": "off",
     "manualSunrise": "06:30",
@@ -608,7 +608,7 @@
     "session": ""
   },
   "plugins": {
-    "autoUpdate": false
+    "autoUpdate": true
   },
   "desktopWidgets": {
     "enabled": false,
