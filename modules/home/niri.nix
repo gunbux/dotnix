@@ -19,9 +19,10 @@
   services.kdeconnect.enable = true;
 
   ## Packages for plugins and stuff
-  home.packages = [
-    pkgs.mpvpaper
-    pkgs.kdePackages.qttools
+  home.packages = with pkgs; [
+    mpvpaper
+    kdePackages.qttools
+    xwayland-satellite
   ];
 
   # Banana Cursor
@@ -29,7 +30,7 @@
     x11.enable = true;
     gtk.enable = true;
     package = pkgs.banana-cursor-dreams;
-    size = 128;
+    size = 48;
     name = "Banana-Catppuccin-Mocha";
   };
 

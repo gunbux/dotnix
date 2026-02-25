@@ -106,8 +106,13 @@ layout {
     }
 }
 
+cursor {
+    xcursor-theme "Banana-Catppuccin-Mocha"
+    xcursor-size 48
+}
+
 environment {
-  XDG_CURRENT_DESKTOP "niri"
+    XDG_CURRENT_DESKTOP "niri"
 }
 
 hotkey-overlay {
