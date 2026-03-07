@@ -19,6 +19,7 @@
     impala
     iperf
     jq
+    lnav
     lsd
     mcfly
     ncdu
