@@ -101,6 +101,7 @@
         inputs.minegrub-theme.nixosModules.default
         ./hosts/fw12/default.nix
         ./modules/cosmic.nix
+        ./modules/niri.nix
         {
           nixpkgs.overlays = [overlays.custom-packages];
           home-manager.useGlobalPkgs = true;
