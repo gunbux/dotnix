@@ -7,6 +7,7 @@
   home.packages = with pkgs; [
     # Linux-related System Utils
     ccid
+    fuse3
     gnupg
     libbpf
     libcxx
