@@ -49,9 +49,18 @@
   # TLP Config, use one or the other but not both
   services.power-profiles-daemon.enable = false; # Defaults to true in Gnome 44
 
-  # Steam Configs
+  # Steam/Gaming Configs
   programs.steam = {
     enable = true;
+    remotePlay.openFirewall = true;
+    dedicatedServer.openFirewall = true;
+    localNetworkGameTransfers.openFirewall = true;
+    gamescopeSession.enable = true;
+  };
+
+  programs.gamescope = {
+    enable = true;
+    capSysNice = false;
   };
 
   # Logitech
@@ -64,6 +73,7 @@
   services.upower.enable = true;
   environment.systemPackages = with pkgs; [
     brightnessctl
+    mangohud
   ];
 
   # Bluetooth
