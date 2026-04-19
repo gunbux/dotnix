@@ -85,6 +85,9 @@
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
 
+  # Dynamic Linking for non nix programs
+  programs.nix-ld.enable = true;
+
   # NOTE: VirtualBox tends to cause recompilations of the kernel, enable only where neccessary.
   # Virtualization
   # virtualisation.virtualbox.host.enable = true;

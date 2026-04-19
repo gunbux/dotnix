@@ -87,4 +87,7 @@
       };
     };
   };
+
+  # Dynamic Linking for non nix programs
+  programs.nix-ld.enable = true;
 }
