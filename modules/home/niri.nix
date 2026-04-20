@@ -8,10 +8,6 @@
   ];
 
   # Noctalia Shell
-  programs.noctalia-shell.systemd = {
-    enable = true;
-  };
-
   programs.noctalia-shell = {
     enable = true;
   };
