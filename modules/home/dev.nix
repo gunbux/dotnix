@@ -6,7 +6,6 @@
     # geekbench
     # libnfc
     # marksman
-    # python312
     alejandra
     bun
     cargo
@@ -20,6 +19,7 @@
     meson
     ninja
     nodejs
+    python3
     rust-analyzer
     rustfmt
     tree-sitter
