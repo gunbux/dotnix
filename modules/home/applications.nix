@@ -12,6 +12,7 @@
       audacity # Audio Editor
       bitwarden-desktop # Password Manager
       blender # Blender
+      bluetui # Bluetooth TUI
       code-cursor # Cursor
       crush # Crush
       discord # Discord
