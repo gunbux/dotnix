@@ -24,6 +24,11 @@
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
+  # NOTE: This package is needed for the latest version of Citrix. There are known vulnerabilities
+  nixpkgs.config.permittedInsecurePackages = [
+    "libsoup-2.74.3"
+  ];
+
   # Audio Settings
   security.rtkit.enable = true;
   services.pipewire = {

@@ -13,6 +13,7 @@
       bitwarden-desktop # Password Manager
       blender # Blender
       bluetui # Bluetooth TUI
+      citrix_workspace # Citrix
       code-cursor # Cursor
       crush # Crush
       discord # Discord
