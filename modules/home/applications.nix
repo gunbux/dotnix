@@ -34,7 +34,7 @@
       pear-desktop # Music
       postman # Postman
       prismlauncher # Minecraft
-      qui # Torrent
+      deluge # Torrent
       solaar # Mouse Utilities
       spotify # Music
       steam # Games

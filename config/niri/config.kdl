@@ -107,6 +107,7 @@ layout {
 }
 
 spawn-at-startup "noctalia-shell"
+spawn-at-startup "noctalia-shell ipc call notifications enableDND"
 
 cursor {
     xcursor-theme "Banana-Catppuccin-Mocha"
