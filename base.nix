@@ -55,7 +55,7 @@
   i18n = {
     defaultLocale = "en_US.UTF-8";
   };
-  time.timeZone = "Asia/Singapore";
+  services.tzupdate.enable = true;
 
   # Keyboard Settings
   services.libinput.enable = true;
