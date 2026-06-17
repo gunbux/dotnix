@@ -35,6 +35,7 @@
       postman # Postman
       prismlauncher # Minecraft
       deluge # Torrent
+      saber # Handwriting
       solaar # Mouse Utilities
       spotify # Music
       steam # Games
