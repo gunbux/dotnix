@@ -30,7 +30,7 @@
     minegrub-theme.url = "github:Lxtharia/minegrub-theme";
     minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
     noctalia = {
-      url = "github:noctalia-dev/noctalia-shell";
+      url = "github:noctalia-dev/noctalia-shell/legacy-v4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

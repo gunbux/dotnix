@@ -10,7 +10,6 @@
       # davinci-resolve # Video Editor
       apostrophe # Markdown Editor
       audacity # Audio Editor
-      bitwarden-desktop # Password Manager
       blender # Blender
       bluetui # Bluetooth TUI
       citrix_workspace_25_08_10 # Citrix

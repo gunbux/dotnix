@@ -12,6 +12,7 @@
 
   sops.secrets.openrouter_api_key = {
     path = "/run/secrets/openrouter_api_key";
+    owner = "chun";
     mode = "0600";
   };
 }
