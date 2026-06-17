@@ -19,6 +19,12 @@
     # WSL Support
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
 
+    # sop-nix
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     ## Non-nixpkgs Applications
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     minegrub-theme.url = "github:Lxtharia/minegrub-theme";
@@ -56,6 +62,7 @@
         ./hosts/g14/default.nix
         ./modules/cosmic.nix
         ./modules/niri.nix
+        ./modules/sops.nix
         {
           nixpkgs.overlays = [overlays.custom-packages];
           home-manager.useGlobalPkgs = true;
@@ -78,6 +85,7 @@
         ./hosts/legion/default.nix
         ./modules/cosmic.nix
         ./modules/niri.nix
+        ./modules/sops.nix
         {
           nixpkgs.overlays = [
             overlays.custom-packages
@@ -102,6 +110,7 @@
         ./hosts/fw12/default.nix
         ./modules/cosmic.nix
         ./modules/niri.nix
+        ./modules/sops.nix
         {
           nixpkgs.overlays = [overlays.custom-packages];
           home-manager.useGlobalPkgs = true;
@@ -122,6 +131,7 @@
       modules = [
         inputs.nixos-wsl.nixosModules.default
         inputs.home-manager.nixosModules.home-manager
+        inputs.sops-nix.nixosModules.sops
         ./modules/nix.nix
         ./modules/wsl.nix
         {

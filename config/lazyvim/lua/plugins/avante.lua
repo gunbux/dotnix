@@ -6,8 +6,11 @@ return {
   disable_tools = true,
   enabled = false,
   config = function()
-    -- Read API key from ~/.openrouter and remove any whitespace/newlines
-    local api_key = vim.fn.trim(vim.fn.readfile(vim.fn.expand('~/.openrouter'))[1])
+    -- Read API key from sops secret or ~/.openrouter fallback
+    local sops_secret = "/run/secrets/openrouter_api_key"
+    local home_secret = vim.fn.expand('~/.openrouter')
+    local api_key_file = vim.fn.filereadable(sops_secret) == 1 and sops_secret or home_secret
+    local api_key = vim.fn.trim(vim.fn.readfile(api_key_file)[1])
     vim.env.OPENROUTER_API_KEY = api_key
 
     require("avante").setup({

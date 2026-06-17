@@ -1,0 +1,9 @@
+keys:
+  - &legion-win age176rgm3f2c8ez6n40xx80j2uftjp883rhrlluug5u62hf2qwfgu5q8k3eqn
+  - &germ age1qa8mdn98m5jscurtjyk2y26s5rl6dlxvflfrrx36agtd7wqa2c2sr2svkz
+  - &legion-nix age1v3t6waa35jnctfssskd7h2mesklpk43sl9fkwc87ctt4e2znfapsear4d0
+  - &fw12 age1y7a2jyx5emkqp0g9ruhqejjsfxk08dh6n8v4mk2jpsc3nz844udsyq0yar
+creation_rules:
+  - path_regex: secrets/secrets.yaml
+    key_groups:
+    - age: [*legion-win, *legion-nix, *fw12]

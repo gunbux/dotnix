@@ -78,9 +78,9 @@
 
     initContent = ''
       pokego --no-title -r 1-6
-      # Set OPENROUTER_API_KEY from ~/.openrouter if it exists
-      if [ -f "$HOME/.openrouter" ]; then
-        export OPENROUTER_API_KEY=$(cat "$HOME/.openrouter")
+      # Set OPENROUTER_API_KEY from sops secret
+      if [ -f "/run/secrets/openrouter_api_key" ]; then
+        export OPENROUTER_API_KEY=$(cat "/run/secrets/openrouter_api_key")
       fi
 
       if [[ $TERM != "dumb" ]]; then
