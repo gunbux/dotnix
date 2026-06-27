@@ -3,6 +3,9 @@ keys:
   - &germ age1qa8mdn98m5jscurtjyk2y26s5rl6dlxvflfrrx36agtd7wqa2c2sr2svkz
   - &legion-nix age1v3t6waa35jnctfssskd7h2mesklpk43sl9fkwc87ctt4e2znfapsear4d0
   - &fw12 age1y7a2jyx5emkqp0g9ruhqejjsfxk08dh6n8v4mk2jpsc3nz844udsyq0yar
+age:
+  ssh_key_paths:
+    - ~/.ssh/id_ed25519
 creation_rules:
   - path_regex: secrets/secrets.yaml
     key_groups:
