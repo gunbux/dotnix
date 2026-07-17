@@ -1,48 +1,56 @@
 # Command Line Applications
-{pkgs, ...}: {
-  home.packages = with pkgs; [
-    bat
-    bpftools
-    btop
-    cheat
-    commitizen
-    delta
-    docker
-    dog
-    duf
-    dust
-    elfutils
-    eza
-    fd
-    fzf
-    gping
-    impala
-    iperf
-    jq
-    lnav
-    lsd
-    mcfly
-    ncdu
-    nh
-    nix-output-monitor
-    nmap
-    opencode
-    pokego
-    presenterm
-    ripgrep
-    rsync
-    starship
-    termshark
-    tldr
-    tmux
-    unrar
-    unzip
-    wget
-    xz
-    zip
-    zoxide
-    zstd
-  ];
+{
+  pkgs,
+  inputs,
+  ...
+}: {
+  home.packages = with pkgs;
+    [
+      bat
+      bpftools
+      btop
+      cheat
+      commitizen
+      delta
+      docker
+      dog
+      duf
+      dust
+      elfutils
+      eza
+      fd
+      fzf
+      gping
+      impala
+      iperf
+      jq
+      lnav
+      lsd
+      mcfly
+      ncdu
+      nh
+      nix-output-monitor
+      nmap
+      opencode
+      pokego
+      presenterm
+      ripgrep
+      rsync
+      starship
+      termshark
+      tldr
+      tmux
+      unrar
+      unzip
+      wget
+      xz
+      zip
+      zoxide
+      zstd
+    ]
+    ++ [
+      inputs.torlink.packages.${pkgs.system}.default
+    ];
 
   # Mutt Configs
   home.file.".config/mutt/" = {
