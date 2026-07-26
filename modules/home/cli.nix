@@ -10,7 +10,8 @@
       bpftools
       btop
       cheat
-      commitizen
+      # commitizen
+      claude-code
       delta
       docker
       dog
