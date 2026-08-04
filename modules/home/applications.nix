@@ -46,7 +46,7 @@
       zed-editor # Zed
     ]
     ++ [
-      inputs.zen-browser.packages.${pkgs.system}.default
+      inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
     ];
 
   # Ghostty Config

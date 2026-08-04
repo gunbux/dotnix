@@ -50,7 +50,7 @@
       zstd
     ]
     ++ [
-      inputs.torlink.packages.${pkgs.system}.default
+      inputs.torlink.packages.${pkgs.stdenv.hostPlatform.system}.default
     ];
 
   # Mutt Configs
