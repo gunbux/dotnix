@@ -27,7 +27,9 @@
 
     ## Non-nixpkgs Applications
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
-    minegrub-theme.url = "github:Lxtharia/minegrub-theme";
+    # TODO: Pinned to PR #91 (fix nested list in buildInputs). Switch back to
+    # "github:Lxtharia/minegrub-theme" once https://github.com/Lxtharia/minegrub-theme/pull/91 is merged.
+    minegrub-theme.url = "github:Lxtharia/minegrub-theme/pull/91/head";
     minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
     noctalia = {
       url = "github:noctalia-dev/noctalia-shell/legacy-v4";

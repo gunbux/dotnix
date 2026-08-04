@@ -156,15 +156,16 @@
         "nixpkgs": "nixpkgs_3"
       },
       "locked": {
-        "lastModified": 1783209925,
-        "narHash": "sha256-NO94JBjSI4jHPaSxXhaZDv3oT7lKpoCzLxjAbWdSjwc=",
+        "lastModified": 1781139417,
+        "narHash": "sha256-UagLexUw+iajIUrFSEeeASYqMfC0Ys4kR1WxslEqbXY=",
         "owner": "Lxtharia",
         "repo": "minegrub-theme",
-        "rev": "d0aec4523e1800c3196227dc420d326891292508",
+        "rev": "df06ae07a63e04b755ad59d5bebfff08e5b7ac3e",
         "type": "github"
       },
       "original": {
         "owner": "Lxtharia",
+        "ref": "pull/91/head",
         "repo": "minegrub-theme",
         "type": "github"
       }

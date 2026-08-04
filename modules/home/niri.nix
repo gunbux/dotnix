@@ -23,6 +23,7 @@
 
   # Banana Cursor
   home.pointerCursor = {
+    enable = true;
     x11.enable = true;
     gtk.enable = true;
     package = pkgs.banana-cursor-dreams;
