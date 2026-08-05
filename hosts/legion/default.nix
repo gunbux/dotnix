@@ -61,6 +61,20 @@
     powerManagement.enable = true;
   };
 
+  # Steam/Gaming Configs
+  programs.steam = {
+    enable = true;
+    remotePlay.openFirewall = true;
+    dedicatedServer.openFirewall = true;
+    localNetworkGameTransfers.openFirewall = true;
+    gamescopeSession.enable = true;
+  };
+
+  programs.gamescope = {
+    enable = true;
+    capSysNice = false;
+  };
+
   # Logitech
   hardware.logitech.wireless = {
     enable = true;
