@@ -32,7 +32,7 @@
       pear-desktop # Music
       postman # Postman
       prismlauncher # Minecraft
-      protonup # Imperative Proton
+      protonup-ng # Imperative Proton
       deluge # Torrent
       saber # Handwriting
       solaar # Mouse Utilities
