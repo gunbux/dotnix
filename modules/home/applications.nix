@@ -38,6 +38,7 @@
       solaar # Mouse Utilities
       spotify # Music
       steam # Games
+      t3code # T3 Code GUI
       tailscale # VPN/Wireguard
       telegram-desktop # Telegram
       thunderbird # Email Client
