@@ -87,8 +87,21 @@
   # We remove power-profiles-daemon because it clashes with powerManagement, I think.
   powerManagement = {
     enable = true;
-    powertop.enable = true;
+    # NOTE: `powertop --auto-tune` writes power/control=auto to *every* USB
+    # device, which runtime-suspends the mouse receiver and keyboards. The
+    # first input after an idle stretch then has to resume the whole chain
+    # (device -> hub -> xHCI root hub -> PCI controller out of D3), which is
+    # perceptible as input latency. Left off deliberately.
+    powertop.enable = false;
   };
+
+  # Keep USB HID devices out of runtime suspend. Matches any USB interface
+  # claiming HID class (bInterfaceClass == 03) and pins power/control on its
+  # parent usb_device, since power/control lives on the device, not the
+  # interface. Fires on hotplug, e.g. replugging a wireless receiver.
+  services.udev.extraRules = ''
+    ACTION=="add|change", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_interface", ATTR{bInterfaceClass}=="03", RUN+="/bin/sh -c 'echo on > /sys%p/../power/control'"
+  '';
   services.auto-cpufreq = {
     enable = true;
   };
