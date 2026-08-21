@@ -28,6 +28,7 @@
       loupe # GTK Image Viewer
       musescore # Musescore
       neomutt # Email Client
+      ninjabrain-bot # Ninjabrain bot
       obs-studio # Recording
       pear-desktop # Music
       postman # Postman
@@ -43,6 +44,7 @@
       telegram-desktop # Telegram
       thunderbird # Email Client
       vivaldi # Browser
+      waywall # Waywall for Minecraft
       yazi # File Manager
       yt-dlp # Downloader
       zed-editor # Zed
@@ -54,6 +56,13 @@
   # Ghostty Config
   home.file.".config/ghostty" = {
     source = ../../config/ghostty;
+    recursive = true;
+    force = true;
+  };
+
+  # Waywall Config
+  home.file.".config/waywall" = {
+    source = ../../config/waywall;
     recursive = true;
     force = true;
   };

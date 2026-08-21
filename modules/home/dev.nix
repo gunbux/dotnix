@@ -14,6 +14,7 @@
     conda
     ghostscript_headless
     gnumake
+    jemalloc
     kdlfmt
     lua-language-server
     meson
