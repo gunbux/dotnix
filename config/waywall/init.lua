@@ -4,7 +4,7 @@ local main = require("main")
 local remaps = require("remaps")
 
 local cfg = {
-    debug_text = true,
+    debug_text = false,
 
     -- ==== LOOKS ====
     resolution = { 1920, 1080 },
@@ -48,7 +48,7 @@ local cfg = {
     -- ==== MACROS ====
     -- resolution changes
     thin = { key = "*-Alt_L", f3_safe = false, ingame_only = true },
-    wide = { key = "*-B", f3_safe = true, ingame_only = true },
+    wide = { key = "*-Z", f3_safe = true, ingame_only = true },
     tall = { key = "*-F4", f3_safe = false, ingame_only = false },
 
     -- startup actions
@@ -56,7 +56,7 @@ local cfg = {
     launch_paceman_key = "Shift-P",
 
     -- during game actions
-    toggle_ninbot_key = "*-apostrophe",
+    toggle_ninbot_key = "*-minus",
     toggle_remaps_key = "Insert",
 
 
@@ -72,7 +72,7 @@ local cfg = {
 
 
     -- ==== MISC ====
-    sens_change = { enabled = true, normal = 1.83336434, tall = 0.12367766, raw_input = false }, -- setting raw_input to true will enable sens changing via maccel
+    sens_change = { enabled = true, normal = 3.9008047, tall = 0.26314595, raw_input = false }, -- setting raw_input to true will enable sens changing via maccel
     enable_resize_animations = false,
 
 }
