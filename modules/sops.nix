@@ -15,4 +15,10 @@
     owner = "chun";
     mode = "0600";
   };
+
+  sops.secrets.claude_code_oauth_token = {
+    path = "/run/secrets/claude_code_oauth_token";
+    owner = "chun";
+    mode = "0600";
+  };
 }

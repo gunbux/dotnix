@@ -92,6 +92,11 @@
         export OPENROUTER_API_KEY=$(cat "/run/secrets/openrouter_api_key")
       fi
 
+      # Set CLAUDE_CODE_OAUTH_TOKEN from sops secret (avoids re-login every 8-24h)
+      if [ -f "/run/secrets/claude_code_oauth_token" ]; then
+        export CLAUDE_CODE_OAUTH_TOKEN=$(cat "/run/secrets/claude_code_oauth_token")
+      fi
+
       if [[ $TERM != "dumb" ]]; then
         eval "$(/etc/profiles/per-user/chun/bin/starship init zsh)"
       fi
