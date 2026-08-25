@@ -27,6 +27,7 @@
       kitty # Terminal
       localsend # Global Airdrop
       loupe # GTK Image Viewer
+      matcha # Bubble Tea Email Client
       musescore # Musescore
       neomutt # Email Client
       ninjabrain-bot # Ninjabrain bot

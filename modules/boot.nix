@@ -13,6 +13,7 @@
 
     consoleLogLevel = 3;
     initrd.verbose = false;
+    kernel.sysctl."kernel.dmesg_restrict" = 0;
     kernelParams = [
       "quiet"
       "splash"
