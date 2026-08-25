@@ -111,6 +111,8 @@
       ls = "eza --icons=auto";
       ll = "eza -lha --icons=auto --sort=name --group-directories-first";
       ld = "eza -lhD --icons=auto";
+      gmail = "MAILBOX=gmail neomutt";
+      lmail = "MAILBOX=chunyu neomutt";
     };
   };
 

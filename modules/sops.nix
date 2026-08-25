@@ -21,4 +21,16 @@
     owner = "chun";
     mode = "0600";
   };
+
+  sops.secrets.mutt_gmail_password = {
+    path = "/run/secrets/mutt_gmail_password";
+    owner = "chun";
+    mode = "0600";
+  };
+
+  sops.secrets.mutt_mxroute_password = {
+    path = "/run/secrets/mutt_mxroute_password";
+    owner = "chun";
+    mode = "0600";
+  };
 }
