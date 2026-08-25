@@ -13,6 +13,7 @@
       blender # Blender
       bluetui # Bluetooth TUI
       code-cursor # Cursor
+      codex # OpenAI Codex
       crush # Crush
       discord # Discord
       evince # PDF

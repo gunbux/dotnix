@@ -15,7 +15,6 @@
     libqalculate
     libz
     logiops
-    nautilus
     nfs-utils
     pinentry-tty
     pipewire

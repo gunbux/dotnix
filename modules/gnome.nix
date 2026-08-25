@@ -7,7 +7,6 @@
   # Enable GDM
   services.xserver.enable = true;
   services.displayManager.gdm.enable = lib.mkForce true;
-  services.displayManager.gdm.wayland = true;
   # services.displayManager.autoLogin = {
   #   enable = true;
   #   user = "chun";
@@ -31,7 +30,6 @@
 
     # Gnome Dependencies
     tela-icon-theme
-    pop-gtk-theme
     nordzy-cursor-theme
 
     # Gnome Extensions
@@ -45,7 +43,6 @@
     gnomeExtensions.gsconnect
     gnomeExtensions.forge
     gnomeExtensions.unite
-    gnomeExtensions.pano
   ];
 
   # Enable screen sharing portal
