@@ -58,8 +58,8 @@
     mode = "0600";
     content =
       builtins.replaceStrings
-      ["@MUTT_MXROUTE_PASSWORD@"]
-      [config.sops.placeholder.mutt_mxroute_password]
+      ["@MUTT_MXROUTE_PASSWORD@" "@OPENROUTER_API_KEY@"]
+      [config.sops.placeholder.mutt_mxroute_password config.sops.placeholder.openrouter_api_key]
       (builtins.readFile ../config/herald/conf.yaml);
   };
 }

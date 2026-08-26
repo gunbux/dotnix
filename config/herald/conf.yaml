@@ -1,6 +1,6 @@
 # Herald mail client config, mirroring config/mutt/mailboxes/chunyu.rc.
-# The password placeholder below is rendered by modules/sops.nix via a sops
-# template, so the real secret never touches git.
+# The placeholders below are rendered by modules/sops.nix via a sops
+# template, so the real secrets never touch git.
 credentials:
   username: "mail@chunyu.sh"
   password: "@MUTT_MXROUTE_PASSWORD@"
@@ -10,3 +10,12 @@ server:
 smtp:
   host: "mail.chunyu.sh"
   port: 465
+
+# AI (classification, cleanup suggestions, chat) via OpenRouter's
+# OpenAI-compatible API -- same key/model as config/matcha/plugins/unread_summary.lua.
+ai:
+  provider: openai
+openai:
+  api_key: "@OPENROUTER_API_KEY@"
+  base_url: "https://openrouter.ai/api/v1"
+  model: "anthropic/claude-haiku-4.5"
