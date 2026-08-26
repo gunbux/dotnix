@@ -24,6 +24,7 @@
       gnome-network-displays # Gnome Miracast
       godot # Godot Game Engine
       gparted # Disk
+      herald # Terminal Email Client
       kitty # Terminal
       localsend # Global Airdrop
       loupe # GTK Image Viewer

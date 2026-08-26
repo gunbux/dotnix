@@ -1,0 +1,12 @@
+# Herald mail client config, mirroring config/mutt/mailboxes/chunyu.rc.
+# The password placeholder below is rendered by modules/sops.nix via a sops
+# template, so the real secret never touches git.
+credentials:
+  username: "mail@chunyu.sh"
+  password: "@MUTT_MXROUTE_PASSWORD@"
+server:
+  host: "mail.chunyu.sh"
+  port: 993
+smtp:
+  host: "mail.chunyu.sh"
+  port: 465

@@ -50,6 +50,8 @@
         pokego = prev.callPackage ./pkgs/pokego/default.nix {};
         ## Fun cursor
         banana-cursor-dreams = prev.callPackage ./pkgs/banana-cursor-dreams/default.nix {};
+        ## Herald - terminal-based email client
+        herald = prev.callPackage ./pkgs/herald/default.nix {};
       };
     };
 
