@@ -196,9 +196,16 @@ window-rule {
     default-window-height { proportion 0.5; }
 }
 
-// Pin browser to workspace 1 at startup
+// Pin browser to workspace 1 and maximize it at startup
 window-rule {
-    match app-id=r#"^zen-beta$"#
+    match app-id=r#"^zen-beta$"# at-startup=true
+    open-maximized true
+}
+
+// Maximize the tmux terminal spawned at startup
+window-rule {
+    match app-id="^kitty$" at-startup=true
+    open-maximized true
 }
 
 // Example: enable rounded corners for all windows.
