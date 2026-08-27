@@ -107,6 +107,8 @@ layout {
 }
 
 spawn-at-startup "noctalia-shell"
+spawn-at-startup "kitty" "-e" "/home/chun/.config/tmux/start-session.sh"
+spawn-at-startup "zen-beta"
 
 cursor {
     xcursor-theme "Banana-Catppuccin-Mocha"
@@ -192,6 +194,11 @@ window-rule {
     open-floating true
     default-column-width { proportion 0.5; }
     default-window-height { proportion 0.5; }
+}
+
+// Pin browser to workspace 1 at startup
+window-rule {
+    match app-id=r#"^zen-beta$"#
 }
 
 // Example: enable rounded corners for all windows.
