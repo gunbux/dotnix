@@ -13,7 +13,7 @@ set sort_aux = "last-date-received"
 set edit_headers
 
 # Obviously
-set editor = "vim"
+set editor = "nvim"
 
 # Remember to `mkdir -p ~/.mutt/hcache` first:
 set header_cache = "~/.mutt/hcache"
@@ -48,7 +48,18 @@ set query_command = "/usr/bin/lbdbq"
 #
 # See http://www.mutt.org/doc/manual/#index-format for how to reformat it to
 # your preference.
-set index_format = " %Z %{%b %d} %-15.15L (%?l?%4l&%4c?) %s"
+set index_format = "%4C %Z %D %-20.20L %?M?(%M) ?%s"
+set status_format = " %D  %?M?%M messages  ?%?n?%n new  ?%?d?%d deleted  ?%?F?%F flagged  ?%> F1 help "
+set pager_index_lines = 8
+set pager_context = 3
+set menu_scroll
+set tilde
+set markers = no
+set smart_wrap
+
+# Mailing lists make the most sense as conversations.
+set use_threads = yes
+set collapse_all = no
 
 # Skip the host name part of the $hostname variable when adding the domain part
 # to addresses.
@@ -62,6 +73,12 @@ set use_from = yes
 
 # Have mutt set a User-Agent header, specifying the version of mutt.
 set user_agent = yes
+
+# Kernel mail expects plain-text, inline replies rather than top-posting.
+set text_flowed = no
+set include = yes
+set attribution_intro = "On %d, %n wrote:"
+set honor_followup_to = yes
 
 # If no subject is specified, ask to abort but default to no.
 set abort_nosubject = ask-no

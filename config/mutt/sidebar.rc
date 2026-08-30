@@ -3,7 +3,10 @@
 # NeoMutt sidebar configuration
 
 set sidebar_visible
-set sidebar_format = "%B%?F? [%F]?%* %?N?%N/?%S "
+set sidebar_format = "%D%* %?N?%N new&%S? "
+set sidebar_short_path = yes
+set sidebar_folder_indent = yes
+set sidebar_indent_string = "  "
 
 # Checks for mail stats (read, unread, etc) in the sidebar. This is pretty
 # performance intensive, so we stick with a longer interval for checking.
@@ -16,7 +19,7 @@ unset mail_check_recent
 set sidebar_sort_method = "alpha"
 
 # Default is 30, this makes it look just a bit nicer.
-set sidebar_width = 35
+set sidebar_width = 28
 
 # Sidebar key bindings:
 bind index,pager . sidebar-next

@@ -9,16 +9,16 @@
 # Any of the 256 xterm colors may be specified:
 # https://web.archive.org/web/20190712111427/https://jonasjacek.github.io/colors/
 
-color normal            default             default
-color indicator         cyan       	    color18 # dark-blue
+color normal            color252            default
+color indicator         color230            color24
 color tree              default             default
-color status            brightgreen         blue
+color status            color234            color110
 color error             brightred           default
 color message           red                 default
 color signature         red                 default
 color attachment        yellow              default
 color search            brightyellow        red
-color tilde             brightmagenta       default
+color tilde             color240            default
 color markers           red                 default
 color hdrdefault        cyan                default
 color bold              green               black
@@ -60,3 +60,12 @@ color quoted6    green          default
 color quoted7    red            default
 color quoted8    magenta        default
 color quoted9    blue           default
+
+# Thread-oriented index accents for modern 256-colour terminals.
+color index_author       color110            default
+color index_subject      color252            default
+color index_date         color245            default
+color index_number       color243            default
+color index_flags        color203            default ~D
+color index_flags        color221            default ~F
+color index_flags        color114            default ~N

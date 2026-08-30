@@ -88,7 +88,10 @@ matcha.bind_key("ctrl+u", "inbox", "Summarize unread", function()
         return
     end
 
-    matcha.notify("Summarizing " .. n .. " unread emails...", 10)
+    -- No "Summarizing..." notify here: bind_key callbacks run synchronously
+    -- on the UI thread and matcha.http() blocks it, so any notify() call
+    -- before the blocking request completes is just overwritten by the
+    -- next one and is never actually drawn.
 
     local user_msg = "Unread emails:\n" .. build_email_list()
 
@@ -130,5 +133,11 @@ matcha.bind_key("ctrl+u", "inbox", "Summarize unread", function()
     matcha.log("unread_summary:\n" .. content)
     matcha.store_set("last_summary", content)
     matcha.set_status("inbox", content:sub(1, 120):gsub("\n", " "))
-    matcha.notify("Summary ready (full text in log, preview in title bar)", 6)
+
+    -- matcha.notify() actually replaces the whole screen with a spinner
+    -- view for its duration (see tui.NewStatus), so it can show the full
+    -- multi-line summary rather than just a short toast. Scale the
+    -- duration to length so there's time to read it.
+    local dur = math.min(60, math.max(10, #content / 15))
+    matcha.notify(content, dur)
 end)

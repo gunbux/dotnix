@@ -20,9 +20,23 @@ bind index gg first-entry
 bind index G last-entry
 bind index <f5> imap-fetch-mail
 
+# Move between discussions rather than every message in a long thread.
+bind index,pager J next-thread
+bind index,pager K previous-thread
+
 # Replies:
 bind index,pager r reply
 bind index,pager R group-reply
+bind index,pager L list-reply
+
+# Deliberately opt in to sending the current message to the configured LLM.
+macro index,pager S "<pipe-message>kernel-mail-summary<enter>" "AI summary (sends message to OpenRouter)"
+
+# A short guide; NeoMutt's context-sensitive help remains on `?`.
+macro index,pager <f1> "<shell-escape>mutt-help<enter>" "Kernel mail cheat sheet"
+
+bind index N toggle-new
+bind index <esc>l show-limit
 
 # Going to specific folders.
 macro index,pager gi "<change-folder>=INBOX<enter>"   "Open Inbox"

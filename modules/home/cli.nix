@@ -3,7 +3,20 @@
   pkgs,
   inputs,
   ...
-}: {
+}: let
+  kernel-mail-summary = pkgs.writeShellApplication {
+    name = "kernel-mail-summary";
+    runtimeInputs = with pkgs; [coreutils curl jq];
+    text = builtins.readFile ../../config/mutt/kernel-mail-summary.sh;
+  };
+  mutt-help = pkgs.writeShellApplication {
+    name = "mutt-help";
+    runtimeInputs = with pkgs; [bat];
+    text = ''
+      bat --plain --language markdown --paging always ${../../config/mutt/CHEATSHEET.md}
+    '';
+  };
+in {
   home.packages = with pkgs;
     [
       bat
@@ -25,6 +38,7 @@
       impala
       iperf
       jq
+      kernel-mail-summary
       lnav
       lsd
       mcfly
@@ -41,6 +55,7 @@
       termshark
       tldr
       tmux
+      mutt-help
       unrar
       unzip
       wget
