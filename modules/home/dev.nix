@@ -26,6 +26,7 @@
     tree-sitter
     tshark
     uv
+    vtsls
     zls
   ];
 }
