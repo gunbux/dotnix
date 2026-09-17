@@ -1,0 +1,15 @@
+interface:
+  display_name: "Use Trek"
+  short_description: "Plan and manage travel with Trek MCP"
+  default_prompt: "Use $use-trek to review my trips and help update my itinerary."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "trek"
+      description: "Trek travel planning MCP server"
+      transport: "streamable_http"
+      url: "https://trek.chunyu.sh/mcp"
+
+policy:
+  allow_implicit_invocation: true
