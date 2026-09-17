@@ -36,6 +36,7 @@
       postman # Postman
       prismlauncher # Minecraft
       protonup-ng # Imperative Proton
+      railway # Railway CLI
       deluge # Torrent
       saber # Handwriting
       solaar # Mouse Utilities

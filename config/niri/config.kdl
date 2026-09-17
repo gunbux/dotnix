@@ -109,6 +109,7 @@ layout {
 spawn-at-startup "noctalia-shell"
 spawn-at-startup "kitty" "-e" "/home/chun/.config/tmux/start-session.sh"
 spawn-at-startup "zen-beta"
+spawn-at-startup "t3code-desktop"
 
 cursor {
     xcursor-theme "Banana-Catppuccin-Mocha"
