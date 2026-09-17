@@ -24,7 +24,6 @@ in {
       btop
       cheat
       commitizen
-      claude-code
       delta
       docker
       dog
@@ -52,6 +51,7 @@ in {
       ripgrep
       rsync
       starship
+      sops
       termshark
       tldr
       tmux

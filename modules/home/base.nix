@@ -8,6 +8,7 @@
   ...
 }: {
   imports = [
+    ./ai.nix
     ./cli.nix
     ./dev.nix
     ./git.nix
