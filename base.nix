@@ -14,6 +14,7 @@
     ./modules/boot.nix
     ./modules/fonts.nix
     ./modules/syncthing.nix
+    ./modules/codex.nix
 
     # For comma
     inputs.nix-index-database.nixosModules.default
