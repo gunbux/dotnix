@@ -16,15 +16,6 @@
     daemonCPUSchedPolicy = "idle";
     daemonIOSchedClass = "idle";
 
-    # Free up to 1GiB whenever there is less than 100MiB left.
-    extraOptions = ''
-      keep-outputs = true
-      warn-dirty = false
-      keep-derivations = true
-      min-free = ${toString (100 * 1024 * 1024)}
-      max-free = ${toString (1024 * 1024 * 1024)}
-    '';
-
     settings = {
       auto-optimise-store = true;
       allowed-users = ["@wheel"];
@@ -33,14 +24,20 @@
       max-jobs = "auto";
       keep-going = true;
       log-lines = 20;
+      warn-dirty = false;
       experimental-features = [
         "flakes"
         "nix-command"
         "recursive-nix"
         "ca-derivations"
       ];
-      keep-derivations = true;
-      keep-outputs = true;
+      # Do not pin build-time dependencies of everything installed;
+      # they would survive GC and bloat the store.
+      keep-derivations = false;
+      keep-outputs = false;
+      # Free up to 20GiB whenever there is less than 5GiB left.
+      min-free = 5 * 1024 * 1024 * 1024;
+      max-free = 20 * 1024 * 1024 * 1024;
       substituters = [
         "https://cache.nixos.org"
         "https://nix-community.cachix.org"

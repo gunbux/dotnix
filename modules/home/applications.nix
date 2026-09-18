@@ -8,7 +8,7 @@
   home.packages = with pkgs;
     [
       # davinci-resolve # Video Editor
-      apostrophe # Markdown Editor
+      (apostrophe.override {texliveMedium = texliveSmall;}) # Markdown Editor (small texlive: no Java deps)
       audacity # Audio Editor
       blender # Blender
       bluetui # Bluetooth TUI
@@ -34,7 +34,7 @@
       obs-studio # Recording
       pear-desktop # Music
       postman # Postman
-      prismlauncher # Minecraft
+      (prismlauncher.override {jdks = [jdk21 jdk17];}) # Minecraft (1.16+ only; add jdk8 for older)
       protonup-ng # Imperative Proton
       railway # Railway CLI
       deluge # Torrent
