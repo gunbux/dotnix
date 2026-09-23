@@ -150,7 +150,18 @@
         }
       ];
     };
+    ## Shared package set for devshells.
+    shellPkgs = import inputs.nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+      overlays = [overlays.custom-packages];
+    };
   in {
+    ## Project devshells: `nix develop ~/dotnix#<name>`
+    devShells.${system} = {
+      firecracker-eks = import ./shells/firecracker-eks.nix {pkgs = shellPkgs;};
+    };
+
     ## Build all these nixos configs.
     nixosConfigurations = {
       "chun-lappy" = g14Config;
