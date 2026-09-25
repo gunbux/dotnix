@@ -52,6 +52,8 @@
         banana-cursor-dreams = prev.callPackage ./pkgs/banana-cursor-dreams/default.nix {};
         ## Herald - terminal-based email client
         herald = prev.callPackage ./pkgs/herald/default.nix {};
+        ## Delta - AI-native code editor from Zed (binary release)
+        delta-editor = prev.callPackage ./pkgs/delta-editor/default.nix {};
       };
     };
 

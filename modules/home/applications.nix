@@ -14,6 +14,7 @@
       bluetui # Bluetooth TUI
       code-cursor # Cursor
       crush # Crush
+      delta-editor # Delta Editor
       discord # Discord
       evince # PDF
       fastfetch # Fastfetch
