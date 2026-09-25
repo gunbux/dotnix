@@ -19,6 +19,7 @@ pkgs.mkShell {
     ## EKS / Kubernetes
     eksctl
     kubectl
+    kind # local k8s-in-docker cluster for offline practice
     kubernetes-helm
     kustomize
     k9s
@@ -44,6 +45,10 @@ pkgs.mkShell {
     gnutar
     gzip
     xz
+    zstd
+
+    ## Poking at KVM from the host (strace -e trace=ioctl firecracker ...)
+    strace
 
     ## Guest networking inside the pod (tap devices, NAT, CNI experiments)
     iproute2
@@ -51,6 +56,7 @@ pkgs.mkShell {
     bridge-utils
     socat
     cni-plugins
+    openssh # ssh into the guest over the tap device
 
     ## Scripting and glue
     jq
@@ -66,6 +72,7 @@ pkgs.mkShell {
     echo "  firecracker $(firecracker --version 2>/dev/null | head -n1 | awk '{print $NF}')"
     echo "  kubectl     $(kubectl version --client 2>/dev/null | awk '/Client/{print $3}')"
     echo "  eksctl      $(eksctl version 2>/dev/null)"
+    echo "  kind        $(kind version 2>/dev/null | awk '{print $2}')"
     echo "  aws         $(aws --version 2>/dev/null | cut -d' ' -f1)"
     if [ -w /dev/kvm ]; then
       echo "  /dev/kvm    writable (local Firecracker runs will work)"
