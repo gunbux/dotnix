@@ -10,6 +10,7 @@
     ./hardware-configuration.nix
     inputs.nixos-hardware.nixosModules.framework-12-13th-gen-intel
     inputs.home-manager.nixosModules.home-manager
+    ../../modules/waydroid.nix
   ];
 
   # Swap
@@ -66,10 +67,8 @@
   };
 
   # Logitech
-  hardware.logitech.wireless = {
-    enable = true;
-    enableGraphical = true;
-  };
+  hardware.logitech.wireless.enable = true;
+  programs.solaar.enable = true;
 
   # Services
   services.upower.enable = true;

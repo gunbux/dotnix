@@ -97,10 +97,8 @@
   # };
 
   # Logitech
-  hardware.logitech.wireless = {
-    enable = true;
-    enableGraphical = true;
-  };
+  hardware.logitech.wireless.enable = true;
+  programs.solaar.enable = true;
 
   # Dynamic Linking for non nix programs
   programs.nix-ld.enable = true;
@@ -120,7 +118,6 @@
   };
 
   services.asusd.enable = true;
-  services.asusd.enableUserService = true;
 
   environment.systemPackages = with pkgs; [
     brightnessctl

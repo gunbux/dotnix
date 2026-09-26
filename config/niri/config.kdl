@@ -209,6 +209,12 @@ window-rule {
     open-maximized true
 }
 
+// Open Libby (Waydroid) fullscreen
+window-rule {
+    match app-id=r#"^waydroid\.com\.overdrive\.mobile\.android\.libby$"#
+    open-fullscreen true
+}
+
 // Example: enable rounded corners for all windows.
 // (This example rule is commented out with a "/-" in front.)
 window-rule {

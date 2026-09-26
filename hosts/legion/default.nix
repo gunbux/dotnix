@@ -78,10 +78,8 @@
   };
 
   # Logitech
-  hardware.logitech.wireless = {
-    enable = true;
-    enableGraphical = true;
-  };
+  hardware.logitech.wireless.enable = true;
+  programs.solaar.enable = true;
 
   # Power Mangement
   # We remove power-profiles-daemon because it clashes with powerManagement, I think.
