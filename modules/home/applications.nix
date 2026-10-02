@@ -5,6 +5,8 @@
   inputs,
   ...
 }: {
+  imports = [./paseo.nix];
+
   home.packages = with pkgs;
     [
       # davinci-resolve # Video Editor

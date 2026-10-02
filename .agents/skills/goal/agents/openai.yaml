@@ -1,0 +1,4 @@
+interface:
+  display_name: "Goal"
+  short_description: "Keep working until a completion condition is verified"
+  default_prompt: "Use $goal to work toward a verifiable completion condition."

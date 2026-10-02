@@ -109,7 +109,7 @@ layout {
 spawn-at-startup "noctalia-shell"
 spawn-at-startup "kitty" "-e" "/home/chun/.config/tmux/start-session.sh"
 spawn-at-startup "zen-beta"
-spawn-at-startup "t3code-desktop"
+spawn-at-startup "paseo-desktop" "--class=Paseo"
 
 cursor {
     xcursor-theme "Banana-Catppuccin-Mocha"
@@ -207,6 +207,12 @@ window-rule {
 window-rule {
     match app-id="^kitty$" at-startup=true
     open-maximized true
+}
+
+// Open Paseo fullscreen at startup
+window-rule {
+    match app-id="^Paseo$" at-startup=true
+    open-fullscreen true
 }
 
 // Open Libby (Waydroid) fullscreen
