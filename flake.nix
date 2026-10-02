@@ -54,6 +54,8 @@
         herald = prev.callPackage ./pkgs/herald/default.nix {};
         ## Delta - AI-native code editor from Zed (binary release)
         delta-editor = prev.callPackage ./pkgs/delta-editor/default.nix {};
+        ## Paseo - coding agent orchestrator (desktop AppImage release; nixpkgs only ships the CLI)
+        paseo-desktop = prev.callPackage ./pkgs/paseo-desktop/default.nix {};
       };
     };
 

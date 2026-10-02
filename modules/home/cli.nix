@@ -101,7 +101,8 @@ in {
     };
 
     initContent = ''
-      pokego --no-title -r 1-6
+      # Only greet real terminals: apps like paseo read PATH from `zsh -ilc` stdout
+      if [[ -t 1 ]]; then pokego --no-title -r 1-6; fi
       # Set OPENROUTER_API_KEY from sops secret
       if [ -f "/run/secrets/openrouter_api_key" ]; then
         export OPENROUTER_API_KEY=$(cat "/run/secrets/openrouter_api_key")
@@ -116,7 +117,7 @@ in {
         eval "$(/etc/profiles/per-user/chun/bin/starship init zsh)"
       fi
 
-      if [ "$TMUX" = "" ]; then tmux; fi
+      if [[ -z "$TMUX" && -t 0 && -t 1 ]]; then tmux; fi
     '';
 
     shellAliases = {

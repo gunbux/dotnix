@@ -33,6 +33,7 @@
       neomutt # Email Client
       ninjabrain-bot # Ninjabrain bot
       obs-studio # Recording
+      paseo-desktop # Paseo Coding Agent Orchestrator
       pear-desktop # Music
       postman # Postman
       (prismlauncher.override {jdks = [jdk21 jdk17];}) # Minecraft (1.16+ only; add jdk8 for older)
