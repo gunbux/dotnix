@@ -1,0 +1,15 @@
+interface:
+  display_name: "Use Sure"
+  short_description: "Review and manage finances with Sure MCP"
+  default_prompt: "Use $use-sure to review my accounts and recent transactions."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "sure"
+      description: "Sure personal finance MCP server"
+      transport: "streamable_http"
+      url: "https://sure.chunyu.sh/mcp"
+
+policy:
+  allow_implicit_invocation: true
