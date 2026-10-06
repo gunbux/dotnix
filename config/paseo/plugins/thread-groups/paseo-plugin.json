@@ -1,5 +1,0 @@
-{
-  "id": "thread-groups",
-  "description": "Organize threads by feature across workspaces without moving them.",
-  "requirements": { "paseo": ">=0.10.3 <0.11.0" }
-}

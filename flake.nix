@@ -194,6 +194,19 @@
           inherit inputs;
         };
       };
+
+      ## Debian server (germaine) running a headless Paseo daemon
+      "germ" = inputs.home-manager.lib.homeManagerConfiguration {
+        pkgs = import inputs.nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+          overlays = [overlays.custom-packages];
+        };
+        modules = [./hosts/germ/home.nix];
+        extraSpecialArgs = {
+          inherit inputs;
+        };
+      };
     };
   };
 }

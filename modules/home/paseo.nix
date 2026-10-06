@@ -1,7 +1,7 @@
 {lib, ...}: {
-  # Source is declarative; group data and plugin registration remain daemon-owned.
-  home.file.".local/share/paseo/plugins/thread-groups".source = lib.cleanSourceWith {
-    src = ../../config/paseo/plugins/thread-groups;
+  # Source is declarative; plugin settings and registration remain daemon-owned.
+  home.file.".local/share/paseo/plugins/auto-label".source = lib.cleanSourceWith {
+    src = ../../config/paseo/plugins/auto-label;
     filter = path: type: let
       name = baseNameOf path;
     in
