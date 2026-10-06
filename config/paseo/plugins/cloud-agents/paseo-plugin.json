@@ -1,0 +1,5 @@
+{
+  "id": "cloud-agents",
+  "description": "Chat with Claude Managed Agents and control Codex Cloud tasks from Paseo.",
+  "requirements": { "paseo": ">=0.10.3 <0.11.0" }
+}
