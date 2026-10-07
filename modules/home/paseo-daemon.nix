@@ -6,9 +6,11 @@
 }: {
   imports = [./paseo.nix];
 
-  home.packages = [pkgs.paseo-desktop];
+  # Plain-node build of the desktop hosts' version. The AppImage's FHS sandbox
+  # hides the host's /usr/bin (git, ps, docker) from the daemon and its agents
+  # outside NixOS. ~/.paseo stays daemon-owned.
+  home.packages = [pkgs.paseo];
 
-  # Same CLI and daemon as the desktop hosts; ~/.paseo stays daemon-owned.
   systemd.user.services.paseo = {
     Unit = {
       Description = "Paseo coding agent server";
@@ -20,7 +22,7 @@
       # Agent CLIs (claude, codex) come from the Home Manager profile.
       Environment = ["PATH=${config.home.profileDirectory}/bin:/usr/local/bin:/usr/bin:/bin"];
       WorkingDirectory = "%h";
-      ExecStart = "${pkgs.paseo-desktop}/bin/paseo daemon run";
+      ExecStart = "${pkgs.paseo}/bin/paseo-server";
       Restart = "on-failure";
       RestartSec = 5;
       TimeoutStopSec = 30;

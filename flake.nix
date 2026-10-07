@@ -56,6 +56,8 @@
         delta-editor = prev.callPackage ./pkgs/delta-editor/default.nix {};
         ## Paseo - coding agent orchestrator (desktop AppImage release; nixpkgs only ships the CLI)
         paseo-desktop = prev.callPackage ./pkgs/paseo-desktop/default.nix {};
+        ## Paseo CLI/daemon on plain node, bumped to match paseo-desktop for headless hosts
+        paseo = prev.callPackage ./pkgs/paseo/default.nix {inherit (prev) paseo;};
       };
     };
 
