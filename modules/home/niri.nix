@@ -7,8 +7,11 @@
     inputs.noctalia.homeModules.default
   ];
 
-  # Noctalia Shell
-  programs.noctalia-shell = {
+  # v5.2.1 only disables the old .nix path; newer Home Manager uses a directory.
+  disabledModules = ["programs/noctalia"];
+
+  # Native Noctalia v5. Settings can be managed through its settings window.
+  programs.noctalia = {
     enable = true;
   };
 
@@ -37,9 +40,6 @@
     recursive = true;
   };
 
-  # Noctalia Config
-  home.file.".config/noctalia" = {
-    source = ../../config/noctalia;
-    recursive = true;
-  };
+  # Legacy v4 JSON settings remain in config/noctalia for reference.
+  # v5 uses TOML and does not migrate v4 settings or plugins.
 }

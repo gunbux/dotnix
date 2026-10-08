@@ -32,7 +32,7 @@
     minegrub-theme.url = "github:Lxtharia/minegrub-theme/pull/91/head";
     minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
     noctalia = {
-      url = "github:noctalia-dev/noctalia-shell/legacy-v4";
+      url = "github:noctalia-dev/noctalia/v5.2.1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     torlink.url = "github:baairon/torlink";

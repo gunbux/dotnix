@@ -106,7 +106,7 @@ layout {
     }
 }
 
-spawn-at-startup "noctalia-shell"
+spawn-at-startup "noctalia"
 spawn-at-startup "kitty" "-e" "/home/chun/.config/tmux/start-session.sh"
 spawn-at-startup "zen-beta"
 spawn-at-startup "paseo-desktop" "--class=Paseo"
@@ -229,8 +229,15 @@ window-rule {
 }
 
 // Noctalia Window Rules
+window-rule {
+  match app-id="dev.noctalia.Noctalia"
+  open-floating true
+  default-column-width { fixed 1080; }
+  default-window-height { fixed 920; }
+}
+
 layer-rule {
-  match namespace="^noctalia-overview*"
+  match namespace="^noctalia-backdrop"
   place-within-backdrop true
 }
 
