@@ -69,6 +69,26 @@
         "url": "https://flakehub.com/f/DeterminateSystems/flake-schemas/%3D0.5.0.tar.gz"
       }
     },
+    "glance": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791502281,
+        "narHash": "sha256-gdqgyqnlxAtq9HUpiFxjea4L1FcQasSSEwSlkrH+Qw4=",
+        "ref": "refs/heads/main",
+        "rev": "c2e74a9c79795932f16b48680e6e7e26b7a7620a",
+        "revCount": 1,
+        "type": "git",
+        "url": "file:///home/chun/repo/random/glance"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///home/chun/repo/random/glance"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -422,6 +442,7 @@
     "root": {
       "inputs": {
         "chaotic": "chaotic",
+        "glance": "glance",
         "home-manager": "home-manager_2",
         "minecraft-plymouth-theme": "minecraft-plymouth-theme",
         "minegrub-theme": "minegrub-theme",

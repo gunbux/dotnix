@@ -15,7 +15,9 @@ binds {
     // Noctalia binds
     Mod+Comma hotkey-overlay-title="Noctalia Settings" { spawn-sh "noctalia msg settings-toggle"; }
     Mod+Period hotkey-overlay-title="Noctalia Control Panel" { spawn-sh "noctalia msg panel-toggle control-center"; }
-    Mod+Shift+T hotkey-overlay-title="OCR Region to Clipboard: noctalia" { spawn-sh "noctalia msg plugin fel/ocr:ocr focused ocr-region"; }
+    // Glance binds (screenshots, OCR, ask about screen)
+    Mod+Shift+T hotkey-overlay-title="OCR Region to Clipboard: glance" { spawn "glance" "ocr" "region"; }
+    Mod+Shift+A hotkey-overlay-title="Ask About Screen Region: glance" { spawn "glance" "ask" "region"; }
 
     // Vicinae binds
     Mod+V hotkey-overlay-title="Clipboard History: vicinae" { spawn "vicinae" "cmd" "launch" "clipboard:history"; }
@@ -270,9 +272,9 @@ binds {
     // Print { screenshot; }
     // Ctrl+Print { screenshot-screen; }
     // Alt+Print { screenshot-window; }
-    Mod+Shift+S { screenshot; }
-    Mod+P { screenshot-screen; }
-    Mod+Shift+P { screenshot-window; }
+    Mod+Shift+S hotkey-overlay-title="Screenshot Region: glance" { spawn "glance" "shot" "region"; }
+    Mod+P hotkey-overlay-title="Screenshot Screen: glance" { spawn "glance" "shot" "screen"; }
+    Mod+Shift+P hotkey-overlay-title="Screenshot Window: glance" { spawn "glance" "shot" "window"; }
 
     // Applications such as remote-desktop clients and software KVM switches may
     // request that niri stops processing the keyboard shortcuts defined here

@@ -2,6 +2,7 @@
   imports = [
     ./noctalia.nix
     ./vicinae.nix
+    ./glance.nix
   ];
 
   ## Packages for plugins and stuff

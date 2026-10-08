@@ -45,6 +45,11 @@
       flake = false;
     };
     torlink.url = "github:baairon/torlink";
+    # Screenshots, OCR and ask-about-screen; local checkout, see modules/home/glance.nix.
+    glance = {
+      url = "git+file:///home/chun/repo/random/glance";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {...} @ inputs: let
