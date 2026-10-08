@@ -35,6 +35,13 @@
     mode = "0600";
   };
 
+  # Read by the Paseo cloud-agents plugin for Claude Managed Agents.
+  sops.secrets.anthropic_api_key = {
+    path = "/run/secrets/anthropic_api_key";
+    owner = "chun";
+    mode = "0600";
+  };
+
   # Matcha's unread_summary plugin needs the OpenRouter key baked into the
   # plugin file itself (Lua plugins are sandboxed with no file/env access),
   # so render it via a sops template instead of committing the key to git.
