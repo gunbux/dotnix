@@ -35,6 +35,15 @@
       url = "github:noctalia-dev/noctalia/v5.2.1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Pinned Noctalia plugin sources, exposed to Noctalia as read-only path sources.
+    noctalia-official-plugins = {
+      url = "github:noctalia-dev/official-plugins";
+      flake = false;
+    };
+    noctalia-community-plugins = {
+      url = "github:noctalia-dev/community-plugins";
+      flake = false;
+    };
     torlink.url = "github:baairon/torlink";
   };
 

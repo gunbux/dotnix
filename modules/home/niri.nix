@@ -1,21 +1,7 @@
-{
-  inputs,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   imports = [
-    inputs.noctalia.homeModules.default
+    ./noctalia.nix
   ];
-
-  # v5.2.1 only disables the old .nix path; newer Home Manager uses a directory.
-  disabledModules = ["programs/noctalia"];
-
-  # Native Noctalia v5. Settings can be managed through its settings window.
-  programs.noctalia = {
-    enable = true;
-  };
-
-  services.kdeconnect.enable = true;
 
   ## Packages for plugins and stuff
   home.packages = with pkgs; [
@@ -39,7 +25,4 @@
     source = ../../config/niri;
     recursive = true;
   };
-
-  # Legacy v4 JSON settings remain in config/noctalia for reference.
-  # v5 uses TOML and does not migrate v4 settings or plugins.
 }
