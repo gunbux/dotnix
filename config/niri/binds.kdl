@@ -13,18 +13,19 @@ binds {
     // shows a list of important hotkeys.
 
     // Noctalia binds
-    Mod+A hotkey-overlay-title="Noctalia Launcher" { spawn-sh "noctalia msg panel-toggle launcher"; }
     Mod+Comma hotkey-overlay-title="Noctalia Settings" { spawn-sh "noctalia msg settings-toggle"; }
-    Mod+Period hotkey-overlay-title="Noctalia Control panel" { spawn-sh "noctalia msg panel-toggle control-center"; }
-    Mod+V hotkey-overlay-title="Clipboard Manager" { spawn-sh "noctalia msg panel-toggle clipboard"; }
-    Mod+Shift+Slash hotkey-overlay-title="Keybind Cheatsheet" { spawn-sh "noctalia msg panel-toggle kenn/keybind-cheatsheet:cheatsheet"; }
-    Mod+Semicolon hotkey-overlay-title="Emoji & Symbol Picker" { spawn-sh "noctalia msg panel-toggle liamwh/emoji-picker:wide"; }
-    Mod+Shift+T hotkey-overlay-title="OCR Region to Clipboard" { spawn-sh "noctalia msg plugin fel/ocr:ocr focused ocr-region"; }
+    Mod+Period hotkey-overlay-title="Noctalia Control Panel" { spawn-sh "noctalia msg panel-toggle control-center"; }
+    Mod+Shift+T hotkey-overlay-title="OCR Region to Clipboard: noctalia" { spawn-sh "noctalia msg plugin fel/ocr:ocr focused ocr-region"; }
+
+    // Vicinae binds
+    Mod+V hotkey-overlay-title="Clipboard History: vicinae" { spawn "vicinae" "cmd" "launch" "clipboard:history"; }
+    Mod+Shift+Slash hotkey-overlay-title="Keybind Cheatsheet: vicinae" { spawn "vicinae" "cmd" "launch" "@knoopx/niri:keybinds"; }
+    Mod+Semicolon hotkey-overlay-title="Emoji Picker: vicinae" { spawn "vicinae" "cmd" "launch" "core:search-emojis"; }
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+Return hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
     Mod+B hotkey-overlay-title="Open a Browser: zen" { spawn "zen-beta"; }
-    Mod+Space hotkey-overlay-title="Run an Application: omnia" { spawn "kitty" "-T" "omnia" "/home/chun/repo/omnia/omnia"; }
+    Mod+Space hotkey-overlay-title="Run an Application: vicinae" { spawn "vicinae" "toggle"; }
     Mod+Escape hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.

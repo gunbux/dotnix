@@ -78,6 +78,11 @@
       };
     };
   };
+  # keyd grabs every physical keyboard, so key events only appear on its virtual
+  # device. Give it a stable path for readers like Noctalia's bongocat widget.
+  services.udev.extraRules = ''
+    SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="keyd virtual keyboard", SYMLINK+="input/by-id/keyd-virtual-keyboard-event-kbd"
+  '';
 
   # Services
   programs.mosh.enable = true;

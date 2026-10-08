@@ -1,6 +1,7 @@
 {pkgs, ...}: {
   imports = [
     ./noctalia.nix
+    ./vicinae.nix
   ];
 
   ## Packages for plugins and stuff

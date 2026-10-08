@@ -1,0 +1,118 @@
+{
+  "$schema": "https://raw.githubusercontent.com/vicinaehq/vicinae/refs/heads/main/extra/schemas/extension.json",
+  "name": "paseo",
+  "title": "Paseo",
+  "description": "Jump to Paseo workspaces and ask quick questions through a Paseo agent",
+  "categories": ["Developer Tools", "Productivity"],
+  "license": "MIT",
+  "platforms": ["Linux"],
+  "author": "chun",
+  "icon": "paseo.png",
+  "preferences": [
+    {
+      "name": "model",
+      "title": "Chat Model",
+      "description": "Provider and model for quick chats",
+      "type": "dropdown",
+      "required": false,
+      "default": "claude/claude-haiku-4-5",
+      "data": [
+        { "title": "Claude Haiku 4.5", "value": "claude/claude-haiku-4-5" },
+        { "title": "Claude Sonnet 5.5", "value": "claude/claude-sonnet-5-5" },
+        { "title": "Claude Opus 5.5", "value": "claude/claude-opus-5-5" },
+        { "title": "OpenRouter Auto Router", "value": "opencode/openrouter/openrouter/auto" },
+        { "title": "OpenRouter Free Router", "value": "opencode/openrouter/openrouter/free" },
+        { "title": "Codex (provider default)", "value": "codex" },
+        { "title": "Custom", "value": "custom" }
+      ]
+    },
+    {
+      "name": "customModel",
+      "title": "Custom Model",
+      "description": "provider/model used when Chat Model is Custom, e.g. opencode/openrouter/anthropic/claude-haiku-4.5. List models with `paseo provider models <provider>`.",
+      "type": "textfield",
+      "required": false,
+      "placeholder": "opencode/openrouter/anthropic/claude-haiku-4.5",
+      "default": ""
+    },
+    {
+      "name": "thinking",
+      "title": "Thinking",
+      "description": "Thinking effort; options the model does not support are rejected by Paseo",
+      "type": "dropdown",
+      "required": false,
+      "default": "",
+      "data": [
+        { "title": "Model default", "value": "" },
+        { "title": "Off", "value": "off" },
+        { "title": "Low", "value": "low" },
+        { "title": "Medium", "value": "medium" },
+        { "title": "High", "value": "high" }
+      ]
+    },
+    {
+      "name": "readOnly",
+      "title": "Read Only",
+      "label": "Run chats in plan mode so they cannot edit files",
+      "description": "Applies to providers with a plan mode (Claude, OpenCode)",
+      "type": "checkbox",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "chatDirectory",
+      "title": "Chat Directory",
+      "description": "Working directory for quick chat workspaces; created if missing",
+      "type": "textfield",
+      "required": false,
+      "default": "~/.local/share/paseo/quick-chat"
+    },
+    {
+      "name": "chatLabel",
+      "title": "Chat Workspace Label",
+      "description": "Label added to quick chat workspaces. Match the auto-archive plugin's quick chat label so they are archived sooner.",
+      "type": "textfield",
+      "required": false,
+      "default": "Quick chat"
+    },
+    {
+      "name": "showQuickChats",
+      "title": "Quick Chats",
+      "label": "Show quick chat workspaces in the workspace switcher",
+      "description": "Quick chats are always listed in Ask Paseo",
+      "type": "checkbox",
+      "required": false,
+      "default": false
+    }
+  ],
+  "commands": [
+    {
+      "name": "workspaces",
+      "title": "Paseo Workspaces",
+      "subtitle": "Paseo",
+      "description": "Search Paseo workspaces and agents and open them in Paseo",
+      "mode": "view"
+    },
+    {
+      "name": "ask",
+      "title": "Ask Paseo",
+      "subtitle": "Paseo",
+      "description": "Ask a quick question through a Paseo agent",
+      "mode": "view",
+      "arguments": [{ "name": "question", "type": "text", "placeholder": "Question", "required": false }]
+    }
+  ],
+  "scripts": {
+    "build": "vici build",
+    "dev": "vici develop",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vicinae/api": "0.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.0",
+    "typescript": "^5.9.3"
+  }
+}

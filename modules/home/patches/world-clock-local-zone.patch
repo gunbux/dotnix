@@ -1,0 +1,105 @@
+diff -ru a/bar.luau b/bar.luau
+--- a/bar.luau	2026-10-09 00:51:37.897868525 +0200
++++ b/bar.luau	2026-10-09 00:51:37.961095340 +0200
+@@ -3,6 +3,7 @@
+ -- themselves when the "show_clocks" widget setting is on.
+ 
+ local zones = noctalia.state.get("world_clock.zones") or {}
++local localRow = noctalia.state.get("world_clock.local")
+ 
+ local function render()
+   -- Read on every render: a settings change repaints the widget.
+@@ -14,6 +15,9 @@
+ 
+   -- Only zones the user left visible in the panel (per-zone eye toggle).
+   local visible = {}
++  if localRow ~= nil then
++    table.insert(visible, localRow)
++  end
+   for _, row in ipairs(zones) do
+     if row.on_bar ~= false then
+       table.insert(visible, row)
+@@ -46,6 +50,11 @@
+   render()
+ end)
+ 
++noctalia.state.watch("world_clock.local", function(value)
++  localRow = value
++  render()
++end)
++
+ function update()
+   render()
+ end
+diff -ru a/service.luau b/service.luau
+--- a/service.luau	2026-10-09 00:51:37.898111012 +0200
++++ b/service.luau	2026-10-09 00:51:37.960847807 +0200
+@@ -17,6 +17,14 @@
+ 
+ local zones = {} -- ordered list of { id, label, on_bar }
+ 
++-- System timezone, polled because tzupdate changes it while travelling and the
++-- process's own local time can stay stale. Published to world_clock.local
++-- (bar only) unless a listed zone already shows the same time.
++local LOCAL_LABEL = "📍"
++local LOCAL_POLL_MS = 60000
++local localZone = nil
++local lastLocalPoll = nil
++
+ local function dataPath()
+   local dir = noctalia.pluginDataDir()
+   if dir == nil then
+@@ -121,6 +129,40 @@
+     })
+   end
+   noctalia.state.set("world_clock.zones", rows)
++
++  local localRow = nil
++  if localZone ~= nil then
++    local localOffset = noctalia.formatTime("%z", nil, localZone)
++    local covered = false
++    for _, row in ipairs(rows) do
++      if row.offset == localOffset then
++        covered = true
++        break
++      end
++    end
++    if not covered then
++      localRow = {
++        id = localZone,
++        label = LOCAL_LABEL,
++        time = noctalia.formatTime(format, nil, localZone),
++      }
++    end
++  end
++  noctalia.state.set("world_clock.local", localRow)
++end
++
++local function pollLocalZone()
++  lastLocalPoll = noctalia.nowMs()
++  noctalia.runAsync({ "timedatectl", "show", "-p", "Timezone", "--value" }, function(result)
++    if result.exitCode ~= 0 or result.timedOut then
++      return
++    end
++    local zone = noctalia.string.trim(result.stdout or "")
++    if zone ~= "" and noctalia.isValidTimezone(zone) and zone ~= localZone then
++      localZone = zone
++      publish()
++    end
++  end, 5000)
+ end
+ 
+ local function addZone(zone)
+@@ -255,8 +297,12 @@
+ end)
+ 
+ function update()
++  if lastLocalPoll == nil or noctalia.nowMs() - lastLocalPoll >= LOCAL_POLL_MS then
++    pollLocalZone()
++  end
+   publish()
+ end
+ 
+ loadZones()
+ publish()
++pollLocalZone()

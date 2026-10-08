@@ -1,10 +1,42 @@
 {
   config,
   inputs,
+  lib,
   osConfig,
   pkgs,
   ...
-}: {
+}: let
+  # agent-glow 0.1.0 never matches Claude sessions (it searches the cached
+  # family name instead of the cmdline) and misses Paseo's --resume=<uuid> and
+  # Codex app-server sessions. world_clock gains a bar-only local clock that
+  # follows tzupdate and hides when it matches a listed zone. Both override the
+  # pinned copies via a later source.
+  patchedPlugins = pkgs.runCommand "noctalia-patched-plugins" {} ''
+    mkdir -p $out
+    cp -r ${inputs.noctalia-community-plugins}/agent-glow $out/
+    cp -r ${inputs.noctalia-official-plugins}/world_clock $out/
+    chmod -R u+w $out
+    patch -d $out/agent-glow -p1 < ${./patches/agent-glow-sessions.patch}
+    patch -d $out/world_clock -p1 < ${./patches/world-clock-local-zone.patch}
+    substituteInPlace $out/world_clock/service.luau \
+      --replace-fail '"timedatectl"' '"${pkgs.systemd}/bin/timedatectl"'
+  '';
+
+  # Seeded into the world clock's plugin data on every switch; edits made in
+  # its panel last until the next switch.
+  worldClockZones = pkgs.writeText "world-clock-zones.json" (builtins.toJSON [
+    {
+      id = "Asia/Singapore";
+      label = "🇸🇬";
+      on_bar = true;
+    }
+    {
+      id = "America/Los_Angeles";
+      label = "🇺🇸";
+      on_bar = true;
+    }
+  ]);
+in {
   imports = [
     inputs.noctalia.homeModules.default
   ];
@@ -20,7 +52,9 @@
 
     settings = {
       shell = {
-        font_family = "JetBrainsMono NF";
+        # Emoji second: fontconfig's fallback otherwise reaches Unifont first,
+        # which draws flag emoji as boxed letters.
+        font_family = "JetBrainsMono NF, Noto Color Emoji";
         avatar_path = "~/.face";
         telemetry_enabled = false;
         # No other polkit agent runs under niri; share-wifi needs one for pkexec.
@@ -94,43 +128,70 @@
         radius = 12;
         background_opacity = 0.93;
         capsule = true;
-        widget_spacing = 4;
+        # Dense: slimmer bar, tighter padding, slightly smaller icons and text.
+        thickness = 30;
+        padding = 8;
+        widget_spacing = 3;
+        capsule_padding = 4;
+        scale = 0.9;
         font_scale = 0.75;
 
         # Related widgets share one capsule; nothing is hidden behind hover.
         # Bluetooth's device label is off to save space; the tooltip shows it.
         # Emoji picker (Mod+;) and night light (control centre) stay off the bar.
-        start = ["workspaces" "group:sysmon" "group:agents"];
-        center = ["control-center" "clock" "world-clock" "media" "bongocat"];
-        end = [
-          "privacy"
-          "notifications"
-          "group:nix"
-          "ocr"
-          "group:controls"
-          "group:connectivity"
+        # Everything left-aligned: system entry points and time first, then live
+        # stats, then the playful bits that change width.
+        start = [
+          "control-center"
+          "workspaces"
+          "group:time"
+          "group:sysmon"
+          "group:agents"
+          "media"
+          "bongocat"
         ];
+        center = [];
+        end = ["group:nix" "privacy" "group:tools" "group:controls" "group:connectivity"];
 
+        # Collapsible groups show their first member until hovered and unfold
+        # toward the centre. Privacy stays outside so captures are never hidden.
         capsule_group = [
+          {
+            id = "time";
+            members = ["date" "world-clock"];
+            padding = 4;
+          }
           {
             id = "sysmon";
             members = ["cpu" "ram" "disk" "net-down" "net-up"];
+            padding = 4;
           }
           {
             id = "agents";
-            members = ["agent-glow" "claude-usage"];
+            members = ["agent-glow" "claude-usage" "codex-usage"];
+            padding = 4;
           }
           {
             id = "nix";
             members = ["nix-status" "nix-monitor"];
+            padding = 4;
           }
           {
-            id = "connectivity";
-            members = ["ip" "tailscale" "bluetooth" "phone" "share-wifi" "network"];
+            id = "tools";
+            members = ["ocr" "notifications" "phone" "share-wifi"];
+            padding = 4;
+            accordion = true;
+            accordion_direction = "start";
           }
           {
             id = "controls";
             members = ["volume" "brightness" "battery"];
+            padding = 4;
+          }
+          {
+            id = "connectivity";
+            members = ["ip" "tailscale" "bluetooth" "network"];
+            padding = 4;
           }
         ];
       };
@@ -144,28 +205,34 @@
           empty_color = "secondary";
         };
 
+        # Glyph + value only (no gauges); percentages instead of GiB figures.
         cpu = {
           type = "sysmon";
           stat = "cpu_usage";
+          visualization = "none";
         };
         ram = {
           type = "sysmon";
-          stat = "ram_used";
+          stat = "ram_pct";
+          visualization = "none";
         };
         disk = {
           type = "sysmon";
-          stat = "disk_used";
+          stat = "disk_used_pct";
           path = "/";
+          visualization = "none";
         };
         net-down = {
           type = "sysmon";
           stat = "net_rx";
           network_speed_compact = true;
+          visualization = "none";
         };
         net-up = {
           type = "sysmon";
           stat = "net_tx";
           network_speed_compact = true;
+          visualization = "none";
         };
 
         # v4 ip-monitor showed the public IP.
@@ -181,11 +248,6 @@
           custom_image = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
         };
 
-        clock = {
-          format = "{:%H:%M %a, %b %d}";
-          tooltip_format = "{:%A, %B %d, %Y}";
-        };
-
         media = {
           artist_first = true;
           max_length = 145;
@@ -193,8 +255,12 @@
           hide_when_no_media = true;
         };
 
+        # Replaces the plain clock: live 🇸🇬 and 🇺🇸 times (plus 📍 local time
+        # when elsewhere), panel on click. It shares the "time" capsule with the
+        # built-in "date" widget, date first.
         world-clock = {
           type = "noctalia/world_clock:bar";
+          show_clocks = true;
         };
 
         agent-glow = {
@@ -207,8 +273,15 @@
           pill_extras = "countdown";
         };
 
+        # Headroom only reads ~/.codex/auth.json; run `codex` if the session expires.
+        codex-usage = {
+          type = "ayagmar/headroom:usage";
+        };
+
         nix-status = {
           type = "mindnbytes/nix-status:status";
+          color = "secondary";
+          icon_color = "primary";
         };
 
         nix-monitor = {
@@ -232,8 +305,9 @@
 
         bongocat = {
           type = "noctalia/bongocat:cat";
-          # Built-in and USB keyboards; reading them relies on the input group.
-          input_devices = ["/dev/input/by-path/*-event-kbd"];
+          # keyd grabs the physical keyboards; read its virtual one (udev
+          # symlink in base.nix). Reading it relies on the input group.
+          input_devices = ["/dev/input/by-id/keyd-virtual-keyboard-event-kbd"];
         };
 
         privacy.hide_inactive = true;
@@ -291,6 +365,7 @@
           "conqazht/share-wifi"
           "fel/agent-glow"
           "jrohland/claudecode"
+          "ayagmar/headroom"
         ];
         auto_update = "all";
 
@@ -322,6 +397,12 @@
             location = "${inputs.noctalia-community-plugins}";
             enabled = true;
           }
+          {
+            name = "nix-patched";
+            kind = "path";
+            location = "${patchedPlugins}";
+            enabled = true;
+          }
         ];
       };
 
@@ -330,7 +411,7 @@
           flake_dir = "${config.home.homeDirectory}/dotnix";
           # nixosConfigurations names match the hostnames.
           nixos_configuration = osConfig.networking.hostName;
-          use_themed_logos = true;
+          use_themed_logos = false;
         };
         "avivbintangaringga/nix-monitor" = {
           branch = "nixos-unstable";
@@ -339,6 +420,19 @@
         };
         # Types the picked character into the focused window after copying it.
         "liamwh/emoji-picker".paste_command = "wtype {emoji}";
+        # Codex only, as a plain percentage; Claude is in Headroom's panel since
+        # claudecode already shows it on the bar.
+        "ayagmar/headroom" = {
+          provider_codex = "bar";
+          provider_claude = "panel";
+          provider_antigravity = "off";
+          window = "session";
+          bar_style = "value";
+        };
+        # Setting this (re)starts the world clock service, which loads the
+        # SG/SF labels seeded below.
+        "noctalia/world_clock".time_format = "24h";
+        "fel/agent-glow".agents = "opencode,claude,codex,gemini,aider,goose,paseo";
         "kenn/keybind-cheatsheet" = {
           compositor = "niri";
           niri_config = "~/.config/niri/config.kdl";
@@ -346,6 +440,12 @@
       };
     };
   };
+
+  home.activation.noctaliaWorldClockZones = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    dir="${config.xdg.stateHome}/noctalia/plugins/data/noctalia/world_clock"
+    run mkdir -p "$dir"
+    run install -m 644 ${worldClockZones} "$dir/zones.json"
+  '';
 
   services.kdeconnect.enable = true;
 

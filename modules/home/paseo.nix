@@ -1,5 +1,5 @@
 {lib, ...}: let
-  plugins = ["auto-label" "cloud-agents"];
+  plugins = ["auto-archive" "auto-label" "cloud-agents"];
   pluginSource = name:
     lib.cleanSourceWith {
       src = ../../config/paseo/plugins + "/${name}";

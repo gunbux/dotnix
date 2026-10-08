@@ -1,0 +1,162 @@
+--- a/activity.py	2026-10-08 22:59:35.882600442 +0200
++++ b/activity.py	2026-10-08 22:59:35.930461802 +0200
+@@ -38,6 +38,7 @@
+ MAX_STATE_AGE = 30
+ OCODE_DB = os.path.expanduser("~/.local/share/opencode/opencode.db")
+ CLAUDE_PROJECTS = os.path.expanduser("~/.claude/projects")
++CODEX_HOME = os.environ.get("CODEX_HOME") or os.path.expanduser("~/.codex")
+ MAX_NAME_LEN = 80
+ 
+ 
+@@ -203,7 +204,7 @@
+ 
+ # ── Claude transcripts ──────────────────────────────────────────────────────
+ 
+-RESUME_RE = re.compile(r"--resume\s+([0-9a-fA-F-]{8,})")
++RESUME_RE = re.compile(r"--(?:resume|session-id)(?:=|\s+)([0-9a-fA-F-]{8,})")
+ 
+ 
+ def extract_prompt_text(obj):
+@@ -272,21 +273,52 @@
+     return matches[0] if matches else None
+ 
+ 
++def is_claude_binary(cmdline):
++    """argv[0] is Claude Code itself (claude, .claude-wrapped), not e.g. a shell
++    whose arguments merely mention ~/.claude."""
++    argv0 = os.path.basename(cmdline.split(" ", 1)[0]).lower()
++    return "claude" in argv0
++
++
++def newest_transcript(cwd):
++    """Most recently written transcript for a project dir. Claude Code names the
++    project folder after the cwd with every non-alphanumeric char as '-'."""
++    if not cwd:
++        return None
++    folder = os.path.join(CLAUDE_PROJECTS, re.sub(r"[^A-Za-z0-9]", "-", cwd))
++    try:
++        paths = glob.glob(os.path.join(folder, "*.jsonl"))
++        return max(paths, key=os.path.getmtime) if paths else None
++    except OSError:
++        return None
++
++
+ def collect_claude(procs, cpu, names_cache):
+     """Live claude processes joined to transcripts -> session dicts."""
+     sessions = []
++    seen = set()
+     for pid, entry in procs.items():
+-        cmdline = entry[2]
+-        if "claude" not in cmdline.lower():
++        # snapshot() keeps only the matched family, never the cmdline, so the
++        # cmdline is re-read here for the few pids already known to be claude.
++        if entry[2] != "claude":
++            continue
++        cmdline = read_cmdline(pid) or ""
++        if not is_claude_binary(cmdline):
+             continue
+         match = RESUME_RE.search(cmdline)
+         uuid = match.group(1) if match else None
+-        if uuid is None:
+-            continue
+-        cached = names_cache.get(uuid, {})
+-        path = find_transcript(uuid, cached.get("path"))
++        cached = names_cache.get(uuid, {}) if uuid else {}
++        path = find_transcript(uuid, cached.get("path")) if uuid else None
+         if path is None:
++            # New sessions (e.g. started by Paseo) carry no --resume.
++            path = newest_transcript(read_cwd(pid))
++            if path is None:
++                continue
++            uuid = os.path.basename(path)[: -len(".jsonl")]
++            cached = names_cache.get(uuid, {})
++        if uuid in seen:
+             continue
++        seen.add(uuid)
+         try:
+             last_active = os.path.getmtime(path)
+         except OSError:
+@@ -308,6 +340,67 @@
+     return sessions
+ 
+ 
++# ── Codex rollouts ──────────────────────────────────────────────────────────
++
++def codex_titles():
++    titles = {}
++    try:
++        with open(os.path.join(CODEX_HOME, "session_index.jsonl"), encoding="utf-8", errors="replace") as handle:
++            for line in handle:
++                try:
++                    obj = json.loads(line)
++                except ValueError:
++                    continue
++                if obj.get("id") and obj.get("thread_name"):
++                    titles[obj["id"]] = obj["thread_name"]
++    except OSError:
++        pass
++    return titles
++
++
++def collect_codex(any_live, window=3600, limit=10):
++    """Recent Codex rollout files -> session dicts. Codex (including the
++    app-server Paseo drives) appends to the rollout on every turn."""
++    if not any_live:
++        return []
++    now = time.time()
++    recent = []
++    for path in glob.glob(os.path.join(CODEX_HOME, "sessions", "*", "*", "*", "rollout-*.jsonl")):
++        try:
++            mtime = os.path.getmtime(path)
++        except OSError:
++            continue
++        if now - mtime < window:
++            recent.append((mtime, path))
++    recent.sort(reverse=True)
++    titles = None
++    sessions = []
++    for mtime, path in recent:
++        try:
++            with open(path, encoding="utf-8", errors="replace") as handle:
++                meta = json.loads(handle.readline()).get("payload", {})
++        except (OSError, ValueError, AttributeError):
++            continue
++        source = meta.get("source")
++        if isinstance(source, dict) and "subagent" in source:
++            continue  # internal helpers such as guardian reviews
++        sid = str(meta.get("id") or os.path.basename(path))
++        if titles is None:
++            titles = codex_titles()
++        sessions.append({
++            "family": "codex",
++            "key": sid,
++            "name": (titles.get(sid) or "codex session")[:MAX_NAME_LEN],
++            "project": meta.get("cwd") or "",
++            "last_active": mtime,
++            "cpu": 0.0,
++            "live": True,
++        })
++        if len(sessions) >= limit:
++            break
++    return sessions
++
++
+ # ── opencode database ───────────────────────────────────────────────────────
+ 
+ def collect_opencode(any_live, limit_recent=10):
+@@ -385,7 +478,14 @@
+             groups[family] = round(pct, 1)
+ 
+     any_opencode_live = any(family_of(pid, after["procs"]) == "opencode" for pid in after["procs"])
+-    sessions = collect_claude(after["procs"], cpu, names_cache) + collect_opencode(any_opencode_live)
++    any_codex_live = "codex" in patterns and any(
++        family_of(pid, after["procs"]) == "codex" for pid in after["procs"]
++    )
++    sessions = (
++        collect_claude(after["procs"], cpu, names_cache)
++        + collect_codex(any_codex_live)
++        + collect_opencode(any_opencode_live)
++    )
+     save_state(args.state, {**after, "names": names_cache, "v": STATE_FORMAT})
+ 
+     for session in sessions:

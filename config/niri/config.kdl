@@ -189,14 +189,6 @@ window-rule {
     open-floating true
 }
 
-// Omnia window rule
-window-rule {
-    match title="^omnia$"
-    open-floating true
-    default-column-width { proportion 0.5; }
-    default-window-height { proportion 0.5; }
-}
-
 // Pin browser to workspace 1 and maximize it at startup
 window-rule {
     match app-id=r#"^zen-beta$"# at-startup=true

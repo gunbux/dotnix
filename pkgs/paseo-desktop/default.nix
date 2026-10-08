@@ -41,6 +41,9 @@ in
       ${mkNodeEntry "paseo-server" "server/dist/scripts/supervisor-entrypoint.js"}
     '';
 
+    # For scripts that reuse the bundled daemon client (e.g. the vicinae extension)
+    passthru = {inherit resources;};
+
     meta = {
       description = "Orchestrate multiple coding agents from desktop and mobile";
       homepage = "https://github.com/getpaseo/paseo";
