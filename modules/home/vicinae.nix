@@ -42,16 +42,6 @@
       preBuild = "rm -rf node_modules/usocket";
     });
 
-  # Runs the bridge on Paseo's bundled runtime so it reuses the installed CLI's
-  # daemon client; see config/vicinae/paseo/bridge/paseo-bridge.mjs.
-  paseoResources = pkgs.paseo-desktop.resources;
-  paseoBridge = pkgs.writeShellScript "paseo-vicinae-bridge" ''
-    exec env PASEO_RESOURCES=${paseoResources} ELECTRON_RUN_AS_NODE=1 PASEO_NODE_ENV=production \
-      ${pkgs.paseo-desktop}/bin/paseo-desktop --disable-warning=DEP0040 \
-      ${paseoResources}/app.asar.unpacked/dist/daemon/node-entrypoint-runner.js \
-      node-script ${../../config/vicinae/paseo/bridge/paseo-bridge.mjs} "$@"
-  '';
-
   paseoExtension =
     (config.lib.vicinae.mkExtension {
       name = "paseo";
@@ -62,7 +52,7 @@
     }).overrideAttrs {
       postPatch = ''
         substituteInPlace src/lib/paseo.ts \
-          --replace-fail "@paseoBridge@" "${paseoBridge}" \
+          --replace-fail "@paseoBridge@" "${pkgs.lib.getExe pkgs.paseo-bridge}" \
           --replace-fail "@paseo@" "${pkgs.paseo-desktop}/bin/paseo"
       '';
     };

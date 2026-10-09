@@ -68,9 +68,9 @@ export function SettingsScreen({ theme }: PluginSurfaceProps) {
     </SettingsSection>
     <SettingsSection title="Quick chats">
       <SettingsCard>
-        <SettingsInput label="Quick chat label"
-          hint="Workspaces with this label, such as the Vicinae extension's quick chats, use the hours below. Leave empty to turn off."
-          initialValue={values.quickChatLabel} onChangeText={label => setChatDraft({ ...chat, label })} placeholder="Quick chat" />
+        <SettingsInput label="Quick chat labels"
+          hint="Workspaces with any of these comma-separated labels, such as the Vicinae extension's quick chats and glance's chats, use the hours below. Leave empty to turn off."
+          initialValue={values.quickChatLabel} onChangeText={label => setChatDraft({ ...chat, label })} placeholder="Quick chat, Glance" />
         <SettingsInput label="Quick chat hours" hint="Hours without activity before a quick chat is archived. 0 uses idle days."
           initialValue={String(values.quickChatHours)} onChangeText={hours => setChatDraft({ ...chat, hours })} placeholder="12" />
         <SettingsAction label="Save quick chat settings"

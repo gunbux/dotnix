@@ -48,6 +48,9 @@ export type Agent = {
 
 export type Snapshot = { serverId: string; workspaces: Workspace[]; agents: Agent[] };
 
+export type Turn = { prompt: string; answer: string };
+export type History = { status: string; turns: Turn[] };
+
 export type AskEvent =
   | { type: "started"; agentId: string; workspaceId: string | null }
   | { type: "text"; text: string }
@@ -73,6 +76,7 @@ async function bridge<T>(...args: string[]): Promise<T> {
 export const snapshot = () => bridge<Snapshot>("snapshot");
 export const archiveWorkspace = (id: string) => bridge("archive", id);
 export const setPinned = (id: string, pinned: boolean) => bridge("pin", id, pinned ? "1" : "0");
+export const history = (agentId: string) => bridge<History>("history", agentId);
 
 /** Focuses Paseo Desktop on an agent, launching it if needed. */
 export async function openAgent(agentId: string) {
@@ -91,7 +95,10 @@ const PLAN_MODES: Record<string, string> = { claude: "plan", opencode: "plan" };
 
 export type AskOptions = { prompt: string; agentId?: string | undefined; model: string; signal?: AbortSignal };
 
-/** Starts a quick chat (or follows up on one) and streams bridge events. */
+/**
+ * Starts a quick chat (or follows up on one) and streams bridge events. With an
+ * agentId and an empty prompt it only follows the agent's current turn.
+ */
 export function ask({ prompt, agentId, model, signal }: AskOptions, onEvent: (event: AskEvent) => void) {
   const prefs = preferences();
   const { provider, model: modelId } = resolveModel(model, prefs.customModel);
@@ -128,6 +135,10 @@ export function ask({ prompt, agentId, model, signal }: AskOptions, onEvent: (ev
     );
   });
 }
+
+// glance's ask-about-screen chats (programs.glance.settings.paseoLabel in
+// modules/home/glance.nix); the switcher hides them along with quick chats.
+export const GLANCE_LABEL = "Glance";
 
 export const isQuickChat = (workspace: Workspace, label: string) => workspace.labels.includes(label);
 

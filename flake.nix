@@ -72,6 +72,8 @@
         paseo-desktop = prev.callPackage ./pkgs/paseo-desktop/default.nix {};
         ## Paseo CLI/daemon on plain node, bumped to match paseo-desktop for headless hosts
         paseo = prev.callPackage ./pkgs/paseo/default.nix {inherit (prev) paseo;};
+        ## Daemon client for the Vicinae Paseo extension and glance (see config/vicinae/paseo/bridge)
+        paseo-bridge = final.callPackage ./pkgs/paseo-bridge/default.nix {};
       };
     };
 

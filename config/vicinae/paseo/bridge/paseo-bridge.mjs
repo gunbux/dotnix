@@ -1,13 +1,15 @@
-// Runs on Paseo's bundled Electron-as-node runtime (see modules/home/vicinae.nix) so
-// it reuses the installed CLI's daemon client: same version, same local
-// credential. The public CLI drops agent workspace ids, which the switcher needs.
+// Runs on Paseo's bundled Electron-as-node runtime (see pkgs/paseo-bridge) so it
+// reuses the installed CLI's daemon client: same version, same local credential.
+// The public CLI drops agent workspace ids, which the switcher needs, and cannot
+// set a system prompt, which glance needs.
 //
-//   paseo-vicinae-bridge snapshot           -> one JSON object
-//   paseo-vicinae-bridge ask '<json>'       -> NDJSON events, see ask() below
-//   paseo-vicinae-bridge archive <wks_id>   -> one JSON object
-//   paseo-vicinae-bridge pin <wks_id> <0|1> -> one JSON object
+//   paseo-bridge snapshot            -> one JSON object
+//   paseo-bridge ask '<json>'        -> NDJSON events, see ask() below
+//   paseo-bridge history <agent_id>  -> one JSON object, see history() below
+//   paseo-bridge archive <wks_id>    -> one JSON object
+//   paseo-bridge pin <wks_id> <0|1>  -> one JSON object
 import { mkdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { extname, join } from "node:path";
 
 const cli = `${process.env.PASEO_RESOURCES}/app.asar/node_modules/@getpaseo/cli/dist/utils`;
 const { connectToDaemon } = await import(`${cli}/client.js`);
@@ -71,25 +73,61 @@ async function snapshot(client) {
   };
 }
 
+// Paseo shows an image the agent read (e.g. an attachment) as an assistant
+// message holding only the image; it is not part of the reply.
+const imageEcho = (item) => item.type === "assistant_message" && /^!\[[^\]]*\]\(file:\/\/[^)]*\)$/.test(item.text.trim());
+
+const timelineItems = async (client, agentId) =>
+  (await client.fetchAgentTimeline(agentId, { limit: 500 })).entries.map((entry) => entry.item).filter((item) => !imageEcho(item));
+
 // The reply is every assistant message after the last user message.
 async function reply(client, agentId) {
-  const timeline = await client.fetchAgentTimeline(agentId, { limit: 200 });
-  const items = timeline.entries.map((entry) => entry.item);
+  const items = await timelineItems(client, agentId);
   const start = items.findLastIndex((item) => item.type === "user_message");
   return items
     .slice(start + 1)
     .filter((item) => item.type === "assistant_message")
     .map((item) => item.text)
-    .join("\n\n");
+    .join("\n\n")
+    .trim();
 }
+
+// {type:"history", status, turns:[{prompt, answer}]}: each user message with the
+// assistant messages that followed it. Assistant text before the first user
+// message (none in practice) is dropped.
+async function history(client, agentId) {
+  const [items, agent] = await Promise.all([timelineItems(client, agentId), client.fetchAgent(agentId)]);
+  const turns = [];
+  for (const item of items) {
+    if (item.type === "user_message") turns.push({ prompt: item.text, answer: "" });
+    else if (item.type === "assistant_message" && turns.length) {
+      const turn = turns[turns.length - 1];
+      turn.answer = turn.answer ? `${turn.answer}\n\n${item.text}` : item.text;
+    }
+  }
+  for (const turn of turns) turn.answer = turn.answer.trim();
+  return { type: "history", status: agent?.agent.status ?? "unknown", turns };
+}
+
+const MIME = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif" };
+const readImages = (paths = []) =>
+  Promise.all(
+    paths.map(async (path) => ({
+      data: (await readFile(path)).toString("base64"),
+      mimeType: MIME[extname(path).toLowerCase()] ?? "image/png",
+    })),
+  );
 
 // Events: {type:"started", agentId, workspaceId}, {type:"text", text} (whole reply
 // so far), then {type:"done", text, status} or {type:"error", message}.
+// `images` are file paths sent with the prompt. With an agentId and no prompt it
+// only follows the current turn, e.g. to reattach after the caller went away.
 async function ask(client, request) {
   let agentId = request.agentId;
   let workspaceId = request.workspaceId ?? null;
+  const images = await readImages(request.images);
   if (agentId) {
-    await client.sendAgentMessage(agentId, request.prompt);
+    if (request.prompt) await client.sendAgentMessage(agentId, request.prompt, images.length ? { images } : undefined);
   } else {
     await mkdir(request.cwd, { recursive: true });
     const title = request.title ?? request.prompt.slice(0, 60);
@@ -112,6 +150,8 @@ async function ask(client, request) {
       workspaceId,
       title,
       initialPrompt: request.prompt,
+      ...(images.length ? { images } : {}),
+      ...(request.systemPrompt ? { systemPrompt: request.systemPrompt } : {}),
       labels: request.labels ?? {},
     });
     agentId = agent.id;
@@ -142,6 +182,7 @@ const client = await connectToDaemon({ target: selectDaemonTarget({}) });
 try {
   if (command === "snapshot") emit(await snapshot(client));
   else if (command === "ask") await ask(client, JSON.parse(args[0]));
+  else if (command === "history") emit(await history(client, args[0]));
   else if (command === "archive") emit(await client.archiveWorkspace(args[0]));
   else if (command === "pin") emit(await client.setWorkspacePinned(args[0], args[1] === "1"));
   else throw new Error(`Unknown command: ${command}`);

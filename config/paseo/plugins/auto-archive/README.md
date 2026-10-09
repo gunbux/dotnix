@@ -14,10 +14,11 @@ days (4 by default).
 - Archiving the last workspace on a managed worktree removes the worktree. With **Worktrees with
   uncommitted changes** on (the default), a worktree workspace is only archived when Paseo
   reports it clean. Local workspaces are archived regardless of git state; their directory stays.
-- Workspaces carrying the **Quick chat label** (`Quick chat` by default) are archived after
-  **Quick chat hours** (12 by default) instead. The Vicinae Paseo extension
-  (`config/vicinae/paseo`) adds that label to the workspaces it creates for quick chats; pin
-  one to keep it. Set the hours to 0 or clear the label to treat them like any other workspace.
+- Workspaces carrying any of the comma-separated **Quick chat labels** (`Quick chat, Glance` by
+  default) are archived after **Quick chat hours** (12 by default) instead. The Vicinae Paseo
+  extension (`config/vicinae/paseo`) labels its quick chats `Quick chat`, and glance's Paseo
+  backend labels its ask-about-screen chats `Glance`; pin one to keep it. Set the hours to 0 or
+  clear the labels to treat them like any other workspace.
 - Failures are logged and retried on the next sweep.
 
 Configure under **Settings → Plugins → Auto archive**, or open **Auto archive settings** from the

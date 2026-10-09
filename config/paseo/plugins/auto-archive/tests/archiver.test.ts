@@ -58,6 +58,16 @@ test('archives quick chats after their hour threshold', () => {
   assert.deepEqual(stale(list, { ...settings, quickChatLabel: '' }, NOW).map(c => c.id), []);
 });
 
+test('accepts several comma-separated quick chat labels', () => {
+  const list = [
+    workspace({ id: 'chat', labels: ['Quick chat'], activityAt: daysAgo(13 / 24) }),
+    workspace({ id: 'glance', labels: ['Glance'], activityAt: daysAgo(13 / 24) }),
+    workspace({ id: 'other', labels: ['Nix'], activityAt: daysAgo(13 / 24) }),
+  ];
+  assert.deepEqual(stale(list, { ...settings, quickChatLabel: 'Quick chat, Glance' }, NOW).map(c => c.id).sort(), ['chat', 'glance']);
+  assert.deepEqual(stale(list, { ...settings, quickChatLabel: ' , Glance ,' }, NOW).map(c => c.id), ['glance']);
+});
+
 test('sweep archives candidates, records failures, and honours enabled for automatic runs', async () => {
   const archived: string[] = [];
   let current = settings;

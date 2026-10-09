@@ -16,6 +16,7 @@ import { showFailure, useSnapshot } from "./lib/hooks";
 import {
   type Agent,
   archiveWorkspace,
+  GLANCE_LABEL,
   isQuickChat,
   openAgent,
   preferences,
@@ -74,7 +75,7 @@ export default function Workspaces() {
   const projects = useMemo(() => {
     if (!data) return [];
     const entries: Entry[] = data.workspaces
-      .filter((w) => !w.archivingAt && (showQuickChats || !isQuickChat(w, chatLabel)))
+      .filter((w) => !w.archivingAt && (showQuickChats || !(isQuickChat(w, chatLabel) || isQuickChat(w, GLANCE_LABEL))))
       .map((workspace) => {
         const agents = data.agents
           .filter((a) => a.workspaceId === workspace.id)

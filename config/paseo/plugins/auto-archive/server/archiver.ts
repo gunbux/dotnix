@@ -1,5 +1,5 @@
 import type { Candidate } from '../shared/rpc.ts';
-import type { Settings } from '../shared/settings.ts';
+import { quickChatLabels, type Settings } from '../shared/settings.ts';
 
 export type Workspace = {
   id: string;
@@ -27,8 +27,8 @@ const DAY = 86400000;
 
 /** Idle days before a workspace is archived; quick chats use their own, usually shorter, limit. */
 export function threshold(workspace: Workspace, settings: Settings): number {
-  const quickChat = settings.quickChatLabel && settings.quickChatHours > 0
-    && workspace.labels.includes(settings.quickChatLabel);
+  const quickChat = settings.quickChatHours > 0
+    && quickChatLabels(settings.quickChatLabel).some(label => workspace.labels.includes(label));
   return quickChat ? settings.quickChatHours / 24 : settings.days;
 }
 

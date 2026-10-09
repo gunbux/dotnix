@@ -16,7 +16,18 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import manifest from "../package.json";
 import { showFailure, useSnapshot } from "./lib/hooks";
-import { archiveWorkspace, ask, type AskEvent, isQuickChat, openAgent, preferences, relativeTime, setPinned } from "./lib/paseo";
+import {
+  archiveWorkspace,
+  ask,
+  type AskEvent,
+  history,
+  isQuickChat,
+  openAgent,
+  preferences,
+  relativeTime,
+  setPinned,
+  type Turn,
+} from "./lib/paseo";
 
 // The chat model choices are the ones offered in the extension preferences.
 const MODELS = manifest.preferences.find((p) => p.name === "model")?.data ?? [];
@@ -25,8 +36,6 @@ function modelTitle(value: string) {
   if (value === "custom") return preferences().customModel || "Custom model";
   return MODELS.find((m) => m.value === value)?.title ?? value;
 }
-
-type Turn = { prompt: string; answer: string };
 
 function FollowUp({ onSubmit }: { onSubmit: (prompt: string) => void }) {
   const { pop } = useNavigation();
@@ -53,18 +62,24 @@ function FollowUp({ onSubmit }: { onSubmit: (prompt: string) => void }) {
   );
 }
 
-function Chat({ prompt, model }: { prompt: string; model: string }) {
+type ChatRef = { agentId: string; workspaceId: string | null };
+
+// A new chat (prompt) or an earlier one picked up again (resume).
+type ChatProps = { model: string; prompt?: string; resume?: ChatRef & { pinned: boolean } };
+
+function Chat({ prompt, model, resume }: ChatProps) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
-  const [chat, setChat] = useState<{ agentId: string; workspaceId: string | null } | null>(null);
-  const [pinned, setPinnedState] = useState(false);
+  const [chat, setChat] = useState<ChatRef | null>(resume ?? null);
+  const [pinned, setPinnedState] = useState(resume?.pinned ?? false);
   const abort = useRef(new AbortController());
   useEffect(() => () => abort.current.abort(), []);
 
+  // Sends text as a new turn, or with no text follows the agent's current turn.
   const send = useCallback(
     async (text: string, agentId?: string) => {
       setBusy(true);
-      setTurns((all) => [...all, { prompt: text, answer: "" }]);
+      if (text) setTurns((all) => [...all, { prompt: text, answer: "" }]);
       const update = (answer: string) =>
         setTurns((all) => all.map((turn, i) => (i === all.length - 1 ? { ...turn, answer } : turn)));
       try {
@@ -82,8 +97,23 @@ function Chat({ prompt, model }: { prompt: string; model: string }) {
     [model],
   );
 
-  // Runs once per mount; the prompt and model never change for a chat.
-  useEffect(() => void send(prompt), []);
+  // Runs once per mount; the chat being shown never changes.
+  useEffect(() => {
+    if (!resume) return void send(prompt ?? "");
+    setBusy(true);
+    history(resume.agentId).then(
+      (past) => {
+        setTurns(past.turns);
+        // Still answering (e.g. the window was closed mid-reply): keep streaming.
+        if (past.status === "running" || past.status === "initializing") void send("", resume.agentId);
+        else setBusy(false);
+      },
+      (error) => {
+        setBusy(false);
+        void showFailure("Could not load chat", error);
+      },
+    );
+  }, []);
 
   const last = turns[turns.length - 1];
   const markdown = turns
@@ -146,7 +176,7 @@ function Chat({ prompt, model }: { prompt: string; model: string }) {
 export default function AskPaseo(props: LaunchProps<{ arguments: { question?: string } }>) {
   const initial = props.arguments.question?.trim() ?? "";
   const prefs = preferences();
-  const [model, setModel] = useState(prefs.model || "claude/claude-haiku-4-5");
+  const [model, setModel] = useState(prefs.model || "opencode/openrouter/openrouter/free");
   const [text, setText] = useState("");
   const { data, isLoading, refresh } = useSnapshot();
   const { push } = useNavigation();
@@ -210,6 +240,18 @@ export default function AskPaseo(props: LaunchProps<{ arguments: { question?: st
               <ActionPanel>
                 {text.trim() && (
                   <Action.Push title="Ask" icon={Icon.SpeechBubble} target={<Chat prompt={text.trim()} model={model} />} />
+                )}
+                {agent && (
+                  <Action.Push
+                    title="Continue"
+                    icon={Icon.SpeechBubbleActive}
+                    target={
+                      <Chat
+                        model={agent.model ?? model}
+                        resume={{ agentId: agent.id, workspaceId: workspace.id, pinned: Boolean(workspace.pinnedAt) }}
+                      />
+                    }
+                  />
                 )}
                 {agent && (
                   <Action
