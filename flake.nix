@@ -45,9 +45,9 @@
       flake = false;
     };
     torlink.url = "github:baairon/torlink";
-    # Screenshots, OCR and ask-about-screen; local checkout, see modules/home/glance.nix.
+    # Screenshots, OCR and ask-about-screen (private repo; fetched over SSH as the user).
     glance = {
-      url = "git+file:///home/chun/repo/random/glance";
+      url = "git+ssh://git@github.com/gunbux/glance";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

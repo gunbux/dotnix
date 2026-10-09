@@ -76,17 +76,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1791502281,
-        "narHash": "sha256-gdqgyqnlxAtq9HUpiFxjea4L1FcQasSSEwSlkrH+Qw4=",
+        "lastModified": 1791518175,
+        "narHash": "sha256-qAVlBIbLzmL0NyemJA9ZVv9CiWeT/6ClhkzstHajdN8=",
         "ref": "refs/heads/main",
-        "rev": "c2e74a9c79795932f16b48680e6e7e26b7a7620a",
-        "revCount": 1,
+        "rev": "4aaeeb69969dcafac3958d038dc5912e30303a3d",
+        "revCount": 2,
         "type": "git",
-        "url": "file:///home/chun/repo/random/glance"
+        "url": "ssh://git@github.com/gunbux/glance"
       },
       "original": {
         "type": "git",
-        "url": "file:///home/chun/repo/random/glance"
+        "url": "ssh://git@github.com/gunbux/glance"
       }
     },
     "home-manager": {
