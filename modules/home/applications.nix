@@ -10,7 +10,17 @@
   home.packages = with pkgs;
     [
       # davinci-resolve # Video Editor
-      (apostrophe.override {texliveMedium = texliveSmall;}) # Markdown Editor (small texlive: no Java deps)
+      # Markdown Editor (small texlive: no Java deps). The override means it
+      # always builds locally against python312, where anyio's TLS tests fail.
+      (apostrophe.override {
+        texliveMedium = texliveSmall;
+        python312Packages =
+          (python312.override {
+            packageOverrides = _: super: {
+              anyio = super.anyio.overridePythonAttrs {doCheck = false;};
+            };
+          }).pkgs;
+      })
       audacity # Audio Editor
       blender # Blender
       bluetui # Bluetooth TUI
