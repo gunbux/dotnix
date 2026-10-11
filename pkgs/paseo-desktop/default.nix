@@ -4,14 +4,14 @@
   fetchurl,
 }: let
   pname = "paseo-desktop";
-  version = "0.10.3";
+  version = "0.11.2";
 
   src = fetchurl {
     url = "https://github.com/getpaseo/paseo/releases/download/v${version}/Paseo-x86_64.AppImage";
-    hash = "sha256-SRu25gTSEDiex2KwemLqifgmvqFfmV2DpnA3pZDzmhM=";
+    hash = "sha256-SwECi6qZqVxyS3kWg/SQDE1Kwb3cac1sw+DTS9fO3g0=";
   };
 
-  appimageContents = appimageTools.extractType2 {inherit pname version src;};
+  appimageContents = appimageTools.extract {inherit pname version src;};
   resources = "${appimageContents}/resources";
 
   # Run a bundled node script the way resources/bin/paseo does, but through

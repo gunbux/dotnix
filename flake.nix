@@ -44,6 +44,11 @@
       url = "github:noctalia-dev/community-plugins";
       flake = false;
     };
+    # Paseo bots plugin, linked in by modules/home/paseo.nix.
+    paseo-bots = {
+      url = "github:oliexe/paseo-bots";
+      flake = false;
+    };
     torlink.url = "github:baairon/torlink";
     # Screenshots, OCR and ask-about-screen (private repo; fetched over SSH as the user).
     glance = {
@@ -70,8 +75,6 @@
         delta-editor = prev.callPackage ./pkgs/delta-editor/default.nix {};
         ## Paseo - coding agent orchestrator (desktop AppImage release; nixpkgs only ships the CLI)
         paseo-desktop = prev.callPackage ./pkgs/paseo-desktop/default.nix {};
-        ## Paseo CLI/daemon on plain node, bumped to match paseo-desktop for headless hosts
-        paseo = prev.callPackage ./pkgs/paseo/default.nix {inherit (prev) paseo;};
         ## Daemon client for the Vicinae Paseo extension and glance (see config/vicinae/paseo/bridge)
         paseo-bridge = final.callPackage ./pkgs/paseo-bridge/default.nix {};
       };
