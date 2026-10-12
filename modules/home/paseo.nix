@@ -17,6 +17,8 @@
   linkPlugin = name: src:
     lib.nameValuePair ".local/share/paseo/plugins/${name}" {source = pluginSource src;};
 in {
+  imports = [./paseo-bots.nix];
+
   # Source is declarative; plugin data, settings, and registration remain daemon-owned.
   # Register a new plugin once with `paseo plugin install ~/.local/share/paseo/plugins/<name>`.
   home.file =

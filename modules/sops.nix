@@ -42,6 +42,13 @@
     mode = "0600";
   };
 
+  # Merged into the paseo-bots plugin's state by modules/home/paseo-bots.nix.
+  sops.secrets.paseo_bots_composio_api_key = {
+    path = "/run/secrets/paseo_bots_composio_api_key";
+    owner = "chun";
+    mode = "0600";
+  };
+
   # Matcha's unread_summary plugin needs the OpenRouter key baked into the
   # plugin file itself (Lua plugins are sandboxed with no file/env access),
   # so render it via a sops template instead of committing the key to git.

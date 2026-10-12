@@ -79,6 +79,9 @@ in {
     enableMcpIntegration = true;
     settings.theme = "dark";
     # Third-party plugins pinned as flake inputs; bump with `nix flake update <input>`.
-    plugins.composio = "${inputs.composio-plugin-cc}/plugins/composio";
+    # Plugins share ~/.claude/skills with the skill tree above; the attr name is
+    # only the directory (the manifest still names it `composio`), so keep it
+    # clear of the vendored `composio` skill.
+    plugins.composio-plugin-cc = "${inputs.composio-plugin-cc}/plugins/composio";
   };
 }
