@@ -18,6 +18,8 @@
     chmod -R u+w $out
     patch -d $out/agent-glow -p1 < ${./patches/agent-glow-sessions.patch}
     patch -d $out/world_clock -p1 < ${./patches/world-clock-local-zone.patch}
+    substituteInPlace $out/world_clock/bar.luau \
+      --replace-fail 'local children = { glyph }' 'local children = {}'
     substituteInPlace $out/world_clock/service.luau \
       --replace-fail '"timedatectl"' '"${pkgs.systemd}/bin/timedatectl"'
   '';
@@ -61,7 +63,7 @@ in {
         polkit_agent = true;
         animation = {
           enabled = true;
-          speed = 1.0;
+          speed = 2.0;
         };
         shadow.direction = "down_right";
         panel = {
