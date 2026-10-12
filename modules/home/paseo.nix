@@ -15,6 +15,13 @@
   };
   # Third-party plugins pinned as flake inputs; bump with `nix flake update <input>`.
   externalPlugins = {paseo-bots = inputs.paseo-bots;};
+  # npm plugins prepare writable runtime assets through Paseo on activation.
+  npmPlugins = {
+    shared-browser = {
+      package = "@omercnet/paseo-shared-browser";
+      version = "2.0.0";
+    };
+  };
   pluginSource = src:
     lib.cleanSourceWith {
       inherit src;
@@ -25,7 +32,7 @@
     };
   linkPlugin = name: src:
     lib.nameValuePair ".local/share/paseo/plugins/${name}" {source = pluginSource src;};
-  pluginStates = localPlugins // lib.mapAttrs (_: _: true) externalPlugins;
+  pluginStates = localPlugins // lib.mapAttrs (_: _: true) (externalPlugins // npmPlugins);
 in {
   imports = [./paseo-bots.nix];
 
@@ -41,6 +48,21 @@ in {
     paseoPluginsJq=${lib.getExe pkgs.jq}
     paseoPluginsConfig=${lib.escapeShellArg "${config.home.homeDirectory}/.paseo/config.json"}
     if [[ -e $paseoPluginsConfig ]]; then
+      if [[ $("$paseoPluginsJq" -r '.pluginsEnabled // false' "$paseoPluginsConfig") == true ]]; then
+        ${lib.concatStrings (lib.mapAttrsToList (name: plugin: ''
+        paseoPluginsPath=$("$paseoPluginsJq" -r --arg id ${lib.escapeShellArg name} '.plugins[$id].path // empty' "$paseoPluginsConfig")
+        paseoPluginsVersion=""
+        if [[ -f "$paseoPluginsPath/package.json" ]]; then
+          paseoPluginsVersion=$("$paseoPluginsJq" -r --arg package ${lib.escapeShellArg plugin.package} 'if .name == $package then .version else empty end' "$paseoPluginsPath/package.json")
+        fi
+        if [[ $paseoPluginsVersion != ${lib.escapeShellArg plugin.version} ]]; then
+          run ${pkgs.paseo-desktop}/bin/paseo plugin install ${lib.escapeShellArg "npm:${plugin.package}@${plugin.version}"} --id ${lib.escapeShellArg name}
+        fi
+      '')
+      npmPlugins)}
+      else
+        warnEcho "Paseo plugins are disabled; skipping npm plugin installation."
+      fi
       ${lib.concatStrings (lib.mapAttrsToList (name: enabled: let
         action =
           if enabled

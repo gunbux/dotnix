@@ -11,6 +11,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # macOS system configuration
+    nix-darwin = {
+      url = "github:nix-darwin/nix-darwin/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -180,6 +186,24 @@
         }
       ];
     };
+    ## Configs for the work MacBook (Apple Silicon)
+    greptileMacConfig = inputs.nix-darwin.lib.darwinSystem {
+      specialArgs = {
+        inherit inputs;
+      };
+      modules = [
+        inputs.home-manager.darwinModules.home-manager
+        ./hosts/greptile-mac/default.nix
+        {
+          nixpkgs.overlays = [overlays.custom-packages];
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.extraSpecialArgs = {inherit inputs;};
+          home-manager.users.chun.imports = [./hosts/greptile-mac/home.nix];
+        }
+      ];
+    };
+
     ## Shared package set for devshells.
     shellPkgs = import inputs.nixpkgs {
       inherit system;
@@ -198,6 +222,11 @@
       "legion-nix" = legionConfig;
       "fw12" = fw12Config;
       "wsl" = wsl;
+    };
+
+    ## Build with `nh darwin switch . -H greptile-mac`.
+    darwinConfigurations = {
+      "greptile-mac" = greptileMacConfig;
     };
 
     homeConfigurations = {

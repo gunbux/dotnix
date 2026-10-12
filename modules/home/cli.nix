@@ -1,5 +1,6 @@
 # Command Line Applications
 {
+  lib,
   pkgs,
   inputs,
   ...
@@ -20,7 +21,6 @@ in {
   home.packages = with pkgs;
     [
       bat
-      bpftools
       btop
       cheat
       commitizen
@@ -29,12 +29,10 @@ in {
       dog
       duf
       dust
-      elfutils
       eza
       fd
       fzf
       gping
-      impala
       iperf
       jq
       kernel-mail-summary
@@ -64,7 +62,11 @@ in {
       zoxide
       zstd
     ]
-    ++ [
+    # Linux-only
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
+      bpftools
+      elfutils
+      impala
       inputs.torlink.packages.${pkgs.stdenv.hostPlatform.system}.default
     ];
 

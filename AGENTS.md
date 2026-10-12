@@ -24,6 +24,8 @@ The NixOS configurations are:
 - `fw12`
 - `wsl`
 
+The nix-darwin configuration is `greptile-mac` (work MacBook, `aarch64-darwin`).
+
 The standalone Home Manager configuration is `non-nixos`.
 
 When changing shared modules, account for every configuration that imports them.
@@ -42,6 +44,16 @@ Evaluate a changed NixOS configuration without activating it:
 nix eval --no-write-lock-file \
   .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath
 ```
+
+Evaluate the nix-darwin configuration with:
+
+```bash
+nix eval --no-write-lock-file \
+  .#darwinConfigurations.greptile-mac.system.drvPath
+```
+
+Shared modules under `modules/home/` are also used on macOS; guard Linux-only
+packages with `lib.optionals stdenv.hostPlatform.isLinux`.
 
 Evaluate the standalone Home Manager configuration with:
 

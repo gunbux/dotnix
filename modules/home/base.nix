@@ -23,6 +23,9 @@
 
   # Base config for Home Manager
   home.username = "chun";
-  home.homeDirectory = "/home/chun";
+  home.homeDirectory =
+    if pkgs.stdenv.hostPlatform.isDarwin
+    then "/Users/chun"
+    else "/home/chun";
   home.stateVersion = lib.mkForce "23.05";
 }
