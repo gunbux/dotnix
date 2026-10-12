@@ -2,7 +2,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { Bridge, type AgentPort } from './bridge.ts';
-import { readState, writeState, type State } from './state.ts';
+import { migrateChat, revokeChat, readState, writeState, type State } from './state.ts';
 import { Telegram, TelegramError, type Outgoing } from './telegram.ts';
 import type { Config } from '../shared/settings.ts';
 
@@ -25,7 +25,19 @@ export async function readToken(file: string): Promise<string> {
 export async function deliverOne(state: State, send: (owner: string, item: Outgoing) => Promise<unknown>, save: () => Promise<void>) {
   const item = state.outbox[0];
   if (!item) return;
-  await send(state.owner, item);
+  try { await send(item.chatId, item); }
+  catch (error) {
+    if (error instanceof TelegramError && error.code === 400 && Number.isSafeInteger(error.migrateToChatId)
+      && migrateChat(state, item.chatId, String(error.migrateToChatId))) {
+      await save();
+      return;
+    }
+    if (!(error instanceof TelegramError) || error.code !== 403) throw error;
+    // A removed/blocked bot affects this chat only, not every workspace.
+    revokeChat(state, item.chatId);
+    await save();
+    return;
+  }
   state.outbox.shift();
   await save();
 }
@@ -52,7 +64,7 @@ export async function startRuntime(config: Config, port: AgentPort, home: string
     catch { report('Stopped: could not save bridge state. Check disk space and file permissions, then reload the plugin.'); controller.abort(); throw new Error('Bridge state could not be saved.'); }
   };
   await save();
-  const bridge = new Bridge({ state, port, save, now: Date.now, defaultProvider: config.defaultProvider });
+  const bridge = new Bridge({ state, port, save, now: Date.now, defaultProvider: config.defaultProvider, botUsername: bot.username });
   let serial = Promise.resolve();
   const queue = <T>(work: () => Promise<T>): Promise<T> => {
     const next = serial.then(() => { signal.throwIfAborted(); return work(); });
@@ -105,7 +117,7 @@ export async function startRuntime(config: Config, port: AgentPort, home: string
     }
   };
   // Hooks are best-effort, so recover approvals already pending when we start.
-  for (const id of state.watchedAgents) {
+  for (const id of Object.values(state.chats).flatMap(chat => chat.watchedAgents)) {
     try { await bridge.pending(id, true); } catch { /* An archived/deleted agent may no longer be available. */ }
   }
   signal.throwIfAborted();
@@ -116,7 +128,7 @@ export async function startRuntime(config: Config, port: AgentPort, home: string
       if (signal.aborted) return;
       void queue(() => work(bridge)).catch(() => fatal('Stopped: could not record an agent event. Reload the plugin.'));
     },
-    snapshot: () => ({ bot: bot.username, selectedAgent: state.selectedAgent, queued: state.outbox.length }),
+    snapshot: () => ({ bot: bot.username, selectedAgent: state.chats[state.owner]?.selectedAgent ?? null, queued: state.outbox.length }),
     async close() { controller.abort(); await Promise.allSettled(loops); await serial; },
   };
 }

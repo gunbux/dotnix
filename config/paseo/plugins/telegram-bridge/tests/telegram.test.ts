@@ -31,5 +31,5 @@ test('polling sends the saved offset and requests only supported updates', async
     return new Response(JSON.stringify({ ok: true, result: [] }));
   });
   await api.updates(15);
-  assert.deepEqual(payload, { offset: 15, timeout: 25, limit: 100, allowed_updates: ['message', 'callback_query'] });
+  assert.deepEqual(payload, { offset: 15, timeout: 25, limit: 100, allowed_updates: ['message', 'callback_query', 'my_chat_member'] });
 });

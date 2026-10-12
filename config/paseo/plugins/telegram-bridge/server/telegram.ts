@@ -1,18 +1,22 @@
 export type Button = { text: string; callback_data: string };
 export type Outgoing = { text: string; buttons?: Button[][] };
+type TelegramChat = { id: number; type: string; title?: string; first_name?: string };
 export type Update = {
   update_id: number;
-  message?: { message_id: number; date: number; from?: { id: number }; chat: { id: number; type: string }; text?: string };
-  callback_query?: { id: string; from: { id: number }; data?: string; message?: { message_id: number; chat: { id: number; type: string } } };
+  my_chat_member?: { chat: TelegramChat; new_chat_member: { status: string } };
+  message?: { message_id: number; date: number; from?: { id: number; is_bot?: boolean }; sender_chat?: { id: number }; chat: TelegramChat; migrate_to_chat_id?: number; migrate_from_chat_id?: number; text?: string };
+  callback_query?: { id: string; from: { id: number; is_bot?: boolean }; data?: string; message?: { message_id: number; chat: TelegramChat; sender_chat?: { id: number } } };
 };
 
 export class TelegramError extends Error {
   code: number;
   retryAfter: number;
-  constructor(code: number, retryAfter = 0) {
+  migrateToChatId?: number;
+  constructor(code: number, retryAfter = 0, migrateToChatId?: number) {
     super(`Telegram request failed (${code}).`);
     this.code = code;
     this.retryAfter = retryAfter;
+    this.migrateToChatId = migrateToChatId;
   }
 }
 
@@ -48,13 +52,13 @@ export class Telegram {
       // Fetch errors may contain the full URL, including the bot token.
       throw new TelegramError(0);
     }
-    let data: { ok?: boolean; result?: T; error_code?: number; parameters?: { retry_after?: number } };
+    let data: { ok?: boolean; result?: T; error_code?: number; parameters?: { retry_after?: number; migrate_to_chat_id?: number } };
     try { data = await response.json() as typeof data; } catch { throw new TelegramError(response.status); }
-    if (!response.ok || !data.ok) throw new TelegramError(data.error_code ?? response.status, data.parameters?.retry_after ?? 0);
+    if (!response.ok || !data.ok) throw new TelegramError(data.error_code ?? response.status, data.parameters?.retry_after ?? 0, data.parameters?.migrate_to_chat_id);
     return data.result as T;
   }
   updates(offset: number) {
-    return this.call<Update[]>('getUpdates', { offset, timeout: 25, limit: 100, allowed_updates: ['message', 'callback_query'] });
+    return this.call<Update[]>('getUpdates', { offset, timeout: 25, limit: 100, allowed_updates: ['message', 'callback_query', 'my_chat_member'] });
   }
   send(chatId: string, message: Outgoing) {
     return this.call('sendMessage', {

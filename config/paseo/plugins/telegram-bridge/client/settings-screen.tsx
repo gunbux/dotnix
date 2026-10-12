@@ -22,13 +22,13 @@ export function SettingsScreen({ theme, layout }: PluginSurfaceProps) {
   return <View style={{ gap: 16, padding: layout.compact ? 12 : 20 }}>
     <SettingsSection title="Connection">
       <SettingsCard>
-        <SettingsSwitch label="Enable Telegram bridge" hint="Accept commands only from your private chat with the bot."
+        <SettingsSwitch label="Enable Telegram bridge" hint="Your private chat and groups you register with /start can control their own workspace."
           value={values.enabled} onValueChange={enabled => change({ enabled })} />
         <SettingsInput label="Your Telegram user ID" hint="Your numeric user ID, not a username or the bot ID."
           initialValue={settings.values.ownerId} onChangeText={ownerId => change({ ownerId: ownerId.trim() })} placeholder="123456789" />
         <SettingsInput label="Bot token file" hint="Absolute path on this daemon, readable only by its owner. Store the token through SOPS."
           initialValue={settings.values.tokenFile} onChangeText={tokenFile => change({ tokenFile: tokenFile.trim() })} placeholder="/run/secrets/paseo_telegram_bot_token" />
-        <SettingsInput label="Default provider/model" hint="Used by /new. Copy a provider/model supported by this Paseo daemon. Leave empty to use existing agents only."
+        <SettingsInput label="Default provider/model" hint="Used by /new. Copy a provider/model supported by this Paseo daemon. The first prompt in each chat creates an agent."
           initialValue={settings.values.defaultProvider} onChangeText={defaultProvider => change({ defaultProvider: defaultProvider.trim() })} placeholder="provider/model" />
         <SettingsAction label="Save bridge settings" actionLabel="Save" error={error ?? settings.saveError ?? null}
           disabled={Boolean(error) || settings.saving || !Object.keys(draft).length}
@@ -44,11 +44,11 @@ export function SettingsScreen({ theme, layout }: PluginSurfaceProps) {
       </SettingsCard>
     </SettingsSection>
     <Text style={{ color: theme.colors.foregroundMuted }}>
-      Create a dedicated bot with @BotFather, then open its private chat and send /start. Use /agents and /use to select an agent.
-      Replies and permission prompts for watched agents are sent through Telegram. /unwatch stops those notifications.
+      Each chat gets its own workspace. Send /start in a group yourself to register it. All group members can then send prompts and approve actions.
+      Send /new followed by a prompt to create an agent with TREK access. /agents and /use show only this chat’s agents.
     </Text>
     <Text style={{ color: theme.colors.foregroundMuted }}>
-      Only one daemon can poll a bot token. Approval buttons expire after 15 minutes. Structured questions must be answered in Paseo.
+      Use /send@your_bot followed by a prompt in groups, or disable privacy mode with @BotFather for ordinary text. Only one daemon can poll a bot token. Approval buttons expire after 15 minutes. Structured questions must be answered in Paseo.
     </Text>
   </View>;
 }

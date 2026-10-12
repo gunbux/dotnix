@@ -29,10 +29,10 @@ Open **Settings → Plugins → Telegram bridge**, enter your numeric Telegram u
 
 | Command | Action |
 | --- | --- |
-| `/agents` | List unarchived agents and their IDs. |
+| `/agents` | List unarchived agents in this chat’s workspace. |
 | `/use <id>` | Select an agent and watch its replies and approvals. Unique ID prefixes work. |
-| `/workspaces` | List existing workspaces. |
-| `/new <workspace-id> <prompt>` | Create and select an agent using the configured provider/model. |
+| `/workspace` | Show this chat’s workspace. |
+| `/new <prompt>` | Create and select an agent using the configured provider/model. |
 | Plain text | Send a prompt to the selected agent. Sending during a turn follows Paseo's default interruption behavior. |
 | `/send <text>` | Send text beginning with a slash to the agent. |
 | `/status` | Show selection and watched agents; issue fresh buttons for pending approvals. |
@@ -58,6 +58,18 @@ The daemon must publish a TCP listener in its `paseo.pid`. Startup makes one aut
 
 State is stored at `$PASEO_HOME/plugin-data/telegram-bridge/state.json` with mode 0600. Changing the owner ID or bot identity clears the old selection, approval references, and delivery queue. Corrupt state stops startup rather than resetting the Telegram offset. Disable the bridge before repairing state.
 
-Telegram 409 means another poller is using the bot. A webhook also prevents polling; the bridge never deletes another integration's webhook. A rejected token, blocked bot, or permanent delivery error stops the bridge. Correct the cause and reload. Transient network errors and rate limits retry automatically.
+Telegram 409 means another poller is using the bot. A webhook also prevents polling; the bridge never deletes another integration's webhook. A rejected token or permanent delivery error stops the bridge. A blocked or removed bot revokes only that chat. Correct the cause and reload. Transient network errors and rate limits retry automatically.
 
 The bridge does not replay missed completion events after downtime. Incoming messages older than five minutes are skipped. The durable offset is advanced before executing a command to avoid repeating side effects after a crash; check Paseo before resending an interrupted command. Telegram message delivery is at least once, so a lost acknowledgement can result in duplicate outgoing messages.
+
+## Per-chat workspaces and TREK
+
+Your private chat gets a workspace automatically on its first message. Register each group by sending `/start@clam_maid_bot` yourself. All members of a registered group may then prompt agents and answer approval buttons. A first prompt creates an agent; `/new <prompt>` starts another in the same workspace. `/agents`, `/use`, replies, and approvals are scoped to that workspace. `/workspace` shows the mapping.
+
+The directory `$PASEO_HOME/telegram-workspaces/<bot-id>/<chat-id>` gives each chat a stable identity independent of its title. Missing workspaces are reopened or created. Group-to-supergroup upgrades retain the original directory. Removing or blocking the bot clears chat registration and queued deliveries, leaving Paseo workspaces and agents intact. Only the owner can register the group again.
+
+New agents get `trek` as an HTTP MCP server at `https://trek.chunyu.sh/mcp`. Authentication comes from the selected provider on the daemon. With the live Codex setup, the default is `codex/gpt-6.1-sol`. No TREK token is stored in plugin settings.
+
+For groups with Telegram privacy mode enabled, use `/send@clam_maid_bot <prompt>`, `/new@clam_maid_bot <prompt>`, or reply to the bot. To receive ordinary text, disable privacy mode through @BotFather and re-add the bot. Forum topics share the group's workspace. Anonymous administrator messages and channels are ignored.
+
+State version 2 preserves the old update offset and queued private replies. It resets old global selections and approval buttons so unrelated agents cannot become visible in groups. Workspaces isolate routing, not filesystem permissions; agents still run under the daemon's normal security policy.

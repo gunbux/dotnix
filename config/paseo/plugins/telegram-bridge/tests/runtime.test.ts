@@ -4,18 +4,18 @@ import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { deliverOne, readToken, startRuntime } from '../server/runtime.ts';
-import { emptyState, readState, writeState } from '../server/state.ts';
+import { emptyChat, emptyState, readState, writeState } from '../server/state.ts';
 import type { AgentPort } from '../server/bridge.ts';
 
 test('outbox retains failed deliveries and removes successful messages in order', async () => {
   const state = emptyState('42', 'bot');
-  state.outbox.push({ text: 'first' }, { text: 'second' });
+  state.outbox.push({ chatId: '-100', text: 'first' }, { chatId: '42', text: 'second' });
   const delivered: string[] = [];
   await assert.rejects(deliverOne(state, async () => { throw new Error('offline'); }, async () => {}), /offline/);
   assert.equal(state.outbox.length, 2);
-  await deliverOne(state, async (_owner, item) => { delivered.push(item.text); }, async () => {});
+  await deliverOne(state, async (chatId, item) => { assert.equal(chatId, '-100'); delivered.push(item.text); }, async () => {});
   assert.deepEqual(delivered, ['first']);
-  assert.deepEqual(state.outbox, [{ text: 'second' }]);
+  assert.deepEqual(state.outbox, [{ chatId: '42', text: 'second' }]);
 });
 
 test('bot tokens must come from a private file and failures never expose the token', async t => {
@@ -32,7 +32,7 @@ test('bot tokens must come from a private file and failures never expose the tok
 });
 
 const port: AgentPort = {
-  agents: async () => [{ id: 'agent', title: 'Agent', status: 'idle' }], workspaces: async () => [],
+  agents: async () => [{ id: 'agent', title: 'Agent', status: 'idle' }], ensureWorkspace: async () => 'workspace',
   create: async () => 'new', send: async () => {}, stop: async () => {},
   permissions: async () => [], respond: async () => {},
 };
@@ -87,15 +87,15 @@ test('runtime polls, checkpoints commands, delivers replies, and cancels long po
   assert.equal(pollAborted, true);
   const state = await readState(join(home, 'plugin-data/telegram-bridge/state.json'), '42', '123456');
   assert.equal(state.offset, 3);
-  assert.equal(state.selectedAgent, 'agent');
+  assert.equal(state.chats['42'].selectedAgent, 'agent');
   assert.equal(state.outbox.length, 0);
 });
 
 test('runtime recovers pending permissions after restart and stops on polling conflicts', async t => {
   const { home, config } = await setup(t);
   const state = emptyState('42', '123456');
-  state.watchedAgents.push('agent');
-  state.selectedAgent = 'agent';
+  state.chats['42'] = { ...emptyChat('Me'), workspaceId: 'workspace', watchedAgents: ['agent'] };
+  state.chats['42'].selectedAgent = 'agent';
   await writeState(join(home, 'plugin-data/telegram-bridge/state.json'), state);
   const statuses: string[] = [];
   let polls = 0;
@@ -132,4 +132,24 @@ test('runtime retries rate-limited polling without dropping the saved offset', a
   t.after(() => runtime.close());
   await until(() => offsets.length === 2);
   assert.deepEqual(offsets, [77, 77]);
+});
+
+test('a blocked group cannot stop deliveries to other chats', async () => {
+  const state = emptyState('42', 'bot');
+  state.chats['-100'] = emptyChat('Gone');
+  state.outbox.push({ chatId: '-100', text: 'Group reply' }, { chatId: '42', text: 'Private reply' });
+  const { TelegramError } = await import('../server/telegram.ts');
+  await deliverOne(state, async () => { throw new TelegramError(403); }, async () => {});
+  assert.equal(state.chats['-100'], undefined);
+  assert.deepEqual(state.outbox, [{ chatId: '42', text: 'Private reply' }]);
+});
+
+test('send-time group migration retargets the outbox without stopping delivery', async () => {
+  const state = emptyState('42', 'bot');
+  state.chats['-100'] = { ...emptyChat('Trip'), workspaceId: 'workspace' };
+  state.outbox.push({ chatId: '-100', text: 'Reply' });
+  const { TelegramError } = await import('../server/telegram.ts');
+  await deliverOne(state, async () => { throw new TelegramError(400, 0, -100123); }, async () => {});
+  assert.equal(state.chats['-100123'].workspaceId, 'workspace');
+  assert.equal(state.outbox[0].chatId, '-100123');
 });

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Control Paseo agents from a private Telegram chat.",
+  "description": "Control Paseo agents in per-chat Telegram workspaces.",
   "files": ["paseo-plugin.json", "OVERVIEW.md", "index.server.ts", "index.client.tsx", "server/", "shared/", "client/"],
   "scripts": {
     "typecheck": "tsc -p tsconfig.server.json && tsc -p tsconfig.json",
