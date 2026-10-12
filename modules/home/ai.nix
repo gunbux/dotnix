@@ -1,6 +1,7 @@
 # AI coding agents
 {
   config,
+  inputs,
   lib,
   osConfig ? null,
   pkgs,
@@ -77,5 +78,7 @@ in {
     enable = true;
     enableMcpIntegration = true;
     settings.theme = "dark";
+    # Third-party plugins pinned as flake inputs; bump with `nix flake update <input>`.
+    plugins.composio = "${inputs.composio-plugin-cc}/plugins/composio";
   };
 }

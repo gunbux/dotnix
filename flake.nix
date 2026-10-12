@@ -49,6 +49,11 @@
       url = "github:oliexe/paseo-bots";
       flake = false;
     };
+    # Composio Claude Code plugin, linked in by modules/home/ai.nix.
+    composio-plugin-cc = {
+      url = "github:ComposioHQ/composio-plugin-cc";
+      flake = false;
+    };
     torlink.url = "github:baairon/torlink";
     # Screenshots, OCR and ask-about-screen (private repo; fetched over SSH as the user).
     glance = {

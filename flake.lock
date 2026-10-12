@@ -21,6 +21,22 @@
         "type": "github"
       }
     },
+    "composio-plugin-cc": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785353126,
+        "narHash": "sha256-4KjS4wwSGLANn0rp2ke1jN4y72NeB0SymBVtOBjm72o=",
+        "owner": "ComposioHQ",
+        "repo": "composio-plugin-cc",
+        "rev": "7dfb14e5583c180a7e033be5ee4a8a2d36b707eb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ComposioHQ",
+        "repo": "composio-plugin-cc",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -458,6 +474,7 @@
     "root": {
       "inputs": {
         "chaotic": "chaotic",
+        "composio-plugin-cc": "composio-plugin-cc",
         "glance": "glance",
         "home-manager": "home-manager_2",
         "minecraft-plymouth-theme": "minecraft-plymouth-theme",
