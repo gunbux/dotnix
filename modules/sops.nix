@@ -49,6 +49,13 @@
     mode = "0600";
   };
 
+  # Read directly by the Paseo Telegram bridge; never copied into plugin settings.
+  sops.secrets.paseo_telegram_bot_token = {
+    path = "/run/secrets/paseo_telegram_bot_token";
+    owner = "chun";
+    mode = "0400";
+  };
+
   # Matcha's unread_summary plugin needs the OpenRouter key baked into the
   # plugin file itself (Lua plugins are sandboxed with no file/env access),
   # so render it via a sops template instead of committing the key to git.

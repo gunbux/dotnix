@@ -1,4 +1,4 @@
-import { openExternalUrl, useRpc, type PluginSurfaceProps } from '@getpaseo/plugin/client';
+import { openExternalUrl, useRpc, type PluginScreenProps } from '@getpaseo/plugin/client';
 import { useState } from 'react';
 import { ScrollView, Text, TextInput, View } from 'react-native';
 import { claudeSessionAction, codexApply, codexDiff, codexSubmit, type ClaudeSession, type CodexTask } from '../shared/rpc.ts';
@@ -7,11 +7,11 @@ import { Alert, Button, Card, errorText, Field, Heading, Mono, Note, Row, type T
 
 const DIFF_PREVIEW_LINES = 400;
 
-export function ControlScreen(props: PluginSurfaceProps) {
+export function ControlScreen(props: PluginScreenProps) {
   return <Control key={props.host.id} {...props} />;
 }
 
-function Control({ theme, layout, host }: PluginSurfaceProps) {
+function Control({ theme, layout, host }: PluginScreenProps) {
   const [tab, setTab] = useState<'claude' | 'codex'>('claude');
   return <ScrollView style={{ flex: 1, backgroundColor: theme.colors.surface0 }}
     contentContainerStyle={{ padding: layout.compact ? 16 : 24, gap: 16 }}>

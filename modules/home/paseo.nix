@@ -3,7 +3,7 @@
   lib,
   ...
 }: let
-  localPlugins = ["auto-archive" "auto-label" "cloud-agents"];
+  localPlugins = ["auto-archive" "auto-label" "cloud-agents" "telegram-bridge"];
   # Third-party plugins pinned as flake inputs; bump with `nix flake update <input>`.
   externalPlugins = {paseo-bots = inputs.paseo-bots;};
   pluginSource = src:

@@ -1,0 +1,5 @@
+{
+  "id": "telegram-bridge",
+  "description": "Control agents and answer permission prompts from a private Telegram chat.",
+  "requirements": { "paseo": ">=0.11.2 <0.12.0" }
+}
