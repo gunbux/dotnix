@@ -33,6 +33,8 @@ require("lazy").setup({
     -- version = "*", -- try installing the latest stable version for plugins that support semver
   },
   install = { colorscheme = { "catppuccin", "habamax" } },
+  -- All current plugins use Git builds; no plugin needs a LuaRocks environment.
+  rocks = { enabled = false },
   checker = {
     enabled = true, -- check for plugin updates periodically
     notify = false, -- notify on update

@@ -5,5 +5,6 @@
     ../../modules/home/base.nix
 
     ../../modules/home/darwin.nix
+    ../../modules/home/greptile.nix
   ];
 }

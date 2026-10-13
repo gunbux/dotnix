@@ -17,6 +17,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Scrolling windows through Hammerspoon; source pinned in flake.lock.
+    paperwm = {
+      url = "github:mogenson/PaperWM.spoon";
+      flake = false;
+    };
+
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";

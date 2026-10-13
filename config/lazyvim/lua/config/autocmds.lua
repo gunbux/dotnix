@@ -18,7 +18,14 @@ vim.api.nvim_create_autocmd('BufReadPost', {
 })
 
 -- Remove trailing whitespaces
-vim.api.nvim_create_autocmd('BufWritePre', { command = '%s/\\s\\+$//e' })
+vim.api.nvim_create_autocmd('BufWritePre', {
+    callback = function()
+        -- Health reports and other read-only buffers cannot be edited before export.
+        if vim.bo.modifiable then
+            vim.cmd('%s/\\s\\+$//e')
+        end
+    end,
+})
 
 -- Center document when entering insert mode
 vim.api.nvim_create_autocmd('InsertEnter', { command = 'norm zz' })

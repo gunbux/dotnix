@@ -45,5 +45,5 @@ theme = catppuccin-mocha.conf
 window-padding-x = 15
 window-padding-y = 15
 background-opacity = 0.80
-keybind = global:cmd+t=toggle_quick_terminal
+keybind = global:ctrl+cmd+t=toggle_quick_terminal
 

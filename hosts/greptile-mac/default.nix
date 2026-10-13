@@ -12,6 +12,10 @@
   system.primaryUser = "chun";
 
   homebrew.casks = [
+    # Window automation (PaperWM is configured through Home Manager)
+    "hammerspoon"
+    "codexbar" # Bundled CLI supplies the SwiftBar AI quota widget
+
     # Editors / Terminals
     "cursor"
     "ghostty"
@@ -25,9 +29,8 @@
     # Work
     "orbstack" # Docker runtime
     "postman"
-    "slack"
-    "tailscale-app"
     "zoom"
+    # Slack and Tailscale are installed by company MDM (Iru); don't let brew fight it.
 
     # Personal
     "discord"

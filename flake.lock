@@ -476,6 +476,22 @@
         "type": "github"
       }
     },
+    "paperwm": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790274003,
+        "narHash": "sha256-qFnVrl+UwB5Gu7M6kFVZ3d2haL1m49/jTYD1eaMoPZw=",
+        "owner": "mogenson",
+        "repo": "PaperWM.spoon",
+        "rev": "82f5dde20d40cf1bdef18ab92b2b847f16f368a3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mogenson",
+        "repo": "PaperWM.spoon",
+        "type": "github"
+      }
+    },
     "paseo-bots": {
       "flake": false,
       "locked": {
@@ -508,6 +524,7 @@
         "noctalia": "noctalia",
         "noctalia-community-plugins": "noctalia-community-plugins",
         "noctalia-official-plugins": "noctalia-official-plugins",
+        "paperwm": "paperwm",
         "paseo-bots": "paseo-bots",
         "sops-nix": "sops-nix",
         "torlink": "torlink",

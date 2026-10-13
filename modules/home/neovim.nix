@@ -1,5 +1,9 @@
 # Lazy/Neovim Configs
-{...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   # Neovim Configs
   programs.neovim = {
     enable = true;
@@ -7,6 +11,21 @@
     # Keep legacy defaults (home.stateVersion < 26.05) to silence eval warnings
     withRuby = true;
     withPython3 = true;
+    # Home Manager's provider bootstrap must run before our own LazyVim init.lua.
+    sideloadInitLua = true;
+    extraPackages =
+      [pkgs.imagemagick pkgs.tectonic pkgs.mermaid-cli]
+      ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+        (pkgs.writeShellScriptBin "ghostty" ''
+          exec /Applications/Ghostty.app/Contents/MacOS/ghostty "$@"
+        '')
+      ];
+    # Nix's Mermaid package uses Chromium on Linux; use the installed Chrome on macOS.
+    extraWrapperArgs = lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+      "--set-default"
+      "PUPPETEER_EXECUTABLE_PATH"
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    ];
   };
 
   # LazyVim Config
