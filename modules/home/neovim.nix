@@ -29,8 +29,12 @@
   };
 
   # LazyVim Config
+  # lazy.nvim rewrites its lockfile, so leave it writable outside the store.
   home.file.".config/nvim" = {
-    source = ../../config/lazyvim;
+    source = lib.cleanSourceWith {
+      src = ../../config/lazyvim;
+      filter = path: _type: baseNameOf path != "lazy-lock.json";
+    };
     recursive = true;
   };
 }
