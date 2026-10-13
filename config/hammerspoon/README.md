@@ -84,6 +84,8 @@ Closed-window cleanup handles missed destroy/visibility events in other apps.
 It removes zero-size stale entries
 from the layout every two seconds while keeping valid offscreen columns. When
 closing a window leaves the desktop focused, it focuses a remaining tiled window.
+Cleanup pauses while the screen is locked, and windows are refreshed after
+unlocking or waking so offscreen columns are re-adopted.
 
 Use Hammerspoon's menu to open its console or reload the configuration. Windows
 already minimized by Paneru may need to be restored from the Dock.

@@ -33,11 +33,12 @@ vim.api.nvim_set_keymap('n', '<C-k>', '<C-W>k', { desc = 'Go to Lower Window', n
 vim.api.nvim_set_keymap('n', '<C-h>', '<C-W>h', { desc = 'Go to Upper Window', noremap = true })
 vim.api.nvim_set_keymap('n', '<C-l>', '<C-W>l', { desc = 'Go to Right Window', noremap = true })
 
--- Resize windows
-vim.api.nvim_set_keymap('n', '<M-j>', ':resize -2<CR>', { noremap = true })
-vim.api.nvim_set_keymap('n', '<M-k>', ':resize +2<CR>', { noremap = true })
-vim.api.nvim_set_keymap('n', '<M-h>', ':vertical resize -2<CR>', { noremap = true })
-vim.api.nvim_set_keymap('n', '<M-l>', ':vertical resize +2<CR>', { noremap = true })
+-- Resize windows (Alt+Shift on macOS, where PaperWM owns Alt+hjkl)
+local resize = vim.fn.has('mac') == 1 and { j = 'J', k = 'K', h = 'H', l = 'L' } or { j = 'j', k = 'k', h = 'h', l = 'l' }
+vim.api.nvim_set_keymap('n', '<M-' .. resize.j .. '>', ':resize -2<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<M-' .. resize.k .. '>', ':resize +2<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<M-' .. resize.h .. '>', ':vertical resize -2<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<M-' .. resize.l .. '>', ':vertical resize +2<CR>', { noremap = true })
 
 -- 9. Spell Checking
 -- vim.api.nvim_set_keymap('n', '<leader>ss', ':setlocal spell!<CR>', { noremap = true })

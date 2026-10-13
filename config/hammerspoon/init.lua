@@ -80,9 +80,24 @@ end
 hs.hotkey.bind({ "alt", "shift" }, "escape", toggle_paperwm)
 
 PaperWM:start()
+-- Locking can drop windows from the layout while leaving them parked offscreen,
+-- and AX geometry is unreliable while locked. Pause cleanup and re-adopt windows.
+local locked = false
 PaperWMCleanupTimer = hs.timer.doEvery(2, function()
-  if running then prune_closed_windows() end
+  if running and not locked then prune_closed_windows() end
 end)
+local caffeinate = hs.caffeinate.watcher
+PaperWMLockWatcher = caffeinate.new(function(event)
+  if event == caffeinate.screensDidLock then
+    locked = true
+  elseif event == caffeinate.screensDidUnlock or event == caffeinate.systemDidWake then
+    if event == caffeinate.screensDidUnlock then locked = false end
+    hs.timer.doAfter(1, function()
+      if running then PaperWM.windows.refreshWindows() end
+    end)
+  end
+end)
+PaperWMLockWatcher:start()
 hs.shutdownCallback = function()
   PaperWM:stop()
 end

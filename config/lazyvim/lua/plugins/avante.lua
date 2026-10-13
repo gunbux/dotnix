@@ -86,9 +86,8 @@ return {
       },
     },
     {
+      -- configured in render-markdown.lua (file_types includes Avante)
       "MeanderingProgrammer/render-markdown.nvim",
-      opts = { file_types = { "Avante" } },
-      ft = { "Avante" },
     },
   },
   keys = {

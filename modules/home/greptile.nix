@@ -1,9 +1,11 @@
 # Greptile (greptilia) local development toolchain
 {
+  config,
   lib,
   pkgs,
   ...
 }: let
+  greptiliaDocs = "${config.home.homeDirectory}/repo/greptilia/docs";
   # greptilia requires an exact bun version; nixpkgs lags behind.
   # Bump alongside greptilia's onboarding requirement.
   bun-greptile = pkgs.bun.overrideAttrs (old: {
@@ -56,4 +58,28 @@ in {
   # Show the current kube context/namespace in the prompt
   # (starship's aws module, on by default, shows the active profile/region)
   programs.starship.settings.kubernetes.disabled = false;
+
+  # greptilia's Fumadocs site (docs/content Obsidian vault) on http://localhost:3333.
+  # The vault is converted once at startup; restart to pick up new pages:
+  # launchctl kickstart -k gui/$(id -u)/org.nix-community.home.greptilia-docs
+  launchd.agents.greptilia-docs = {
+    enable = true;
+    config = {
+      ProgramArguments = [
+        "/bin/sh"
+        "-c"
+        "cd ${greptiliaDocs} && bun install --frozen-lockfile && exec bun run dev"
+      ];
+      EnvironmentVariables = {
+        PATH = "${config.home.profileDirectory}/bin:/usr/bin:/bin";
+        PORT = "3333";
+      };
+      RunAtLoad = true;
+      KeepAlive.SuccessfulExit = false;
+      ThrottleInterval = 30;
+      ProcessType = "Background";
+      StandardOutPath = "${config.home.homeDirectory}/Library/Logs/greptilia-docs.log";
+      StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/greptilia-docs.log";
+    };
+  };
 }
