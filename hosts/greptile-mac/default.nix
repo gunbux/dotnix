@@ -14,7 +14,7 @@
   homebrew.casks = [
     # Window automation (PaperWM is configured through Home Manager)
     "hammerspoon"
-    "codexbar" # Bundled CLI supplies the SwiftBar AI quota widget
+    "codexbar" # Native Claude and Codex usage menu
 
     # Editors / Terminals
     "cursor"

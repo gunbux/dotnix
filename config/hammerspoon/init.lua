@@ -72,64 +72,17 @@ end
 hs.hotkey.bind({ "alt" }, "return", function() hs.application.launchOrFocus("Ghostty") end)
 hs.hotkey.bind({ "alt" }, "b", function() hs.application.launchOrFocus("Zen") end)
 
-local state_file = "@state_file@"
-
--- Match PaperWM's native Space numbering, including gaps for fullscreen apps.
-local function workspace_status()
-  local focused = hs.spaces.focusedSpace()
-  local layout = hs.spaces.allSpaces() or {}
-  local windows = PaperWM.state.get().window_list
-  local result = { running = running, spaces = {} }
-  local index = 0
-  for _, screen in ipairs(hs.screen.allScreens()) do
-    for _, space_id in ipairs(layout[screen:getUUID()] or {}) do
-      index = index + 1
-      if space_id == focused then result.current = index end
-      if hs.spaces.spaceType(space_id) == "user" then
-        local count = 0
-        for _, column in ipairs(windows[space_id] or {}) do count = count + #column end
-        table.insert(result.spaces, { index = index, id = space_id, windows = count })
-      end
-    end
-  end
-  return result
-end
-
-local function publish_status()
-  if running then prune_closed_windows() end
-  local file = io.open(state_file .. ".tmp", "w")
-  if not file then return end
-  file:write(hs.json.encode(workspace_status()))
-  file:close()
-  os.rename(state_file .. ".tmp", state_file)
-end
-
 local function toggle_paperwm()
   if running then PaperWM:stop() else PaperWM:start() end
   running = not running
-  publish_status()
 end
 -- A recovery shortcut releases control and brings tiled windows into bounds.
 hs.hotkey.bind({ "alt", "shift" }, "escape", toggle_paperwm)
 
-hs.urlevent.bind("paperwm", function(_, params)
-  if params.action == "toggle" then toggle_paperwm(); return end
-  local index = tonumber(params.index)
-  if not index or index ~= math.floor(index) or index < 1 or index > 99 then return end
-  local space_id = PaperWM.space.MissionControl:getSpaceID(index)
-  if not space_id or hs.spaces.spaceType(space_id) ~= "user" then return end
-  if params.action == "switch" then
-    PaperWM.space.switchToSpace(index)
-  elseif params.action == "send" and running then
-    PaperWM.space.moveWindowToSpace(index)
-  end
-end)
-
 PaperWM:start()
-publish_status()
--- Store only counts and Space IDs, never application names or window titles.
-PaperWMStatusTimer = hs.timer.doEvery(2, publish_status)
+PaperWMCleanupTimer = hs.timer.doEvery(2, function()
+  if running then prune_closed_windows() end
+end)
 hs.shutdownCallback = function()
   PaperWM:stop()
-  os.remove(state_file)
 end
