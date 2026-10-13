@@ -15,6 +15,11 @@
     userEmail = "lamchunyu00@gmail.com";
   };
 
+  # Global gitignore (git reads ~/.config/git/ignore when core.excludesFile is unset)
+  xdg.configFile."git/ignore".text = ''
+    .wakatime-project
+  '';
+
   # Delta
   programs.delta = {
     enable = true;
