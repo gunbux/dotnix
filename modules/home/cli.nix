@@ -120,10 +120,19 @@ in {
       fi
 
       if [[ -z "$TMUX" && -t 0 && -t 1 ]]; then tmux; fi
+
+      # cd into the repo/worktree lazygit was in when it quit
+      lg() {
+        export LAZYGIT_NEW_DIR_FILE=~/.lazygit/newdir
+        lazygit "$@"
+        if [ -f "$LAZYGIT_NEW_DIR_FILE" ]; then
+          cd "$(cat "$LAZYGIT_NEW_DIR_FILE")"
+          rm -f "$LAZYGIT_NEW_DIR_FILE" >/dev/null
+        fi
+      }
     '';
 
     shellAliases = {
-      lg = "lazygit";
       c = "clear";
       l = "eza -lh --icons=auto";
       ls = "eza --icons=auto";
