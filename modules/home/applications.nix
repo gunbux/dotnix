@@ -25,6 +25,7 @@
       blender # Blender
       bluetui # Bluetooth TUI
       code-cursor # Cursor
+      chatgpt # Chatgpt
       crush # Crush
       delta-editor # Delta Editor
       discord # Discord
