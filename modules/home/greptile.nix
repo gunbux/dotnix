@@ -24,5 +24,36 @@ in {
     goose # Local ClickHouse migrations
     process-compose # `bun run stack`
     stripe-cli # Stripe webhook forwarding for billing work
+
+    # Kubernetes
+    kubectl
+    kubectx # kubectx + kubens
+    kubernetes-helm
+    stern # Multi-pod log tailing
+
+    # AWS / EKS
+    eksctl
+    aws-iam-authenticator # Legacy EKS kubeconfig auth
+    ssm-session-manager-plugin # `aws ssm start-session` into nodes
   ];
+
+  # ~/.aws/config is left unmanaged so `aws configure sso` can write profiles
+  programs.awscli.enable = true;
+  home.sessionVariables.AWS_PAGER = "";
+
+  programs.k9s.enable = true;
+
+  # kubectl plugin: `k` alias, kubectl completion (also for `k`), and
+  # shortcuts like kgp, kgd, kl, kex, kaf
+  # aws plugin: completion, `asp` (switch profile), `acp`, `agp`
+  programs.zsh.oh-my-zsh.plugins = ["kubectl" "aws"];
+
+  programs.zsh.shellAliases = {
+    kx = "kubectx";
+    kn = "kubens";
+  };
+
+  # Show the current kube context/namespace in the prompt
+  # (starship's aws module, on by default, shows the active profile/region)
+  programs.starship.settings.kubernetes.disabled = false;
 }
