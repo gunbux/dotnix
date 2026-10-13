@@ -38,6 +38,11 @@
     };
 
     ## Non-nixpkgs Applications
+    # AI coding agents and desktop apps (claude-code, codex, claude-desktop, ...).
+    # Deliberately not following nixpkgs: upstream only builds and caches
+    # against its own pin, and codex/crush/t3code are source builds that would
+    # otherwise compile locally on every nixpkgs bump.
+    llm-agents.url = "github:numtide/llm-agents.nix";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     # TODO: Pinned to PR #91 (fix nested list in buildInputs). Switch back to
     # "github:Lxtharia/minegrub-theme" once https://github.com/Lxtharia/minegrub-theme/pull/91 is merged.

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.png" alt="dotnix icon" width="160">
+</p>
+
 # Chun's dotfiles
 
 ## Building the system

@@ -43,7 +43,6 @@ in {
       nh
       nix-output-monitor
       nmap
-      opencode
       pokego
       presenterm
       ripgrep

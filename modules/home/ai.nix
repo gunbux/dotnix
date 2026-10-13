@@ -20,7 +20,15 @@
     skillDirectories;
   globalSkillFiles = skillFilesFor ".agents/skills" // skillFilesFor ".claude/skills";
   mcpServers = import ../mcp-servers.nix {inherit lib pkgs;};
+  # Agent CLIs come from numtide/llm-agents.nix (updated daily, binary cached)
+  # rather than nixpkgs. GUI counterparts live in applications.nix.
+  llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
 in {
+  home.packages = with llmAgents; [
+    crush
+    opencode
+  ];
+
   # Keep one repository-owned skill tree for Codex and Claude Code.
   # Codex discovers user skills in ~/.agents/skills. Claude Code receives the
   # same whole-directory links under ~/.claude/skills.
@@ -64,6 +72,7 @@ in {
 
   programs.codex = {
     enable = true;
+    package = llmAgents.codex;
     enableMcpIntegration = osConfig == null;
 
     settings = lib.mkIf (osConfig == null) {
@@ -76,6 +85,7 @@ in {
 
   programs.claude-code = {
     enable = true;
+    package = llmAgents.claude-code;
     enableMcpIntegration = true;
     settings.theme = "dark";
     # Third-party plugins pinned as flake inputs; bump with `nix flake update <input>`.

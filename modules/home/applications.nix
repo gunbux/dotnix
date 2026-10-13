@@ -25,8 +25,6 @@
       blender # Blender
       bluetui # Bluetooth TUI
       code-cursor # Cursor
-      chatgpt # Chatgpt
-      crush # Crush
       delta-editor # Delta Editor
       discord # Discord
       evince # PDF
@@ -57,7 +55,6 @@
       solaar # Mouse Utilities
       spotify # Music
       steam # Games
-      t3code # T3 Code GUI
       tailscale # VPN/Wireguard
       telegram-desktop # Telegram
       thunderbird # Email Client
@@ -69,7 +66,13 @@
     ]
     ++ [
       inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
-    ];
+    ]
+    # AI desktop apps from llm-agents.nix (CLIs are in ai.nix)
+    ++ (with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}; [
+      chatgpt # ChatGPT / Codex desktop
+      claude-desktop # Claude desktop
+      t3code-desktop # T3 Code GUI
+    ]);
 
   # Ghostty Config
   home.file.".config/ghostty" = {
