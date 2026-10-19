@@ -24,10 +24,13 @@
   # rather than nixpkgs. GUI counterparts live in applications.nix.
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
 in {
-  home.packages = with llmAgents; [
-    crush
-    opencode
-  ];
+  home.packages =
+    (with llmAgents; [
+      crush
+      opencode
+    ])
+    # Not packaged by llm-agents.nix; nixpkgs covers every host platform.
+    ++ [pkgs.devin-cli];
 
   # Keep one repository-owned skill tree for Codex and Claude Code.
   # Codex discovers user skills in ~/.agents/skills. Claude Code receives the

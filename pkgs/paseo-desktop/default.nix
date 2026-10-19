@@ -4,11 +4,11 @@
   fetchurl,
 }: let
   pname = "paseo-desktop";
-  version = "0.11.2";
+  version = "0.11.4";
 
   src = fetchurl {
     url = "https://github.com/getpaseo/paseo/releases/download/v${version}/Paseo-x86_64.AppImage";
-    hash = "sha256-SwECi6qZqVxyS3kWg/SQDE1Kwb3cac1sw+DTS9fO3g0=";
+    hash = "sha256-CvCTgFU31BHlT+6MOfrkCq7KMVjDXA33KArnFCUSiHE=";
   };
 
   appimageContents = appimageTools.extract {inherit pname version src;};

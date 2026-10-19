@@ -18,6 +18,7 @@
 
     # Editors / Terminals
     "cursor"
+    "devin-desktop" # Devin Desktop IDE; CLI comes from ai.nix
     "ghostty"
     "kitty"
     "visual-studio-code"

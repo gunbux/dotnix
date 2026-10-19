@@ -51,6 +51,7 @@
       protonup-ng # Imperative Proton
       railway # Railway CLI
       deluge # Torrent
+      devin-desktop # Devin Desktop (Windsurf successor); CLI is in ai.nix
       saber # Handwriting
       solaar # Mouse Utilities
       spotify # Music

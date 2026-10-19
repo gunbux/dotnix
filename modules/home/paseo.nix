@@ -19,7 +19,7 @@
   npmPlugins = {
     shared-browser = {
       package = "@omercnet/paseo-shared-browser";
-      version = "2.0.0";
+      version = "2.0.1";
     };
   };
   pluginSource = src:

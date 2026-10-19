@@ -3,17 +3,17 @@
   buildGoModule,
   fetchFromGitHub,
 }: let
-  commit = "b097c04e3a05"; # short=12, matches upstream Makefile's COMMIT format
+  commit = "e3a0fa61bcd0"; # short=12, matches upstream Makefile's COMMIT format
 in
   buildGoModule (finalAttrs: {
     pname = "herald";
-    version = "0.7.5-beta.1";
+    version = "0.8.0-beta.1";
 
     src = fetchFromGitHub {
       owner = "herald-email";
       repo = "herald-mail-app";
       tag = "v${finalAttrs.version}";
-      hash = "sha256-O24TgRxiIxTXXyCs7H2VU6C5ZYNowZMBK0KYlPs6IWc=";
+      hash = "sha256-GKV8r1wf1Z/cyv/dRpGDQ1lry5Kgj5flZqWfpGS6ybE=";
     };
 
     vendorHash = "sha256-keK9JVcLMriE4/0bi2JKvXcgcM1UH6XqdoQ8chwoPwI=";
