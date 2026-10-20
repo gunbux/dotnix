@@ -5,7 +5,6 @@
   pkgs,
   ...
 }: let
-  greptiliaDocs = "${config.home.homeDirectory}/repo/greptilia/docs";
   # greptilia requires an exact bun version; nixpkgs lags behind.
   # Bump alongside greptilia's onboarding requirement.
   bun-greptile = pkgs.bun.overrideAttrs (old: {
@@ -15,6 +14,48 @@
       hash = "sha256-gK/UwGm0am+o8+xSC+vHUKeEPkqNW5WD0prUNsAKNAM=";
     };
   });
+
+  # greptilia's infra/terraform pins these versions in
+  # .github/workflows/terraform-check.yml; a newer terraform writes state the
+  # pinned one can't read. Bump alongside that workflow.
+  terraform-greptile = pkgs.stdenvNoCC.mkDerivation {
+    pname = "terraform";
+    version = "1.15.8";
+    src = pkgs.fetchurl {
+      url = "https://releases.hashicorp.com/terraform/1.15.8/terraform_1.15.8_darwin_arm64.zip";
+      hash = "sha256-8hARDFaYuU2AOnpjzbAlG1RVwVCEFHiAjiu7ND+V7Wg=";
+    };
+    nativeBuildInputs = [pkgs.unzip];
+    sourceRoot = ".";
+    installPhase = "install -Dm755 terraform $out/bin/terraform";
+  };
+  terragrunt-greptile = pkgs.stdenvNoCC.mkDerivation {
+    pname = "terragrunt";
+    version = "1.1.1";
+    src = pkgs.fetchurl {
+      url = "https://github.com/gruntwork-io/terragrunt/releases/download/v1.1.1/terragrunt_darwin_arm64";
+      hash = "sha256-M5rAa/FuO0o4I5SmF0SXcAKWzEhaUXLON+unJecgyDw=";
+    };
+    dontUnpack = true;
+    installPhase = "install -Dm755 $src $out/bin/terragrunt";
+  };
+
+  # `helmfile apply` shells out to the helm-diff plugin.
+  helm-greptile = pkgs.wrapHelm pkgs.kubernetes-helm {
+    plugins = [pkgs.kubernetes-helmPlugins.helm-diff];
+  };
+
+  # `greptilia-docs <worktree>` switches what the docs agent below serves.
+  greptilia-docs = pkgs.writeShellApplication {
+    name = "greptilia-docs";
+    runtimeInputs = with pkgs; [coreutils git gnugrep];
+    text = builtins.readFile ../../config/greptilia-docs/greptilia-docs.sh;
+  };
+  greptilia-docs-serve = pkgs.writeShellApplication {
+    name = "greptilia-docs-serve";
+    runtimeInputs = with pkgs; [coreutils];
+    text = builtins.readFile ../../config/greptilia-docs/serve.sh;
+  };
 in {
   home.packages = with pkgs; [
     # Takes precedence over the nixpkgs bun from dev.nix
@@ -26,17 +67,25 @@ in {
     goose # Local ClickHouse migrations
     process-compose # `bun run stack`
     stripe-cli # Stripe webhook forwarding for billing work
+    cloudflared # Public tunnel to the local llmproxy for Kubernetes sandboxes
 
     # Kubernetes
     kubectl
     kubectx # kubectx + kubens
-    kubernetes-helm
+    helm-greptile
+    helmfile # infra/helm bootstrap (Cilium, Argo CD)
     stern # Multi-pod log tailing
+
+    # Terraform (infra/terraform)
+    terraform-greptile
+    terragrunt-greptile
 
     # AWS / EKS
     eksctl
     aws-iam-authenticator # Legacy EKS kubeconfig auth
     ssm-session-manager-plugin # `aws ssm start-session` into nodes
+
+    greptilia-docs
   ];
 
   # ~/.aws/config is left unmanaged so `aws configure sso` can write profiles
@@ -50,6 +99,20 @@ in {
   # aws plugin: completion, `asp` (switch profile), `acp`, `agp`
   programs.zsh.oh-my-zsh.plugins = ["kubectl" "aws"];
 
+  # Complete greptilia-docs with Paseo worktree names, described by branch.
+  programs.zsh.initContent = ''
+    _greptilia-docs() {
+      local -a items
+      local name branch
+      items=("main:~/repo/greptilia")
+      while IFS=$'\t' read -r name branch; do
+        items+=("$name:''${branch//:/\\:}")
+      done < <(greptilia-docs --list)
+      _describe 'greptilia worktree' items
+    }
+    compdef _greptilia-docs greptilia-docs
+  '';
+
   programs.zsh.shellAliases = {
     kx = "kubectx";
     kn = "kubens";
@@ -60,16 +123,13 @@ in {
   programs.starship.settings.kubernetes.disabled = false;
 
   # greptilia's Fumadocs site (docs/content Obsidian vault) on http://localhost:3333.
-  # The vault is converted once at startup; restart to pick up new pages:
-  # launchctl kickstart -k gui/$(id -u)/org.nix-community.home.greptilia-docs
+  # Serves ~/repo/greptilia unless `greptilia-docs <worktree>` picked a Paseo
+  # worktree. The vault is converted once at startup; `greptilia-docs <current>`
+  # restarts it to pick up new pages.
   launchd.agents.greptilia-docs = {
     enable = true;
     config = {
-      ProgramArguments = [
-        "/bin/sh"
-        "-c"
-        "cd ${greptiliaDocs} && bun install --frozen-lockfile && exec bun run dev"
-      ];
+      Program = "${greptilia-docs-serve}/bin/greptilia-docs-serve";
       EnvironmentVariables = {
         PATH = "${config.home.profileDirectory}/bin:/usr/bin:/bin";
         PORT = "3333";
