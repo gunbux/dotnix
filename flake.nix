@@ -101,6 +101,8 @@
         paseo = prev.callPackage ./pkgs/paseo/default.nix {inherit (prev) paseo;};
         ## Daemon client for the Vicinae Paseo extension and glance (see config/vicinae/paseo/bridge)
         paseo-bridge = final.callPackage ./pkgs/paseo-bridge/default.nix {};
+        ## PostHog CLI (not in nixpkgs)
+        posthog-cli = prev.callPackage ./pkgs/posthog-cli/default.nix {};
       };
     };
 

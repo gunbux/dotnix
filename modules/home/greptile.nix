@@ -62,6 +62,7 @@ in {
     (lib.hiPrio bun-greptile)
     infisical # Secrets CLI
     postgresql # psql, used by internal/cli/variants.ts
+    posthog-cli # Product analytics; custom package in pkgs/
 
     # Optional
     goose # Local ClickHouse migrations
