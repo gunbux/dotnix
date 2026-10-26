@@ -1,5 +1,0 @@
-{
-  "id": "telegram-bridge",
-  "description": "Chat-specific workspaces, agents, TREK access and approvals through Telegram.",
-  "requirements": { "paseo": ">=0.11.2 <0.12.0" }
-}

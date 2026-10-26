@@ -9,10 +9,8 @@
   localPlugins = {
     auto-archive = true;
     auto-label = true;
-    cloud-agents = true;
-    # Disabled for now: too buggy.
-    telegram-bridge = false;
   };
+  removedPlugins = ["cloud-agents" "telegram-bridge"];
   # Third-party plugins pinned as flake inputs; bump with `nix flake update <input>`.
   externalPlugins = {paseo-bots = inputs.paseo-bots;};
   # npm plugins prepare writable runtime assets through Paseo on activation.
@@ -48,6 +46,18 @@ in {
     paseoPluginsJq=${lib.getExe pkgs.jq}
     paseoPluginsConfig=${lib.escapeShellArg "${config.home.homeDirectory}/.paseo/config.json"}
     if [[ -e $paseoPluginsConfig ]]; then
+      # Remove retired registrations on hosts upgraded from older configurations.
+      for paseoPluginsRemoved in ${lib.escapeShellArgs removedPlugins}; do
+        if "$paseoPluginsJq" -e --arg id "$paseoPluginsRemoved" '.plugins[$id] != null' "$paseoPluginsConfig" >/dev/null; then
+          if ! run ${pkgs.paseo-desktop}/bin/paseo plugin remove "$paseoPluginsRemoved" >/dev/null 2>&1; then
+            paseoPluginsTmp=$(mktemp "$paseoPluginsConfig.XXXXXX.tmp")
+            "$paseoPluginsJq" --arg id "$paseoPluginsRemoved" 'del(.plugins[$id])' "$paseoPluginsConfig" >"$paseoPluginsTmp"
+            chmod 600 "$paseoPluginsTmp"
+            run mv "$paseoPluginsTmp" "$paseoPluginsConfig"
+            rm -f "$paseoPluginsTmp"
+          fi
+        fi
+      done
       if [[ $("$paseoPluginsJq" -r '.pluginsEnabled // false' "$paseoPluginsConfig") == true ]]; then
         ${lib.concatStrings (lib.mapAttrsToList (name: plugin: ''
         paseoPluginsPath=$("$paseoPluginsJq" -r --arg id ${lib.escapeShellArg name} '.plugins[$id].path // empty' "$paseoPluginsConfig")

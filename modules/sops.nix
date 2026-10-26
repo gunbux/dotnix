@@ -35,25 +35,11 @@
     mode = "0600";
   };
 
-  # Read by the Paseo cloud-agents plugin for Claude Managed Agents.
-  sops.secrets.anthropic_api_key = {
-    path = "/run/secrets/anthropic_api_key";
-    owner = "chun";
-    mode = "0600";
-  };
-
   # Merged into the paseo-bots plugin's state by modules/home/paseo-bots.nix.
   sops.secrets.paseo_bots_composio_api_key = {
     path = "/run/secrets/paseo_bots_composio_api_key";
     owner = "chun";
     mode = "0600";
-  };
-
-  # Read directly by the Paseo Telegram bridge; never copied into plugin settings.
-  sops.secrets.paseo_telegram_bot_token = {
-    path = "/run/secrets/paseo_telegram_bot_token";
-    owner = "chun";
-    mode = "0400";
   };
 
   # Matcha's unread_summary plugin needs the OpenRouter key baked into the
