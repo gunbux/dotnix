@@ -63,6 +63,10 @@ in {
     infisical # Secrets CLI
     postgresql # psql, used by internal/cli/variants.ts
     posthog-cli # Product analytics; custom package in pkgs/
+    # The pre-commit hook lints staged .github/workflows changes with these
+    # (scripts/lint/workflows.sh), so even merges from main need them.
+    actionlint
+    shellcheck
 
     # Optional
     goose # Local ClickHouse migrations
