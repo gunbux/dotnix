@@ -93,3 +93,9 @@ Do not decrypt `secrets/secrets.yaml` merely to inspect or validate unrelated ch
 ## Working tree
 
 The working tree may contain unrelated user changes. Inspect the diff before editing, preserve unrelated modifications, and keep formatting scoped to files involved in the task.
+
+## Skill preferences
+
+When installed skills cover the same task, use pstack's workflow unless the user explicitly names another skill. This includes `tdd` for test-driven development, `interrogate` for review, `swarm` for parallel work, and the relevant `poteto-mode` playbook for debugging, verification, and PR workflows. Older skills remain installed because other workflows reference them.
+
+Use pstack's `teach` and `unslop`. Matt Pocock's `grilling`, `wizard`, `research`, and `prototype` are also installed.
