@@ -49,7 +49,7 @@
     minegrub-theme.url = "github:Lxtharia/minegrub-theme/pull/91/head";
     minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
     noctalia = {
-      url = "github:noctalia-dev/noctalia/v5.2.1";
+      url = "github:noctalia-dev/noctalia/v5.3.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # Pinned Noctalia plugin sources, exposed to Noctalia as read-only path sources.
@@ -97,6 +97,8 @@
         delta-editor = prev.callPackage ./pkgs/delta-editor/default.nix {};
         ## Paseo - coding agent orchestrator (desktop AppImage release; nixpkgs only ships the CLI)
         paseo-desktop = prev.callPackage ./pkgs/paseo-desktop/default.nix {};
+        ## Headless Paseo CLI/daemon (modules/home/paseo-daemon.nix), kept at paseo-desktop's version
+        paseo = prev.callPackage ./pkgs/paseo/default.nix {inherit (prev) paseo;};
         ## Daemon client for the Vicinae Paseo extension and glance (see config/vicinae/paseo/bridge)
         paseo-bridge = final.callPackage ./pkgs/paseo-bridge/default.nix {};
       };

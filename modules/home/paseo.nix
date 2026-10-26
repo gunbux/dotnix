@@ -17,7 +17,7 @@
   npmPlugins = {
     shared-browser = {
       package = "@omercnet/paseo-shared-browser";
-      version = "2.0.1";
+      version = "4.0.0";
     };
   };
   pluginSource = src:
@@ -66,7 +66,11 @@ in {
           paseoPluginsVersion=$("$paseoPluginsJq" -r --arg package ${lib.escapeShellArg plugin.package} 'if .name == $package then .version else empty end' "$paseoPluginsPath/package.json")
         fi
         if [[ $paseoPluginsVersion != ${lib.escapeShellArg plugin.version} ]]; then
-          run ${pkgs.paseo-desktop}/bin/paseo plugin install ${lib.escapeShellArg "npm:${plugin.package}@${plugin.version}"} --id ${lib.escapeShellArg name}
+          # Non-fatal: the running daemon may predate the plugin's required Paseo
+          # version until it restarts; the next activation retries.
+          if ! run ${pkgs.paseo-desktop}/bin/paseo plugin install ${lib.escapeShellArg "npm:${plugin.package}@${plugin.version}"} --id ${lib.escapeShellArg name}; then
+            warnEcho ${lib.escapeShellArg "Could not install ${plugin.package}@${plugin.version}; restart Paseo and re-run activation."}
+          fi
         fi
       '')
       npmPlugins)}
