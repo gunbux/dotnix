@@ -85,10 +85,6 @@ return {
         },
       },
     },
-    {
-      -- configured in render-markdown.lua (file_types includes Avante)
-      "MeanderingProgrammer/render-markdown.nvim",
-    },
   },
   keys = {
     { "<leader>ai", "<cmd>AvanteAsk<CR>",     desc = "Open Avante" },

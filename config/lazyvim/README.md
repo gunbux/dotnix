@@ -25,3 +25,24 @@ Run `:checkhealth` inside a terminal after startup. Headless checks cannot verif
 terminal graphics or UI components such as the dashboard and notifier. An available
 newer Neovim patch release is informational; updating the shared Nix pin is a separate
 dependency change.
+
+Markdown and Vimwiki `.md` files open in md-render.nvim's experimental auto mode.
+Normal mode shows the rendered document. Press `i`, `I`, `a`, `A`, `o`, or `O` to
+edit the corresponding source line, then Escape to render again. `:w` and `:w!`
+save the Markdown source even while viewing the rendered document.
+
+- `<leader>ma` toggles auto mode. Turning it off returns to ordinary source editing.
+- `<leader>mr` switches between source and rendered views in the same window.
+- `<leader>ms` opens source and rendered views in a vertical split.
+- `<leader>md` opens the renderer's demo.
+
+The rendered buffer is read-only. Switch to source with `<leader>mr` for Normal
+mode edits such as `dd`, paste, undo/redo, substitutions, macros, or saving to a
+different filename. Turn auto mode off with `<leader>ma` to stay in source mode
+after leaving Insert. This is source/render switching rather than direct editing
+of formatted text, and cursor mapping follows source lines.
+
+md-render.nvim requires Neovim 0.12 or newer. Inline images need a terminal with
+the Kitty graphics protocol, such as Ghostty. ImageMagick and Mermaid CLI are
+already supplied by the Neovim Nix module. After deploying this configuration,
+run `:Lazy sync` to install the replacement and remove render-markdown.nvim.
