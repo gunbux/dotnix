@@ -1,5 +1,5 @@
 {
   "id": "auto-label",
   "description": "Label each thread with a topic so tabs can be sorted by label.",
-  "requirements": { "paseo": ">=0.11.2 <0.12.0" }
+  "requirements": { "paseo": ">=0.11.2 <0.14.0" }
 }
