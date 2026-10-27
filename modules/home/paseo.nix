@@ -31,6 +31,11 @@
   linkPlugin = name: src:
     lib.nameValuePair ".local/share/paseo/plugins/${name}" {source = pluginSource src;};
   pluginStates = localPlugins // lib.mapAttrs (_: _: true) (externalPlugins // npmPlugins);
+  # macOS runs the Homebrew cask (hosts/greptile-mac); paseo-desktop is x86_64-linux only.
+  paseoCli =
+    if pkgs.stdenv.hostPlatform.isDarwin
+    then "/Applications/Paseo.app/Contents/Resources/bin/paseo"
+    else "${pkgs.paseo-desktop}/bin/paseo";
 in {
   imports = [./paseo-bots.nix];
 
@@ -49,7 +54,7 @@ in {
       # Remove retired registrations on hosts upgraded from older configurations.
       for paseoPluginsRemoved in ${lib.escapeShellArgs removedPlugins}; do
         if "$paseoPluginsJq" -e --arg id "$paseoPluginsRemoved" '.plugins[$id] != null' "$paseoPluginsConfig" >/dev/null; then
-          if ! run ${pkgs.paseo-desktop}/bin/paseo plugin remove "$paseoPluginsRemoved" >/dev/null 2>&1; then
+          if ! run ${paseoCli} plugin remove "$paseoPluginsRemoved" >/dev/null 2>&1; then
             paseoPluginsTmp=$(mktemp "$paseoPluginsConfig.XXXXXX.tmp")
             "$paseoPluginsJq" --arg id "$paseoPluginsRemoved" 'del(.plugins[$id])' "$paseoPluginsConfig" >"$paseoPluginsTmp"
             chmod 600 "$paseoPluginsTmp"
@@ -68,7 +73,7 @@ in {
         if [[ $paseoPluginsVersion != ${lib.escapeShellArg plugin.version} ]]; then
           # Non-fatal: the running daemon may predate the plugin's required Paseo
           # version until it restarts; the next activation retries.
-          if ! run ${pkgs.paseo-desktop}/bin/paseo plugin install ${lib.escapeShellArg "npm:${plugin.package}@${plugin.version}"} --id ${lib.escapeShellArg name}; then
+          if ! run ${paseoCli} plugin install ${lib.escapeShellArg "npm:${plugin.package}@${plugin.version}"} --id ${lib.escapeShellArg name}; then
             warnEcho ${lib.escapeShellArg "Could not install ${plugin.package}@${plugin.version}; restart Paseo and re-run activation."}
           fi
         fi
@@ -84,7 +89,7 @@ in {
           else "disable";
       in ''
         if [[ $("$paseoPluginsJq" -r --arg id ${name} '.plugins[$id] | if . == null then "unregistered" else .enabled end' "$paseoPluginsConfig") == ${lib.boolToString (!enabled)} ]]; then
-          if ! run ${pkgs.paseo-desktop}/bin/paseo plugin ${action} ${name} >/dev/null 2>&1; then
+          if ! run ${paseoCli} plugin ${action} ${name} >/dev/null 2>&1; then
             paseoPluginsTmp=$(mktemp "$paseoPluginsConfig.XXXXXX.tmp")
             "$paseoPluginsJq" --arg id ${name} '.plugins[$id].enabled = ${lib.boolToString enabled}' "$paseoPluginsConfig" >"$paseoPluginsTmp"
             chmod 600 "$paseoPluginsTmp"
