@@ -18,6 +18,7 @@
   # Global gitignore (git reads ~/.config/git/ignore when core.excludesFile is unset)
   xdg.configFile."git/ignore".text = ''
     .wakatime-project
+    **/.claude/settings.local.json
   '';
 
   # Delta
