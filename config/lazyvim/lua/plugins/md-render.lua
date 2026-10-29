@@ -3,6 +3,10 @@ return {
   version = "^3.11.2",
   ft = { "markdown", "vimwiki" },
   cmd = "MdRender",
+  config = function()
+    -- Fractional heading scaling can insert gaps with some terminal fonts.
+    require("md-render.text_size").setup({ enabled = false })
+  end,
   keys = {
     { "<leader>ma", "<cmd>MdRender auto toggle<cr>", desc = "Markdown auto render (toggle)" },
     { "<leader>mr", "<cmd>MdRender toggle<cr>", desc = "Markdown source/render (toggle)" },

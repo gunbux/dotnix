@@ -25,6 +25,11 @@
       "--set-default"
       "PUPPETEER_EXECUTABLE_PATH"
       "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      # CodeSnap's macOS binary links PCRE2 at a Homebrew path; let dyld find Nix's copy.
+      "--prefix"
+      "DYLD_FALLBACK_LIBRARY_PATH"
+      ":"
+      (lib.makeLibraryPath [pkgs.pcre2])
     ];
   };
 

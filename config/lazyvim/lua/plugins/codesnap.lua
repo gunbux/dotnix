@@ -1,13 +1,14 @@
 return {
     "mistricky/codesnap.nvim",
-    build = "make",
     keys = {
-        { "<leader>ss", "<Esc><cmd>CodeSnap<cr>",      mode = 'x', desc = "Take code snapshot" },
-        { "<leader>sa", "<Esc><cmd>CodeSnapASCII<cr>", mode = 'x', desc = "Take code snapshot, but in ASCII" },
+        { "<leader>ss", "<Esc><cmd>CodeSnap<cr>",      mode = 'x', desc = "Copy code snapshot to clipboard" },
+        { "<leader>sa", "<Esc><cmd>CodeSnapASCII<cr>", mode = 'x', desc = "Copy ASCII code snapshot to clipboard" },
     },
     opts = {
-        has_line_number = true,
-        has_breadcrumbs = true,
-        watermark = "",
+        show_line_number = true,
+        snapshot_config = {
+            code_config = { breadcrumbs = { enable = true } },
+            watermark = { content = "" },
+        },
     },
 }

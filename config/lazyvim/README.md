@@ -43,6 +43,15 @@ after leaving Insert. This is source/render switching rather than direct editing
 of formatted text, and cursor mapping follows source lines.
 
 md-render.nvim requires Neovim 0.12 or newer. Inline images need a terminal with
-the Kitty graphics protocol, such as Ghostty. ImageMagick and Mermaid CLI are
+the Kitty graphics protocol, such as Ghostty. Experimental heading scaling is
+disabled because fractional sizes can produce gaps inside words with some fonts.
+Use `:MdRender textsize off` to disable it in an existing session.
+ImageMagick and Mermaid CLI are
 already supplied by the Neovim Nix module. After deploying this configuration,
 run `:Lazy sync` to install the replacement and remove render-markdown.nvim.
+
+CodeSnap uses its v2 configuration and prebuilt generator. In Visual mode,
+`<leader>ss` copies an image to the clipboard and `<leader>sa` copies ASCII text.
+On macOS, Neovim's Nix wrapper supplies PCRE2 through `DYLD_FALLBACK_LIBRARY_PATH`
+because the upstream generator links to a Homebrew library path. Apply the Home
+Manager configuration and restart Neovim for wrapper changes to take effect.

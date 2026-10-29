@@ -21,6 +21,14 @@ vim.api.nvim_set_keymap('n', '<leader>q', ':wq<CR>', { noremap = true })
 vim.api.nvim_set_keymap('n', '<leader>e', ':q!<CR>', { noremap = true })
 vim.cmd('cnoremap w!! w !sudo tee %')
 
+vim.keymap.set({ "n", "x" }, "<leader>gY", function()
+  Snacks.gitbrowse({
+    what = "permalink",
+    open = function(url) vim.fn.setreg("+", url) end,
+    notify = false,
+  })
+end, { desc = "Git permalink (copy)" })
+
 -- 6. Visual Mode Related
 -- vim.api.nvim_set_keymap('v', '*', ':<C-u>call VisualSelection("", "")<CR>/<C-R>=@/<CR><CR>', { noremap = true, silent = true })
 -- vim.api.nvim_set_keymap('v', '#', ':<C-u>call VisualSelection("", "")<CR>?<C-R>=@/<CR><CR>', { noremap = true, silent = true })
