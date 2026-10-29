@@ -103,6 +103,8 @@
         paseo-bridge = final.callPackage ./pkgs/paseo-bridge/default.nix {};
         ## PostHog CLI (not in nixpkgs)
         posthog-cli = prev.callPackage ./pkgs/posthog-cli/default.nix {};
+        ## Reads T3 Code agent activity for the Noctalia t3-activity plugin
+        t3-activity = prev.callPackage ./pkgs/t3-activity/default.nix {};
       };
     };
 

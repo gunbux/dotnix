@@ -4,7 +4,18 @@
   lib,
   inputs,
   ...
-}: {
+}: let
+  llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+  # TODO: Drop once llm-agents.nix sets the JWT template upstream. Without it
+  # the T3 Connect settings are hidden; the override builds t3code locally.
+  t3code-desktop = llmAgents.t3code-desktop.override {
+    t3code = llmAgents.t3code.override {
+      t3code-unwrapped = llmAgents.t3code.unwrapped.overrideAttrs (old: {
+        env = old.env // {T3CODE_CLERK_JWT_TEMPLATE = "t3-relay";};
+      });
+    };
+  };
+in {
   imports = [./paseo.nix];
 
   home.packages = with pkgs;
@@ -69,11 +80,13 @@
       inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
     ]
     # AI desktop apps from llm-agents.nix (CLIs are in ai.nix)
-    ++ (with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}; [
+    ++ (with llmAgents; [
       chatgpt # ChatGPT / Codex desktop
       claude-desktop # Claude desktop
+    ])
+    ++ [
       t3code-desktop # T3 Code GUI
-    ]);
+    ];
 
   # Ghostty Config
   home.file.".config/ghostty" = {
@@ -104,6 +117,10 @@
       "application/xhtml+xml" = lib.mkForce ["zen-beta.desktop"];
       "application/x-extension-xhtml" = lib.mkForce ["zen-beta.desktop"];
       "application/x-extension-xht" = lib.mkForce ["zen-beta.desktop"];
+
+      # T3 Code thread links. The app registers its own handler at launch, but
+      # on Nix that entry runs bare electron without the app.
+      "x-scheme-handler/t3code" = ["t3code.desktop"];
 
       # Terminal
       "application/x-terminal-emulator" = ["kitty.desktop"];

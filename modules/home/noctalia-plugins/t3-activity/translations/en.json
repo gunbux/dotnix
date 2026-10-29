@@ -1,0 +1,43 @@
+{
+  "panel": {
+    "idle": "No T3 agents active",
+    "open": "Open in T3 Code"
+  },
+  "phase": {
+    "completed": "Done",
+    "failed": "Failed",
+    "running": "Working",
+    "starting": "Starting",
+    "waiting_for_approval": "Needs approval",
+    "waiting_for_input": "Needs input"
+  },
+  "pill": {
+    "done": "done",
+    "failed": "failed",
+    "needs": "waiting",
+    "working": "working"
+  },
+  "settings": {
+    "finished_window": {
+      "description": "Keep finished and failed threads on the bar this many minutes, unless you open the thread first. 0 hides them straight away.",
+      "label": "Show finished threads for (minutes)"
+    },
+    "poll_interval": {
+      "description": "How often to read T3's state.",
+      "label": "Poll interval (seconds)"
+    },
+    "t3_connect": {
+      "description": "Also show threads from your other machines, read from T3 Connect like the phone's Live Activity. Needs T3 Code here signed in to T3 Connect, and each machine publishing agent activity.",
+      "label": "Include other machines"
+    },
+    "t3_home": {
+      "description": "T3 Code data directory (T3CODE_HOME).",
+      "label": "T3 data directory"
+    }
+  },
+  "tooltip": {
+    "idle": "T3: nothing running",
+    "connect": "T3 Connect",
+    "connect_error": "other machines unavailable"
+  }
+}

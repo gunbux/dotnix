@@ -6,22 +6,27 @@
   pkgs,
   ...
 }: let
-  # agent-glow 0.1.0 never matches Claude sessions (it searches the cached
-  # family name instead of the cmdline) and misses Paseo's --resume=<uuid> and
-  # Codex app-server sessions. world_clock gains a bar-only local clock that
-  # follows tzupdate and hides when it matches a listed zone. Both override the
-  # pinned copies via a later source.
+  # world_clock gains a bar-only local clock that follows tzupdate and hides
+  # when it matches a listed zone. It overrides the pinned copy via a later
+  # source.
   patchedPlugins = pkgs.runCommand "noctalia-patched-plugins" {} ''
     mkdir -p $out
-    cp -r ${inputs.noctalia-community-plugins}/agent-glow $out/
     cp -r ${inputs.noctalia-official-plugins}/world_clock $out/
     chmod -R u+w $out
-    patch -d $out/agent-glow -p1 < ${./patches/agent-glow-sessions.patch}
     patch -d $out/world_clock -p1 < ${./patches/world-clock-local-zone.patch}
     substituteInPlace $out/world_clock/bar.luau \
       --replace-fail 'local children = { glyph }' 'local children = {}'
     substituteInPlace $out/world_clock/service.luau \
       --replace-fail '"timedatectl"' '"${pkgs.systemd}/bin/timedatectl"'
+  '';
+
+  # Plugins written for this config; the probe binary path is baked in.
+  localPlugins = pkgs.runCommand "noctalia-local-plugins" {} ''
+    mkdir -p $out
+    cp -r ${./noctalia-plugins}/. $out/
+    chmod -R u+w $out
+    substituteInPlace $out/t3-activity/watcher.luau \
+      --replace-fail '@t3Activity@' '${lib.getExe pkgs.t3-activity}'
   '';
 
   # Seeded into the world clock's plugin data on every switch; edits made in
@@ -149,6 +154,8 @@ in {
           "group:time"
           "group:sysmon"
           "group:agents"
+          # Outside the group so it shows without hovering; hides when idle.
+          "t3-activity"
           "media"
           "bongocat"
         ];
@@ -170,7 +177,7 @@ in {
           }
           {
             id = "agents";
-            members = ["agent-glow" "claude-usage" "codex-usage"];
+            members = ["claude-usage" "codex-usage"];
             padding = 4;
           }
           {
@@ -265,8 +272,9 @@ in {
           show_clocks = true;
         };
 
-        agent-glow = {
-          type = "fel/agent-glow:indicator";
+        # The phone's T3 Live Activity: most urgent thread, click to open it.
+        t3-activity = {
+          type = "chun/t3-activity:pill";
         };
 
         # Reads ~/.claude/.credentials.json and refreshes its OAuth token.
@@ -365,7 +373,7 @@ in {
           "fel/ocr"
           "liamwh/emoji-picker"
           "conqazht/share-wifi"
-          "fel/agent-glow"
+          "chun/t3-activity"
           "jrohland/claudecode"
           "ayagmar/headroom"
         ];
@@ -405,6 +413,13 @@ in {
             location = "${patchedPlugins}";
             enabled = true;
           }
+          # Plugins written for this config (t3-activity).
+          {
+            name = "local";
+            kind = "path";
+            location = "${localPlugins}";
+            enabled = true;
+          }
         ];
       };
 
@@ -434,7 +449,6 @@ in {
         # Setting this (re)starts the world clock service, which loads the
         # SG/SF labels seeded below.
         "noctalia/world_clock".time_format = "24h";
-        "fel/agent-glow".agents = "opencode,claude,codex,gemini,aider,goose,paseo";
         "kenn/keybind-cheatsheet" = {
           compositor = "niri";
           niri_config = "~/.config/niri/config.kdl";
@@ -465,6 +479,5 @@ in {
     evtest # bongocat
     linux-wifi-hotspot # share-wifi (create_ap)
     iw # share-wifi
-    python3 # agent-glow
   ];
 }
