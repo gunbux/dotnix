@@ -105,6 +105,8 @@
         posthog-cli = prev.callPackage ./pkgs/posthog-cli/default.nix {};
         ## Reads T3 Code agent activity for the Noctalia t3-activity plugin
         t3-activity = prev.callPackage ./pkgs/t3-activity/default.nix {};
+        ## Greptile CLI (npm package, not in nixpkgs)
+        greptile-cli = prev.callPackage ./pkgs/greptile-cli/default.nix {};
       };
     };
 
