@@ -13,7 +13,7 @@
   vulkan-loader,
   wayland,
 }: let
-  version = "0.21.0";
+  version = "0.23.0";
 
   # delta.dev only hands out short-lived presigned R2 URLs, so resolve one
   # through the versioned release API inside a fixed-output derivation.
@@ -21,12 +21,12 @@
     name = "delta-linux-x86_64-${version}.tar.gz";
     nativeBuildInputs = [cacert curl jq];
     buildCommand = ''
-      url=$(curl -fsSL "https://delta.dev/api/releases/nightly/${version}/asset?asset=delta&os=linux&arch=x86_64" | jq -r .url)
+      url=$(curl -fsSL "https://delta.dev/api/releases/stable/${version}/asset?asset=delta&os=linux&arch=x86_64" | jq -r .url)
       curl -fsSL "$url" -o "$out"
     '';
     outputHashMode = "flat";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-lN5oSycdw1n3AswiGcsB4/jR481noJ5zv3qay5CTXso=";
+    outputHash = "sha256-3j2W4+JAo0hq3+mZZbnJPfEjpP+HQjKMFAp1+jUuZcY=";
   };
 in
   stdenv.mkDerivation {

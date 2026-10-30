@@ -107,7 +107,13 @@ func main() {
 	window := flag.Int("finished-window", 30, "minutes to keep finished and failed threads")
 	relay := flag.Bool("relay", false, "add other machines' threads from T3 Connect")
 	relayInterval := flag.Int("relay-interval", 10, "seconds between T3 Connect fetches")
+	seenID := flag.String("seen", "", "mark a thread opened from the pill, then exit")
 	flag.Parse()
+
+	if *seenID != "" {
+		markSeen(*seenID)
+		return
+	}
 
 	userdata := filepath.Join(expand(*home), "userdata")
 	envID := ""
@@ -128,6 +134,8 @@ func main() {
 
 	if *relay {
 		rows, labels, status := relayActivity(userdata, time.Duration(*relayInterval)*time.Second)
+		seen := loadSeen(rows)
+		now := float64(time.Now().UnixMilli()) / 1000
 		out.Connect = &status
 		if label := labels[envID]; label != "" {
 			out.Machine = label
@@ -145,6 +153,14 @@ func main() {
 				label = "remote"
 			}
 			updated := epoch(&row.UpdatedAt)
+			// The relay keeps finished threads until they are settled; opening
+			// one is invisible to it. Drop them once opened from the pill, or,
+			// like local ones, once older than the window.
+			if row.Phase == "completed" || row.Phase == "failed" {
+				if seen[row.ThreadID] == row.UpdatedAt || now-updated >= float64(*window*60) {
+					continue
+				}
+			}
 			out.Threads = append(out.Threads, thread{
 				ID:      row.ThreadID,
 				Title:   row.ThreadTitle,

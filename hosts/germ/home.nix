@@ -1,8 +1,7 @@
-# Debian server (germaine) running a headless Paseo daemon.
+# Debian server (germaine) with shared agent CLI configuration.
 {...}: {
   imports = [
     ../../modules/home/ai.nix
-    ../../modules/home/paseo-daemon.nix
   ];
 
   targets.genericLinux.enable = true;

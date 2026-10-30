@@ -49,7 +49,7 @@
     minegrub-theme.url = "github:Lxtharia/minegrub-theme/pull/91/head";
     minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
     noctalia = {
-      url = "github:noctalia-dev/noctalia/v5.3.0";
+      url = "github:noctalia-dev/noctalia/v5.4.1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # Pinned Noctalia plugin sources, exposed to Noctalia as read-only path sources.
@@ -59,11 +59,6 @@
     };
     noctalia-community-plugins = {
       url = "github:noctalia-dev/community-plugins";
-      flake = false;
-    };
-    # Paseo bots plugin, linked in by modules/home/paseo.nix.
-    paseo-bots = {
-      url = "github:oliexe/paseo-bots";
       flake = false;
     };
     # Composio Claude Code plugin, linked in by modules/home/ai.nix.
@@ -87,7 +82,7 @@
       custom-packages = final: prev: {
         ## supergfxctl with a reverted version because of a regression in latest.
         supergfxctl = prev.callPackage ./pkgs/supergfxctl/default.nix {};
-        ## So shell doesn't break outside of hyde
+        ## Pokémon sprite greeting for interactive shells
         pokego = prev.callPackage ./pkgs/pokego/default.nix {};
         ## Fun cursor
         banana-cursor-dreams = prev.callPackage ./pkgs/banana-cursor-dreams/default.nix {};
@@ -95,18 +90,31 @@
         herald = prev.callPackage ./pkgs/herald/default.nix {};
         ## Delta - AI-native code editor from Zed (binary release)
         delta-editor = prev.callPackage ./pkgs/delta-editor/default.nix {};
-        ## Paseo - coding agent orchestrator (desktop AppImage release; nixpkgs only ships the CLI)
-        paseo-desktop = prev.callPackage ./pkgs/paseo-desktop/default.nix {};
-        ## Headless Paseo CLI/daemon (modules/home/paseo-daemon.nix), kept at paseo-desktop's version
-        paseo = prev.callPackage ./pkgs/paseo/default.nix {inherit (prev) paseo;};
-        ## Daemon client for the Vicinae Paseo extension and glance (see config/vicinae/paseo/bridge)
-        paseo-bridge = final.callPackage ./pkgs/paseo-bridge/default.nix {};
+        ## Patched llm-agents source build with T3 Connect enabled.
+        t3code-desktop = prev.callPackage ./pkgs/t3code-desktop/default.nix {
+          upstreamT3code = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system}.t3code;
+          upstreamDesktop = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system}.t3code-desktop;
+        };
         ## PostHog CLI (not in nixpkgs)
         posthog-cli = prev.callPackage ./pkgs/posthog-cli/default.nix {};
         ## Reads T3 Code agent activity for the Noctalia t3-activity plugin
         t3-activity = prev.callPackage ./pkgs/t3-activity/default.nix {};
         ## Greptile CLI (npm package, not in nixpkgs)
         greptile-cli = prev.callPackage ./pkgs/greptile-cli/default.nix {};
+      };
+    };
+
+    ## Home Manager settings shared by every NixOS and nix-darwin host.
+    homeManagerDefaults = {pkgs, ...}: {
+      home-manager = {
+        useGlobalPkgs = true;
+        useUserPackages = true;
+        extraSpecialArgs = {inherit inputs;};
+        # A stray file at a newly managed path otherwise aborts activation.
+        # Numbered backups never collide, so repeated switches keep working.
+        backupCommand = pkgs.writeShellScript "hm-backup" ''
+          exec ${pkgs.coreutils}/bin/mv --backup=numbered -- "$1" "$1.hm-backup"
+        '';
       };
     };
 
@@ -120,14 +128,12 @@
         inputs.chaotic.nixosModules.default
         inputs.minegrub-theme.nixosModules.default
         ./hosts/g14/default.nix
+        homeManagerDefaults
         ./modules/cosmic.nix
         ./modules/niri.nix
         ./modules/sops.nix
         {
           nixpkgs.overlays = [overlays.custom-packages];
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.users.chun.imports = [./hosts/g14/home.nix];
         }
       ];
@@ -143,6 +149,7 @@
         inputs.chaotic.nixosModules.default
         inputs.minegrub-theme.nixosModules.default
         ./hosts/legion/default.nix
+        homeManagerDefaults
         ./modules/cosmic.nix
         ./modules/niri.nix
         ./modules/sops.nix
@@ -150,9 +157,6 @@
           nixpkgs.overlays = [
             overlays.custom-packages
           ];
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.users.chun.imports = [./hosts/legion/home.nix];
         }
       ];
@@ -168,14 +172,12 @@
         inputs.chaotic.nixosModules.default
         inputs.minegrub-theme.nixosModules.default
         ./hosts/fw12/default.nix
+        homeManagerDefaults
         ./modules/cosmic.nix
         ./modules/niri.nix
         ./modules/sops.nix
         {
           nixpkgs.overlays = [overlays.custom-packages];
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.users.chun.imports = [./hosts/fw12/home.nix];
         }
       ];
@@ -194,11 +196,9 @@
         inputs.sops-nix.nixosModules.sops
         ./modules/nix.nix
         ./modules/wsl.nix
+        homeManagerDefaults
         {
           nixpkgs.overlays = [overlays.custom-packages];
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.users.chun.imports = [
             ./modules/home/base.nix
           ];
@@ -213,11 +213,9 @@
       modules = [
         inputs.home-manager.darwinModules.home-manager
         ./hosts/greptile-mac/default.nix
+        homeManagerDefaults
         {
           nixpkgs.overlays = [overlays.custom-packages];
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.extraSpecialArgs = {inherit inputs;};
           home-manager.users.chun.imports = [./hosts/greptile-mac/home.nix];
         }
       ];
@@ -269,7 +267,7 @@
         };
       };
 
-      ## Debian server (germaine) running a headless Paseo daemon
+      ## Debian server (germaine) with shared agent CLI configuration
       "germ" = inputs.home-manager.lib.homeManagerConfiguration {
         pkgs = import inputs.nixpkgs {
           inherit system;

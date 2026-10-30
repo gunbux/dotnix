@@ -23,6 +23,7 @@ local STATE_OF = {
 }
 
 local status = noctalia.state.get("status")
+local probePath = "@t3Activity@" -- substituted by Nix
 
 local function threads()
   if type(status) == "table" and type(status.threads) == "table" then
@@ -140,6 +141,7 @@ function onClick()
   local waiting = first ~= nil and STATE_OF[first.phase] == "needs"
   if first ~= nil and (waiting or #list == 1) and first.url ~= nil and first.url ~= "" then
     noctalia.runAsync({ "xdg-open", first.url })
+    noctalia.runAsync({ probePath, "--seen", first.id })
     return
   end
   noctalia.togglePanel("chun/t3-activity:threads")

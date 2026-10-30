@@ -109,7 +109,7 @@ layout {
 spawn-at-startup "noctalia"
 spawn-at-startup "kitty" "-e" "/home/chun/.config/tmux/start-session.sh"
 spawn-at-startup "zen-beta"
-spawn-at-startup "paseo-desktop" "--class=Paseo"
+spawn-at-startup "t3code-desktop"
 
 cursor {
     xcursor-theme "Banana-Catppuccin-Mocha"
@@ -201,9 +201,9 @@ window-rule {
     open-maximized true
 }
 
-// Open Paseo fullscreen at startup
+// Open T3 Code fullscreen at startup
 window-rule {
-    match app-id="^Paseo$" at-startup=true
+    match app-id=r#"^(com\.t3tools\.T3Code|t3code)$"# at-startup=true
     open-fullscreen true
 }
 

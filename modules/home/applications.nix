@@ -6,18 +6,7 @@
   ...
 }: let
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-  # TODO: Drop once llm-agents.nix sets the JWT template upstream. Without it
-  # the T3 Connect settings are hidden; the override builds t3code locally.
-  t3code-desktop = llmAgents.t3code-desktop.override {
-    t3code = llmAgents.t3code.override {
-      t3code-unwrapped = llmAgents.t3code.unwrapped.overrideAttrs (old: {
-        env = old.env // {T3CODE_CLERK_JWT_TEMPLATE = "t3-relay";};
-      });
-    };
-  };
 in {
-  imports = [./paseo.nix];
-
   home.packages = with pkgs;
     [
       # davinci-resolve # Video Editor
@@ -55,7 +44,6 @@ in {
       neomutt # Email Client
       ninjabrain-bot # Ninjabrain bot
       obs-studio # Recording
-      paseo-desktop # Paseo Coding Agent Orchestrator
       pear-desktop # Music
       postman # Postman
       (prismlauncher.override {jdks = [jdk21 jdk17];}) # Minecraft (1.16+ only; add jdk8 for older)
@@ -84,8 +72,8 @@ in {
       chatgpt # ChatGPT / Codex desktop
       claude-desktop # Claude desktop
     ])
-    ++ [
-      t3code-desktop # T3 Code GUI
+    ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+      t3code-desktop # Patched llm-agents source build with T3 Connect
     ];
 
   # Ghostty Config

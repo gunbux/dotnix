@@ -134,16 +134,16 @@ with lib.hm.gvariant; {
 
     "org/gnome/desktop/interface" = {
       clock-format = "12h";
-      color-scheme = "prefer-dark";
-      cursor-size = 32;
-      cursor-theme = "Nordzy-cursors-white";
+      color-scheme = lib.mkDefault "prefer-dark";
+      cursor-size = lib.mkDefault 32;
+      cursor-theme = lib.mkDefault "Nordzy-cursors-white";
       document-font-name = "Source Sans 3 11";
       enable-animations = true;
       font-antialiasing = "grayscale";
       font-hinting = "slight";
-      font-name = "Source Sans 3 11";
-      gtk-theme = "pop-dark";
-      icon-theme = "Tela";
+      font-name = lib.mkDefault "Source Sans 3 11";
+      gtk-theme = lib.mkDefault "pop-dark";
+      icon-theme = lib.mkDefault "Tela";
       locate-pointer = true;
       monospace-font-name = "JetBrainsMono Nerd Font 10";
       show-battery-percentage = true;

@@ -105,7 +105,7 @@ in {
   # aws plugin: completion, `asp` (switch profile), `acp`, `agp`
   programs.zsh.oh-my-zsh.plugins = ["kubectl" "aws"];
 
-  # Complete greptilia-docs with Paseo worktree names, described by branch.
+  # Complete greptilia-docs with Git worktree names, described by branch.
   programs.zsh.initContent = ''
     _greptilia-docs() {
       local -a items
@@ -129,7 +129,7 @@ in {
   programs.starship.settings.kubernetes.disabled = false;
 
   # greptilia's Fumadocs site (docs/content Obsidian vault) on http://localhost:3333.
-  # Serves ~/repo/greptilia unless `greptilia-docs <worktree>` picked a Paseo
+  # Serves ~/repo/greptilia unless `greptilia-docs <worktree>` picked a Git
   # worktree. The vault is converted once at startup; `greptilia-docs <current>`
   # restarts it to pick up new pages.
   launchd.agents.greptilia-docs = {

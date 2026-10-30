@@ -83,11 +83,69 @@ type relayStatus struct {
 }
 
 func cachePath() string {
+	return runtimePath("relay.json")
+}
+
+func runtimePath(name string) string {
 	dir := os.Getenv("XDG_RUNTIME_DIR")
 	if dir == "" {
 		dir = os.TempDir()
 	}
-	return filepath.Join(dir, "t3-activity", "relay.json")
+	return filepath.Join(dir, "t3-activity", name)
+}
+
+func writeRuntime(name string, value any) {
+	path := runtimePath(name)
+	os.MkdirAll(filepath.Dir(path), 0o700)
+	raw, _ := json.Marshal(value)
+	tmp := path + ".tmp"
+	if os.WriteFile(tmp, raw, 0o600) == nil {
+		os.Rename(tmp, path)
+	}
+}
+
+// seen.json maps a remote thread opened from the pill to the relay row's
+// updatedAt at the time, so it reappears once the thread finishes again.
+func readSeen() map[string]string {
+	seen := map[string]string{}
+	if raw, err := os.ReadFile(runtimePath("seen.json")); err == nil {
+		json.Unmarshal(raw, &seen)
+	}
+	return seen
+}
+
+func markSeen(threadID string) {
+	for _, row := range loadCache().Rows {
+		if row.ThreadID == threadID {
+			seen := readSeen()
+			seen[threadID] = row.UpdatedAt
+			writeRuntime("seen.json", seen)
+			return
+		}
+	}
+}
+
+// loadSeen returns the seen marks, forgetting threads the relay has dropped.
+func loadSeen(rows []activityRow) map[string]string {
+	seen := readSeen()
+	if rows == nil {
+		return seen // relay unreachable; keep the marks
+	}
+	live := map[string]bool{}
+	for _, row := range rows {
+		live[row.ThreadID] = true
+	}
+	pruned := false
+	for id := range seen {
+		if !live[id] {
+			delete(seen, id)
+			pruned = true
+		}
+	}
+	if pruned {
+		writeRuntime("seen.json", seen)
+	}
+	return seen
 }
 
 func loadCache() *relayCache {
@@ -99,13 +157,7 @@ func loadCache() *relayCache {
 }
 
 func (c *relayCache) save() {
-	path := cachePath()
-	os.MkdirAll(filepath.Dir(path), 0o700)
-	raw, _ := json.Marshal(c)
-	tmp := path + ".tmp"
-	if os.WriteFile(tmp, raw, 0o600) == nil {
-		os.Rename(tmp, path)
-	}
+	writeRuntime("relay.json", c)
 }
 
 // relayActivity returns every linked environment's activity rows and their

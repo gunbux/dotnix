@@ -1,6 +1,6 @@
 # Switch which greptilia worktree the greptilia-docs launchd agent serves.
 #   greptilia-docs            show what is being served
-#   greptilia-docs <name>     serve a Paseo worktree (~/.paseo/worktrees/*/<name>)
+#   greptilia-docs <name>     serve a registered Git worktree
 #   greptilia-docs main       serve ~/repo/greptilia
 #   greptilia-docs --list     list worktrees as "<name><TAB><branch>" (used by completion)
 
@@ -9,14 +9,14 @@ link="${XDG_STATE_HOME:-$HOME/.local/state}/greptilia-docs/root"
 label="gui/$(id -u)/org.nix-community.home.greptilia-docs"
 log="$HOME/Library/Logs/greptilia-docs.log"
 
-# Paseo worktrees whose .git file points back at the main greptilia checkout.
 worktrees() {
-  shopt -s nullglob
-  local wt
-  for wt in "$HOME"/.paseo/worktrees/*/*/; do
-    wt="${wt%/}"
-    [[ -f "$wt/.git" ]] && grep -q "^gitdir: $main/.git/worktrees/" "$wt/.git" && echo "$wt"
-  done
+  local entry wt
+  while IFS= read -r -d '' entry; do
+    if [[ "$entry" == worktree\ * ]]; then
+      wt="${entry#worktree }"
+      [[ "$wt" != "$main" && -d "$wt" ]] && printf '%s\n' "$wt"
+    fi
+  done < <(git -C "$main" worktree list --porcelain -z)
 }
 
 describe() {
@@ -51,7 +51,7 @@ case "${1:-}" in
   *)
     mapfile -t matches < <(worktrees | grep "/$1\$" || true)
     if ((${#matches[@]} == 0)); then
-      echo "greptilia-docs: no greptilia worktree named '$1' under ~/.paseo/worktrees" >&2
+      echo "greptilia-docs: no registered greptilia worktree named '$1'" >&2
       echo "Run 'greptilia-docs --list' to see the available worktrees." >&2
       exit 1
     elif ((${#matches[@]} > 1)); then

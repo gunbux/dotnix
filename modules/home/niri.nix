@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ./noctalia.nix
     ./vicinae.nix
@@ -20,6 +24,74 @@
     package = pkgs.banana-cursor-dreams;
     size = 32;
     name = "Banana-Catppuccin-Mocha";
+  };
+
+  # adw-gtk3 is the base Noctalia's gtk3/gtk4 templates recolor. Each gtk.css
+  # imports noctalia.css first: Noctalia's apply.sh leaves a gtk.css that
+  # already has the import alone, so it never replaces these HM symlinks.
+  gtk = {
+    enable = true;
+    colorScheme = "dark";
+    theme = {
+      name = "adw-gtk3-dark";
+      package = pkgs.adw-gtk3;
+    };
+    gtk3.extraCss = ''
+      @import url("noctalia.css");
+
+      menu, .menu, .context-menu { padding: 2px; }
+      menu menuitem, .menu menuitem, .context-menu menuitem {
+        min-height: 0;
+        padding: 0 8px;
+        border-radius: 5px;
+        font-size: 10pt;
+      }
+      menu separator, .menu separator, .context-menu separator { margin: 2px 0; }
+      popover.menu modelbutton.flat {
+        min-height: 20px;
+        font-size: 10pt;
+      }
+    '';
+    gtk4.theme = null;
+    gtk4.extraCss = ''
+      @import url("noctalia.css");
+
+      popover.menu > contents { padding: 2px; }
+      popover.menu modelbutton {
+        min-height: 20px;
+        padding: 0 8px;
+        font-size: 10pt;
+      }
+      popover.menu separator { margin: 2px 0; }
+    '';
+    iconTheme = {
+      name = "Papirus-Dark";
+      package = pkgs.papirus-icon-theme;
+    };
+    font = {
+      name = "Source Sans Pro";
+      size = 11;
+    };
+  };
+
+  # Fusion recolored by the palette Noctalia's qt template renders.
+  qt = {
+    enable = true;
+    platformTheme.name = "qtct";
+    qt5ctSettings.Appearance = {
+      style = "Fusion";
+      custom_palette = true;
+      color_scheme_path = "${config.xdg.configHome}/qt5ct/colors/noctalia.conf";
+      icon_theme = "Papirus-Dark";
+      standard_dialogs = "xdgdesktopportal";
+    };
+    qt6ctSettings.Appearance = {
+      style = "Fusion";
+      custom_palette = true;
+      color_scheme_path = "${config.xdg.configHome}/qt6ct/colors/noctalia.conf";
+      icon_theme = "Papirus-Dark";
+      standard_dialogs = "xdgdesktopportal";
+    };
   };
 
   # Niri Config

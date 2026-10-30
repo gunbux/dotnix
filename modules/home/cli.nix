@@ -102,7 +102,7 @@ in {
     };
 
     initContent = ''
-      # Only greet real terminals: apps like paseo read PATH from `zsh -ilc` stdout
+      # Only greet real terminals: desktop apps read PATH from `zsh -ilc` stdout
       if [[ -t 1 ]]; then pokego --no-title -r 1-6; fi
       # Set OPENROUTER_API_KEY from sops secret
       if [ -f "/run/secrets/openrouter_api_key" ]; then

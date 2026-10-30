@@ -25,8 +25,10 @@
     mkdir -p $out
     cp -r ${./noctalia-plugins}/. $out/
     chmod -R u+w $out
-    substituteInPlace $out/t3-activity/watcher.luau \
-      --replace-fail '@t3Activity@' '${lib.getExe pkgs.t3-activity}'
+    for entry in watcher bar panel; do
+      substituteInPlace $out/t3-activity/$entry.luau \
+        --replace-fail '@t3Activity@' '${lib.getExe pkgs.t3-activity}'
+    done
   '';
 
   # Seeded into the world clock's plugin data on every switch; edits made in
@@ -82,6 +84,10 @@ in {
         mode = "dark";
         source = "builtin";
         builtin = "Catppuccin";
+        templates = {
+          enable_builtin_templates = true;
+          builtin_ids = ["gtk3" "gtk4" "qt"];
+        };
       };
 
       wallpaper = {

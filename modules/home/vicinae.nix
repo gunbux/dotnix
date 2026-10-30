@@ -23,9 +23,9 @@
   extensionsSrc = pkgs.fetchFromGitHub {
     owner = "vicinaehq";
     repo = "extensions";
-    rev = "413154812ffce610218c523b9c479febe46c5327";
+    rev = "0e3953058fb787d2a96e5ac0cec462440c07cd07";
     sparseCheckout = map (name: "extensions/${name}") extensionNames;
-    hash = "sha256-XkUbqUmPEt3DlIBxwAylZcO1tf4cZDSDJl9LT4yC0tA=";
+    hash = "sha256-JUWHgrgy2IfeNXYbML4nVkxH2O9aJgCt8uT0YW2Y828=";
   };
 
   # dbus-next pulls in the optional native usocket module, which fails to
@@ -41,28 +41,13 @@
       npmRebuildFlags = ["--ignore-scripts"];
       preBuild = "rm -rf node_modules/usocket";
     });
-
-  paseoExtension =
-    (config.lib.vicinae.mkExtension {
-      name = "paseo";
-      src = pkgs.lib.cleanSourceWith {
-        src = ../../config/vicinae/paseo;
-        filter = path: _: !(builtins.elem (baseNameOf path) ["node_modules" "bridge" "vicinae-env.d.ts"]);
-      };
-    }).overrideAttrs {
-      postPatch = ''
-        substituteInPlace src/lib/paseo.ts \
-          --replace-fail "@paseoBridge@" "${pkgs.lib.getExe pkgs.paseo-bridge}" \
-          --replace-fail "@paseo@" "${pkgs.paseo-desktop}/bin/paseo"
-      '';
-    };
 in {
   # App launcher on Mod+Space (niri binds); the daemon keeps the window warm.
   programs.vicinae = {
     enable = true;
     systemd.enable = true;
 
-    extensions = map mkStoreExtension extensionNames ++ [paseoExtension];
+    extensions = map mkStoreExtension extensionNames;
 
     settings = {
       # Bundled theme; matches Noctalia's builtin Catppuccin.

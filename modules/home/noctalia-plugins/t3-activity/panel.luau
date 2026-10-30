@@ -11,6 +11,7 @@ local PHASES = {
 }
 
 local status = noctalia.state.get("status")
+local probePath = "@t3Activity@" -- substituted by Nix
 
 local function render()
   local list = {}
@@ -40,6 +41,7 @@ local function render()
       detail ..= ` · {thread.branch}`
     end
     local url = thread.url
+    local id = thread.id
     table.insert(rows, ui.row({
       key = thread.id,
       gap = 10,
@@ -50,6 +52,8 @@ local function render()
       onClick = function()
         if url ~= nil and url ~= "" then
           noctalia.runAsync({ "xdg-open", url })
+          -- T3 Connect cannot tell a remote thread was opened; the probe can.
+          noctalia.runAsync({ probePath, "--seen", id })
           noctalia.togglePanel("chun/t3-activity:threads")
         end
       end,

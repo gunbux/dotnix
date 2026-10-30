@@ -6,7 +6,5 @@
 
     ../../modules/home/darwin.nix
     ../../modules/home/greptile.nix
-    # Plugins for the Paseo cask (on Linux, applications.nix imports this)
-    ../../modules/home/paseo.nix
   ];
 }
