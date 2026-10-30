@@ -62,9 +62,11 @@
   # Homebrew itself must be installed once by hand (https://brew.sh).
   homebrew = {
     enable = true;
+    # Upgrade casks on every rebuild, including ones that update themselves.
+    greedyCasks = true;
     onActivation = {
-      autoUpdate = false;
-      upgrade = false;
+      autoUpdate = true;
+      upgrade = true;
       # Leave apps installed outside this config (e.g. by company MDM) alone.
       cleanup = "none";
     };
