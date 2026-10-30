@@ -33,7 +33,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Don't add something the user is still trying to understand.
 - Make design calls inside the code you own. Pick the best option, or copy the reference system in parity work. Record the decision and its reason where the project keeps decisions.
 - Never run `terraform apply`, `terragrunt apply`, or any `destroy`, even on sandbox infra. Plan to a file, give the user the commands, wait for "done", then read their output.
-- Hand privileged steps (SSO login, VPN, installs) to the user as exact commands. For a multi-step manual procedure, use the **wizard** skill. Do the wizard's live steps you can, and summarize verbose plans. Under a bypass grant, do these steps yourself when they have no production impact.
+- Hand privileged steps (SSO login, VPN, installs) to the user as exact commands. For a multi-step manual procedure, use the **wizard** skill. During the wizard, do the live steps you can, such as triggering a test review on the test repo. Turn verbose output, such as a Terragrunt plan, into a short human-readable summary. Under a bypass grant, do these steps yourself when they have no production impact.
 - In work repos, never merge PRs. Push freely, then give the user the links to merge. This overrides poteto-mode's Shipping playbook. In personal repos, merge when the user asks, once the PR passes the Greptile gate.
 - Before force-pushing a stacked branch, run `git log <base>..origin/<branch>`. Other sessions push there. Rebase their commits with `--onto` and ask before the push.
 - Before anything that touches staging or prod, run the **blast-radius** skill. Say what could break, whether you can reverse it, which open PRs or teammates' work it conflicts with, and who to tell. Ship new behavior behind an off-by-default flag.
@@ -71,7 +71,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - A PR is done when Greptile scores it 5/5 with no unresolved threads. In work repos, both `greptile` and `greptile-staging` must score 5/5. Use the **greploop** skill (`.claude/skills/greploop` in greptilia). Fix valid comments. Reply to the rest with the reason and resolve them.
 - For visual changes or PRs to upstream projects, let the user try the change locally or see a preview before you open the PR.
 - Tools and settings go in dotnix (`~/repo/dotnix` on the Mac, `~/dotnix` on legion-nix). Don't install ad hoc. Commit and push straight to `main`, then run `nh darwin switch` or `nh os switch` yourself. If a switch fails more than once, find the root cause. dotnix is public, so keep secrets and private config out of it.
-- Prefer declarative infrastructure (Nix, Terragrunt) over commands run on the fly. Fix root causes, not symptoms. Package tools in Nix, with Homebrew in dotnix as the Mac fallback.
+- Prefer declarative infrastructure (Nix, Terragrunt) over commands run on the fly. Fix the root cause instead of a workaround. Package tools properly in Nix. On the Mac, Homebrew is the fallback, declared in dotnix.
 - When you find tooling the user doesn't use, offer to remove it.
 - Keep personal files out of repos. Handover docs go in `/tmp` or the notes repo. Local ignores go in the global gitignore.
 
