@@ -1,5 +1,6 @@
 {
   "panel": {
+    "clear_done": "Clear done",
     "idle": "No T3 agents active",
     "open": "Open in T3 Code"
   },

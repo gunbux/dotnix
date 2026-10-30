@@ -4,7 +4,9 @@
 // It reads T3's projection database read-only, so it needs no token and works
 // while the app is closed. Phases mirror the server's projectThreadAwarenessV2:
 // waiting_for_input, waiting_for_approval, starting, running, completed, failed.
-// With --relay it adds the other machines' threads from T3 Connect (relay.go).
+// Threads made by agents (subagents, launched threads) are left out unless
+// they wait on you. With --relay it adds the other machines' threads from
+// T3 Connect (relay.go).
 package main
 
 import (
@@ -70,7 +72,8 @@ type request struct {
 }
 
 type threadPayload struct {
-	Lineage struct {
+	CreatedBy string `json:"createdBy"`
+	Lineage   struct {
 		RelationshipToParent *string `json:"relationshipToParent"`
 	} `json:"lineage"`
 	SettledOverride *string `json:"settledOverride"`
@@ -108,12 +111,18 @@ func main() {
 	relay := flag.Bool("relay", false, "add other machines' threads from T3 Connect")
 	relayInterval := flag.Int("relay-interval", 10, "seconds between T3 Connect fetches")
 	seenID := flag.String("seen", "", "mark a thread opened from the pill, then exit")
+	clear := flag.Bool("clear-done", false, "hide every finished and failed thread so far, then exit")
 	flag.Parse()
 
 	if *seenID != "" {
 		markSeen(*seenID)
 		return
 	}
+	if *clear {
+		writeRuntime("cleared.json", time.Now().UTC().Format(time.RFC3339Nano))
+		return
+	}
+	cleared := clearedAt()
 
 	userdata := filepath.Join(expand(*home), "userdata")
 	envID := ""
@@ -122,7 +131,7 @@ func main() {
 	}
 	machine, _ := os.Hostname()
 
-	threads, err := collect(userdata, envID, time.Duration(*window)*time.Minute)
+	threads, err := collect(userdata, envID, time.Duration(*window)*time.Minute, cleared)
 	out := output{OK: err == nil, Machine: machine, Threads: threads}
 	if err != nil {
 		out.Error = err.Error()
@@ -153,11 +162,15 @@ func main() {
 				label = "remote"
 			}
 			updated := epoch(&row.UpdatedAt)
+			// The relay has no lineage; agent-made threads show by their ids.
+			if agentThreadID(row.ThreadID) && !needsUser(row.Phase) {
+				continue
+			}
 			// The relay keeps finished threads until they are settled; opening
-			// one is invisible to it. Drop them once opened from the pill, or,
-			// like local ones, once older than the window.
+			// one is invisible to it. Drop them once opened from the pill,
+			// cleared, or, like local ones, older than the window.
 			if row.Phase == "completed" || row.Phase == "failed" {
-				if seen[row.ThreadID] == row.UpdatedAt || now-updated >= float64(*window*60) {
+				if seen[row.ThreadID] == row.UpdatedAt || updated <= cleared || now-updated >= float64(*window*60) {
 					continue
 				}
 			}
@@ -177,6 +190,25 @@ func main() {
 	json.NewEncoder(os.Stdout).Encode(out)
 }
 
+// clearedAt is when "Clear done" was last pressed, in epoch seconds.
+func clearedAt() float64 {
+	var at string
+	if raw, err := os.ReadFile(runtimePath("cleared.json")); err == nil {
+		json.Unmarshal(raw, &at)
+	}
+	return epoch(&at)
+}
+
+func needsUser(phase string) bool {
+	return phase == "waiting_for_input" || phase == "waiting_for_approval"
+}
+
+// agentThreadID matches threads made by delegate_task (subagents) and
+// t3_thread_launch, as the relay names them.
+func agentThreadID(id string) bool {
+	return strings.HasPrefix(id, "thread:delegated-task:") || strings.HasPrefix(id, "mcp:launch:")
+}
+
 func sortThreads(threads []thread) {
 	sort.SliceStable(threads, func(i, j int) bool {
 		if urgency[threads[i].Phase] != urgency[threads[j].Phase] {
@@ -186,7 +218,7 @@ func sortThreads(threads []thread) {
 	})
 }
 
-func collect(userdata, envID string, window time.Duration) ([]thread, error) {
+func collect(userdata, envID string, window time.Duration, cleared float64) ([]thread, error) {
 	dbPath := filepath.Join(userdata, "statev2.sqlite")
 	if _, err := os.Stat(dbPath); err != nil {
 		return nil, fmt.Errorf("no T3 database at %s", dbPath)
@@ -275,9 +307,10 @@ func collect(userdata, envID string, window time.Duration) ([]thread, error) {
 		}
 		var p threadPayload
 		json.Unmarshal([]byte(payload), &p)
-		if rel := p.Lineage.RelationshipToParent; rel != nil && *rel == "subagent" {
-			continue
-		}
+		// Subagents and threads other agents launched report to their parent
+		// agent, so they only show while they wait on you.
+		rel := p.Lineage.RelationshipToParent
+		byAgent := p.CreatedBy == "agent" || (rel != nil && *rel == "subagent") || agentThreadID(id)
 
 		phase := ""
 		switch {
@@ -291,14 +324,14 @@ func collect(userdata, envID string, window time.Duration) ([]thread, error) {
 			phase = "running"
 		case r.status == "completed" || r.status == "failed":
 			// The phone keeps these until dismissed; here they clear once the
-			// thread is opened, settled, or older than the window.
+			// thread is opened, settled, cleared, or older than the window.
 			done := epoch(&r.completedAt)
 			settled := p.SettledOverride != nil && *p.SettledOverride == "settled"
-			if !settled && now-done < window.Seconds() && epoch(p.LastVisitedAt) < done {
+			if !settled && now-done < window.Seconds() && epoch(p.LastVisitedAt) < done && done > cleared {
 				phase = r.status
 			}
 		}
-		if phase == "" {
+		if phase == "" || (byAgent && !needsUser(phase)) {
 			continue
 		}
 

@@ -1,5 +1,6 @@
 --!nonstrict
 -- T3 Activity panel — every active thread; clicking a row opens it in T3.
+-- "Clear done" hides every finished and failed thread listed so far.
 
 local PHASES = {
   waiting_for_input = { glyph = "message-question", color = "error" },
@@ -12,6 +13,27 @@ local PHASES = {
 
 local status = noctalia.state.get("status")
 local probePath = "@t3Activity@" -- substituted by Nix
+
+local function finished(thread)
+  return thread.phase == "completed" or thread.phase == "failed"
+end
+
+-- The probe hides them from its next run on; drop them here straight away.
+local function clearDone()
+  noctalia.runAsync({ probePath, "--clear-done" })
+  if type(status) ~= "table" or type(status.threads) ~= "table" then
+    return
+  end
+  local kept = {}
+  for _, thread in ipairs(status.threads) do
+    if not finished(thread) then
+      table.insert(kept, thread)
+    end
+  end
+  local cleared = table.clone(status)
+  cleared.threads = kept
+  noctalia.state.set("status", cleared)
+end
 
 local function render()
   local list = {}
@@ -28,7 +50,9 @@ local function render()
   end
 
   local rows = {}
+  local anyFinished = false
   for _, thread in ipairs(list) do
+    anyFinished = anyFinished or finished(thread)
     local style = PHASES[thread.phase] or PHASES.running
     local detail = noctalia.tr(`phase.{thread.phase}`)
     if thread.machine ~= nil and thread.machine ~= "" then
@@ -75,6 +99,18 @@ local function render()
           maxLines = 1,
           maxWidth = 420,
         }),
+      }),
+    }))
+  end
+
+  if anyFinished then
+    table.insert(rows, ui.row({ paddingH = 4 }, {
+      ui.button({
+        text = noctalia.tr("panel.clear_done"),
+        glyph = "checks",
+        variant = "ghost",
+        controlSize = "sm",
+        onClick = clearDone,
       }),
     }))
   end
