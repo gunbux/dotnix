@@ -17,13 +17,13 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - For a short explanation, lead with a diagram or table. For system internals, follow the **internals-writing** skill.
 - Run the **unslop** skill on every piece of prose you produce: replies, HTML pages, docs, notes, PR descriptions, and message drafts.
 - Write that prose in ASD-STE100 Simplified Technical English. Use short sentences: at most 20 words for procedures and 25 for descriptions. Give one instruction per sentence. Use active voice and present tense. Give each word one meaning and use the same term for the same thing every time. Define a term before you use it. Keep real code names as written.
-- Keep it short. Write for a reader without the project's context. Spell out what a milestone or option label means instead of writing "M3" or "option B". This applies most to IDs you made up, such as "G7" or "decision 37": restate the meaning and a clickable path each time.
+- Keep it short. Write for a reader without the project's context. Spell out what a milestone or option label means instead of writing "M3" or "option B". Restate IDs you made up ("G7") with their meaning and path.
 - Make every file, doc, and PR reference clickable. Use a repo-relative or absolute path in backticks, or a full URL. Never a bare filename.
-- Ask for decisions with the structured question tool (`AskUserQuestion` in Claude Code, `request_user_input` in Codex). This includes every item blocked on the user, such as a login they must do. Put the context in the question or in the report page it points to: what it's about, what you found, and the trade-off of each option. Put your recommendation first. The user can always answer outside the options or ask more. Without a question tool, use a numbered list the user answers by number.
+- Ask for decisions and blocked items with the question tool (`AskUserQuestion` in Claude Code, `request_user_input` in Codex). Give the context and trade-offs in the question or the report page. Put your recommendation first. Without the tool, use a numbered list.
 - Explain an unfamiliar concept before you ask the user to decide on it.
 - When the user states their understanding ("correct me if I'm wrong"), say plainly whether it's right and fix the wrong part.
 - Fact-check claims against the code and cite the file. List the claims you couldn't verify. Say "not measured", not "not measurable".
-- Answer every status, progress, or catch-up question ("what's left?", "anything blocking?", "I'm back, catch me up") with a dashboard page, not text lists. Show each workstream's state (done, in progress, blocked), its next step, and its links. Build it from live state, not memory. Then ask about the blocked items with the question tool. Give manual steps as exact commands. When the user returns to a codebase rather than a thread, build the summary from `git log` and show the key changes as diff excerpts.
+- Answer status and catch-up questions ("what's left?", "I'm back") with a dashboard page built from live state. Show each workstream as done, in progress, or blocked, with its next step. Then ask about blocked items with the question tool. To catch up on a codebase, summarize `git log` with diff excerpts.
 - Draft messages on request: Slack for work, WhatsApp or email for personal. Keep them short, copy-pasteable, and free of internal labels.
 
 ## Autonomy
@@ -33,10 +33,10 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Don't add something the user is still trying to understand.
 - Make design calls inside the code you own. Pick the best option, or copy the reference system in parity work. Record the decision and its reason where the project keeps decisions.
 - Never run `terraform apply`, `terragrunt apply`, or any `destroy`, even on sandbox infra. Plan to a file, give the user the commands, wait for "done", then read their output.
-- Hand privileged steps (SSO login, VPN, installs) to the user as exact commands. For a multi-step manual procedure, use the **wizard** skill. During the wizard, do the live steps you can, such as triggering a test review on the test repo. Turn verbose output, such as a Terragrunt plan, into a short human-readable summary. Under a bypass grant, do these steps yourself when they have no production impact.
+- Hand privileged steps (SSO login, VPN, installs) to the user as exact commands. For a multi-step manual procedure, use the **wizard** skill. Do the wizard's live steps you can, and summarize verbose plans. Under a bypass grant, do these steps yourself when they have no production impact.
 - In work repos, never merge PRs. Push freely, then give the user the links to merge. This overrides poteto-mode's Shipping playbook. In personal repos, merge when the user asks, once the PR passes the Greptile gate.
 - Before force-pushing a stacked branch, run `git log <base>..origin/<branch>`. Other sessions push there. Rebase their commits with `--onto` and ask before the push.
-- Before anything that touches staging or prod, run the **blast-radius** skill. Say what could break, whether you can reverse it, which open PRs or teammates' work it conflicts with, and who to tell. Offer to set a reminder for the user to tell them. Ship new behavior behind an off-by-default flag.
+- Before anything that touches staging or prod, run the **blast-radius** skill. Say what could break, whether you can reverse it, which open PRs or teammates' work it conflicts with, and who to tell. Ship new behavior behind an off-by-default flag.
 - Read-only requests stay read-only. Don't comment on a PR or post anywhere when the user asked for an assessment.
 - Before an unattended run ("going to bed"), ask every question in one batch up front. Then decide alone and report each decision through the **show-me-your-work** skill.
 - When blocked, find the work that isn't blocked and do it. List only what truly needs the user.
@@ -45,7 +45,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 ## Subagents
 
 - Fan out parallel work without being asked.
-- When the work touches more than one of the user's machines (legion-nix, the work MacBook), run a subagent on each. In T3 Code, pass the machine's `environmentId` to `delegate_task`. Link a missing machine with `t3_environment_link`.
+- For work on several machines, run a subagent on each with T3's `delegate_task` and the machine's `environmentId`.
 - On legion-nix (14 GB RAM), limit how many subagents run at once. If memory or CPU pressure is high, wait for it to drop before you resume.
 - Don't redo work that another agent owns.
 - During long runs, post a one-line status when a phase ends or when you start waiting on an agent.
@@ -71,7 +71,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - A PR is done when Greptile scores it 5/5 with no unresolved threads. In work repos, both `greptile` and `greptile-staging` must score 5/5. Use the **greploop** skill (`.claude/skills/greploop` in greptilia). Fix valid comments. Reply to the rest with the reason and resolve them.
 - For visual changes or PRs to upstream projects, let the user try the change locally or see a preview before you open the PR.
 - Tools and settings go in dotnix (`~/repo/dotnix` on the Mac, `~/dotnix` on legion-nix). Don't install ad hoc. Commit and push straight to `main`, then run `nh darwin switch` or `nh os switch` yourself. If a switch fails more than once, find the root cause. dotnix is public, so keep secrets and private config out of it.
-- Prefer declarative infrastructure (Nix, Terragrunt) over commands run on the fly. Fix the root cause instead of a workaround. Package tools properly in Nix. On the Mac, Homebrew is the fallback, declared in dotnix.
+- Prefer declarative infrastructure (Nix, Terragrunt) over commands run on the fly. Fix root causes, not symptoms. Package tools in Nix, with Homebrew in dotnix as the Mac fallback.
 - When you find tooling the user doesn't use, offer to remove it.
 - Keep personal files out of repos. Handover docs go in `/tmp` or the notes repo. Local ignores go in the global gitignore.
 
