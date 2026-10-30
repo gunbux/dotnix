@@ -585,6 +585,26 @@
         "type": "github"
       }
     },
+    "prview": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793343136,
+        "narHash": "sha256-R5W5TwYwLA4iq+TaAOBeLKPyKPVlsfJQGLIoRIWsJi4=",
+        "ref": "refs/heads/master",
+        "rev": "ad00928b14b6ba815bc3b137eb37256d7acec4a2",
+        "revCount": 24,
+        "type": "git",
+        "url": "ssh://git@github.com/gunbux/prview"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/gunbux/prview"
+      }
+    },
     "root": {
       "inputs": {
         "chaotic": "chaotic",
@@ -603,6 +623,7 @@
         "noctalia-community-plugins": "noctalia-community-plugins",
         "noctalia-official-plugins": "noctalia-official-plugins",
         "paperwm": "paperwm",
+        "prview": "prview",
         "sops-nix": "sops-nix",
         "torlink": "torlink",
         "zen-browser": "zen-browser"

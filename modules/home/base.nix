@@ -14,6 +14,7 @@
     ./git.nix
     ./kitty.nix
     ./neovim.nix
+    ./prview.nix
     ./tmux.nix
     ./zed.nix
   ];

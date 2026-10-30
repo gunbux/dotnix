@@ -72,6 +72,11 @@
       url = "git+ssh://git@github.com/gunbux/glance";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Local PR review dashboard (private repo; fetched over SSH as the user).
+    prview = {
+      url = "git+ssh://git@github.com/gunbux/prview";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {...} @ inputs: let
