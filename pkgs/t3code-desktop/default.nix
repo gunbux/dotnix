@@ -34,6 +34,11 @@
   base = upstreamT3code.unwrapped.override {electron_44 = electron;};
   unwrapped = base.overrideAttrs (previous: {
     env = previous.env // {T3CODE_CLERK_JWT_TEMPLATE = "t3-relay";};
+    # Chromium draws Electron's native menus on Linux with tall fixed rows.
+    # The web UI's in-page menu matches the app theme instead.
+    patches =
+      (previous.patches or [])
+      ++ lib.optionals stdenv.hostPlatform.isLinux [./in-page-context-menus.patch];
   });
   t3code = (upstreamT3code.override {t3code-unwrapped = unwrapped;}).overrideAttrs (previous:
     assert lib.hasInfix "--inherit-argv0" previous.installPhase; {

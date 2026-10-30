@@ -38,31 +38,10 @@
     };
     gtk3.extraCss = ''
       @import url("noctalia.css");
-
-      menu, .menu, .context-menu { padding: 2px; }
-      menu menuitem, .menu menuitem, .context-menu menuitem {
-        min-height: 0;
-        padding: 0 8px;
-        border-radius: 5px;
-        font-size: 10pt;
-      }
-      menu separator, .menu separator, .context-menu separator { margin: 2px 0; }
-      popover.menu modelbutton.flat {
-        min-height: 20px;
-        font-size: 10pt;
-      }
     '';
     gtk4.theme = null;
     gtk4.extraCss = ''
       @import url("noctalia.css");
-
-      popover.menu > contents { padding: 2px; }
-      popover.menu modelbutton {
-        min-height: 20px;
-        padding: 0 8px;
-        font-size: 10pt;
-      }
-      popover.menu separator { margin: 2px 0; }
     '';
     iconTheme = {
       name = "Papirus-Dark";
