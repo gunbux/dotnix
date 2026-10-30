@@ -76,8 +76,6 @@ in {
     cloudflared # Public tunnel to the local llmproxy for Kubernetes sandboxes
 
     # Kubernetes
-    kubectl
-    kubectx # kubectx + kubens
     helm-greptile
     helmfile # infra/helm bootstrap (Cilium, Argo CD)
     stern # Multi-pod log tailing
@@ -98,12 +96,8 @@ in {
   programs.awscli.enable = true;
   home.sessionVariables.AWS_PAGER = "";
 
-  programs.k9s.enable = true;
-
-  # kubectl plugin: `k` alias, kubectl completion (also for `k`), and
-  # shortcuts like kgp, kgd, kl, kex, kaf
   # aws plugin: completion, `asp` (switch profile), `acp`, `agp`
-  programs.zsh.oh-my-zsh.plugins = ["kubectl" "aws"];
+  programs.zsh.oh-my-zsh.plugins = ["aws"];
 
   # Complete greptilia-docs with Git worktree names, described by branch.
   programs.zsh.initContent = ''

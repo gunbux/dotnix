@@ -13,6 +13,7 @@
     ./dev.nix
     ./git.nix
     ./kitty.nix
+    ./kubernetes.nix
     ./neovim.nix
     ./prview.nix
     ./tmux.nix
