@@ -79,6 +79,7 @@ in {
     helm-greptile
     helmfile # infra/helm bootstrap (Cilium, Argo CD)
     stern # Multi-pod log tailing
+    crane # Inspect and copy container images in remote registries
 
     # Terraform (infra/terraform)
     terraform-greptile
