@@ -23,8 +23,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Explain an unfamiliar concept before you ask the user to decide on it.
 - When the user states their understanding ("correct me if I'm wrong"), say plainly whether it's right and fix the wrong part.
 - Fact-check claims against the code and cite the file. List the claims you couldn't verify. Say "not measured", not "not measurable".
-- Answer every status or progress question ("what's left?", "anything blocking?") with a dashboard page, not text lists. Show each workstream's state (done, in progress, blocked), its next step, and its links. Build it from live state, not memory. Then ask about the blocked items with the question tool. Give manual steps as exact commands.
-- When the user returns to a thread ("catch me up", "I'm back"), give its state as a status dashboard: what is done, what is next, and what is blocked on them. When they return to a codebase, build the summary from `git log` and show the key changes as diff excerpts.
+- Answer every status, progress, or catch-up question ("what's left?", "anything blocking?", "I'm back, catch me up") with a dashboard page, not text lists. Show each workstream's state (done, in progress, blocked), its next step, and its links. Build it from live state, not memory. Then ask about the blocked items with the question tool. Give manual steps as exact commands. When the user returns to a codebase rather than a thread, build the summary from `git log` and show the key changes as diff excerpts.
 - Draft messages on request: Slack for work, WhatsApp or email for personal. Keep them short, copy-pasteable, and free of internal labels.
 
 ## Autonomy
