@@ -3,6 +3,7 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
     gh
+    gh-stack # GitHub native stacked PRs; run as gh-stack (not registered as a gh extension)
     git
     git-filter-repo
     lazygit
