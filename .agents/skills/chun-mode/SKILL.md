@@ -1,6 +1,6 @@
 ---
 name: chun-mode
-description: Chun's personal superset of poteto-mode, adding visual HTML reports over long text, dashboard status reports, decisions through the question tool, unslopped ASD-STE100 prose, clickable paths, docs before guesses, a merge gate in work repos, infra applies left to the human, Greptile 5/5 loops, and a notes repo as the record. Use for Chun, /chun-mode, or requests to work in Chun's style.
+description: Chun's personal superset of poteto-mode, adding visual HTML reports over long text, a live status timeline, decisions through the question tool, unslopped ASD-STE100 prose, clickable paths, docs before guesses, a merge gate in work repos, infra applies left to the human, Greptile 5/5 loops, and a notes repo as the record. Use for Chun, /chun-mode, or requests to work in Chun's style.
 disable-model-invocation: true
 ---
 
@@ -23,7 +23,8 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Explain an unfamiliar concept before you ask the user to decide on it.
 - When the user states their understanding ("correct me if I'm wrong"), say plainly whether it's right and fix the wrong part.
 - Fact-check claims against the code and cite the file. List the claims you couldn't verify. Say "not measured", not "not measurable".
-- Answer status and catch-up questions ("what's left?", "I'm back") with a dashboard page built from live state. Show each workstream as done, in progress, or blocked, with its next step. Then ask about blocked items with the question tool. To catch up on a codebase, summarize `git log` with diff excerpts.
+- Answer status and catch-up questions ("what's next?", "timeline", "what's left?", "I'm back") with the **chun-status-timeline** skill (`../chun-status-timeline/SKILL.md`). In long multi-PR work, start its live dashboard without being asked. Then ask about blocked items with the question tool. To catch up on a codebase, summarize `git log` with diff excerpts.
+- Before you ask the user to sign off on a gate or checklist, say who created it (commit or decision ID) and how sure you are that it is met.
 - Draft messages on request: Slack for work, WhatsApp or email for personal. Keep them short, copy-pasteable, and free of internal labels.
 
 ## Autonomy
@@ -33,12 +34,14 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Don't add something the user is still trying to understand.
 - Make design calls inside the code you own. Pick the best option, or copy the reference system in parity work. Record the decision and its reason where the project keeps decisions.
 - Never run `terraform apply`, `terragrunt apply`, or any `destroy`, even on sandbox infra. Plan to a file, give the user the commands, wait for "done", then read their output.
-- Hand privileged steps (SSO login, VPN, installs) to the user as exact commands. For a multi-step manual procedure, use the **wizard** skill. During the wizard, do the live steps you can, such as triggering a test review on the test repo. Turn verbose output, such as a Terragrunt plan, into a short human-readable summary. Under a bypass grant, do these steps yourself when they have no production impact.
+- Hand privileged steps (SSO login, VPN, installs) to the user as exact commands. Turn verbose output, such as a Terragrunt plan, into a short human-readable summary. Under a bypass grant, do these steps yourself when they have no production impact.
+- For a multi-step manual procedure, use the **wizard** skill. Put every manual deploy step in a wizard, not in a PR's Deploy section. Explain each wizard prompt in plain words. Test the wizard's resume before you say it saves state. Before you hand over a wizard, do every step that needs no user credential or approval, such as creating a checkout, opening a PR, or triggering a test review. The wizard then checks those steps instead of asking the user to do them. If such a step can only run mid-wizard, watch the wizard's state file and do it when the wizard reaches it.
 - In work repos, never merge PRs. Push freely, then give the user the links to merge. This overrides poteto-mode's Shipping playbook. In personal repos, merge when the user asks, once the PR passes the Greptile gate.
 - Before force-pushing a stacked branch, run `git log <base>..origin/<branch>`. Other sessions push there. Rebase their commits with `--onto` and ask before the push.
 - Before anything that touches staging or prod, run the **blast-radius** skill. Say what could break, whether you can reverse it, which open PRs or teammates' work it conflicts with, and who to tell. Ship new behavior behind an off-by-default flag.
 - Read-only requests stay read-only. Don't comment on a PR or post anywhere when the user asked for an assessment.
 - Before an unattended run ("going to bed"), ask every question in one batch up front. Then decide alone and report each decision through the **show-me-your-work** skill.
+- Near the end of the user's day, offer the work that can run overnight. Give a time estimate for each run and the steps the user must do first, such as an SSO login that lasts the whole run.
 - When blocked, find the work that isn't blocked and do it. List only what truly needs the user.
 - Do everything the user asked. If you drop an item, say which one and why.
 
@@ -49,6 +52,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - On legion-nix (14 GB RAM), limit how many subagents run at once. If memory or CPU pressure is high, wait for it to drop before you resume.
 - Don't redo work that another agent owns.
 - During long runs, post a one-line status when a phase ends or when you start waiting on an agent.
+- Don't post for events that need nothing from the user, such as a preview deploy, a review bot still running, or a check that started. Start each update with what the user must do now.
 - When you report, include each subagent's task and status.
 
 ## Code
@@ -66,11 +70,12 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 
 ## Process
 
-- In work repos, split large work into milestones, each a draft PR stacked on the previous one. Split a PR that gets large. Put hotfixes on their own branch. In personal repos, use one PR unless the user asks for more.
+- In work repos, keep one `gh stack` chain per feature. Each milestone is a draft PR on top of the previous one. Put follow-ups on top of the chain, never beside a lower milestone. Split a PR that gets large. Put hotfixes on their own branch. In personal repos, use one PR unless the user asks for more.
 - Rebase onto the base. Don't merge `main` in. Squash to a short, readable history. Name work branches `chun/<topic>`.
-- A PR is done when Greptile scores it 5/5 with no unresolved threads. In work repos, both `greptile` and `greptile-staging` must score 5/5. Use the **greploop** skill (`.claude/skills/greploop` in greptilia). Fix valid comments. Reply to the rest with the reason and resolve them.
+- A PR is done when Greptile scores it 5/5 with no unresolved threads. In work repos, both `greptile` and `greptile-staging` must score 5/5. Use the **greploop** skill (`.claude/skills/greploop` in greptilia). Fix valid comments. Reply to the rest with the reason and resolve them. Run greploop yourself until the gate passes. Don't stop to offer it.
+- Enforce merge order on GitHub, not only in chat. Keep a PR as a draft, or base it on the PR it waits for. Keep "do not merge yet" notes in PR descriptions current.
 - For visual changes or PRs to upstream projects, let the user try the change locally or see a preview before you open the PR.
-- Tools and settings go in dotnix (`~/repo/dotnix` on the Mac, `~/dotnix` on legion-nix). Don't install ad hoc. Commit and push straight to `main`, then run `nh darwin switch` or `nh os switch` yourself. If a switch fails more than once, find the root cause. dotnix is public, so keep secrets and private config out of it.
+- Tools and settings go in dotnix (`~/repo/dotnix` on the Mac, `~/dotnix` on legion-nix). Don't install ad hoc. Commit and push straight to `main` without asking, then run `nh darwin switch` or `nh os switch` yourself. If a switch fails more than once, find the root cause. dotnix is public, so keep secrets and private config out of it.
 - Prefer declarative infrastructure (Nix, Terragrunt) over commands run on the fly. Fix the root cause instead of a workaround. Package tools properly in Nix. On the Mac, Homebrew is the fallback, declared in dotnix.
 - When you find tooling the user doesn't use, offer to remove it.
 - Keep personal files out of repos. Handover docs go in `/tmp` or the notes repo. Local ignores go in the global gitignore.
@@ -83,6 +88,7 @@ The notes repo is the record. It is `~/vimwiki` on the work Mac and `~/repo/neur
 - Give each fact one home. Status, numbers, and decisions each live on one page that the others link to.
 - In notes, include code snippets and links to the code.
 - Mark AI-written content in notes as AI-written. When you fill a TODO or stub, keep its original context.
+- After a staging or prod incident, write an incident report in vimwiki in the layout of the last one. Say why the bug wasn't caught earlier and how it could have been.
 - After a benchmark, update the dated report and the visual summary. Use the **dataviz** skill for charts.
 - After any vimwiki change, run `python3 -I ~/vimwiki/bin/check-notes.py`. It must report 0 problems.
 - Repo docs hold what a teammate needs while the user is away. Everything else goes in the notes repo.
