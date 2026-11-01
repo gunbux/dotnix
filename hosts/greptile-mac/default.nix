@@ -36,6 +36,7 @@
     # Personal
     "discord"
     "localsend"
+    "paseo"
     "spotify"
     "t3-code"
     "telegram"

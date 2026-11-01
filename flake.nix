@@ -44,9 +44,7 @@
     # otherwise compile locally on every nixpkgs bump.
     llm-agents.url = "github:numtide/llm-agents.nix";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
-    # TODO: Pinned to PR #91 (fix nested list in buildInputs). Switch back to
-    # "github:Lxtharia/minegrub-theme" once https://github.com/Lxtharia/minegrub-theme/pull/91 is merged.
-    minegrub-theme.url = "github:Lxtharia/minegrub-theme/pull/91/head";
+    minegrub-theme.url = "github:Lxtharia/minegrub-theme";
     minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
     noctalia = {
       url = "github:noctalia-dev/noctalia/v5.4.1";
@@ -64,6 +62,10 @@
     # Composio Claude Code plugin, linked in by modules/home/ai.nix.
     composio-plugin-cc = {
       url = "github:ComposioHQ/composio-plugin-cc";
+      flake = false;
+    };
+    paseo-bots = {
+      url = "github:gunbux/paseo-bots";
       flake = false;
     };
     torlink.url = "github:baairon/torlink";
@@ -87,6 +89,7 @@
       custom-packages = final: prev: {
         ## supergfxctl with a reverted version because of a regression in latest.
         supergfxctl = prev.callPackage ./pkgs/supergfxctl/default.nix {};
+        scx-manager = prev.callPackage ./pkgs/scx_manager/default.nix {};
         ## Pokémon sprite greeting for interactive shells
         pokego = prev.callPackage ./pkgs/pokego/default.nix {};
         ## Fun cursor
@@ -135,6 +138,7 @@
         ./hosts/g14/default.nix
         homeManagerDefaults
         ./modules/cosmic.nix
+        ./modules/browser-runtime.nix
         ./modules/niri.nix
         ./modules/sops.nix
         {
@@ -156,6 +160,7 @@
         ./hosts/legion/default.nix
         homeManagerDefaults
         ./modules/cosmic.nix
+        ./modules/browser-runtime.nix
         ./modules/niri.nix
         ./modules/sops.nix
         {
@@ -179,6 +184,7 @@
         ./hosts/fw12/default.nix
         homeManagerDefaults
         ./modules/cosmic.nix
+        ./modules/browser-runtime.nix
         ./modules/niri.nix
         ./modules/sops.nix
         {

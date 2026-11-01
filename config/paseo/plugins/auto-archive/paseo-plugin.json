@@ -1,0 +1,7 @@
+{
+  "id": "auto-archive",
+  "description": "Archive workspaces that have been idle for a configurable number of days.",
+  "requirements": {
+    "paseo": ">=0.14.0 <0.15.0"
+  }
+}

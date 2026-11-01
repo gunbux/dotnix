@@ -6,20 +6,20 @@
   upstreamT3code,
   upstreamDesktop,
 }: let
-  # Match the release's Electron runtime, including its Brotli security fix.
-  electronVersion = "44.10.0";
+  # Keep the release's Electron major and apply its latest patch release.
+  electronVersion = "44.10.1";
   electronPlatforms = {
     x86_64-linux = {
       target = "linux-x64";
-      hash = "sha256-Yt+Tde8DXyg1oYzX+b/xlZoYXaIvLsuh2qN82cruHcU=";
+      hash = "sha256-K+hotxsKpx8w5rVWehBqNaBJOF6WMYPAdKrRl16tUWc=";
     };
     aarch64-linux = {
       target = "linux-arm64";
-      hash = "sha256-VYromdmLcCNjJdgdpEu2ssmI3Zp70WvhfOol8G5WzBQ=";
+      hash = "sha256-DhbACNYoqch1judbbi+vLy7lNl5+Ui8IhMjlLQ1VHSw=";
     };
     aarch64-darwin = {
       target = "darwin-arm64";
-      hash = "sha256-jp9gQdOqYiKTMrAz0DkP0hOpsQzQeBY/P1/piO6Ruvc=";
+      hash = "sha256-aH+SIDTx6ZGrNO1/R8TLTlxehel0sM4VXCLObW9pmqM=";
     };
   };
   electronPlatform = electronPlatforms.${stdenv.hostPlatform.system};
