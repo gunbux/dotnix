@@ -64,10 +64,6 @@
       url = "github:ComposioHQ/composio-plugin-cc";
       flake = false;
     };
-    paseo-bots = {
-      url = "github:gunbux/paseo-bots";
-      flake = false;
-    };
     torlink.url = "github:baairon/torlink";
     # Local voice dictation; upstream asks to follow nixpkgs so Vulkan finds
     # drivers built against the same glibc.

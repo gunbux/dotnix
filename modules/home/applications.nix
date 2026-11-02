@@ -7,8 +7,6 @@
 }: let
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
 in {
-  imports = [./paseo.nix];
-
   home.packages = with pkgs;
     [
       # davinci-resolve # Video Editor

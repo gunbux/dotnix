@@ -39,7 +39,6 @@
     "discord"
     "anomalyco/tap/hex" # Local voice dictation
     "localsend"
-    "paseo"
     "spotify"
     "t3-code"
     "telegram"
