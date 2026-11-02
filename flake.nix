@@ -64,10 +64,6 @@
       url = "github:ComposioHQ/composio-plugin-cc";
       flake = false;
     };
-    paseo-bots = {
-      url = "github:gunbux/paseo-bots";
-      flake = false;
-    };
     torlink.url = "github:baairon/torlink";
     # Screenshots, OCR and ask-about-screen (private repo; fetched over SSH as the user).
     glance = {

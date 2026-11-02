@@ -584,22 +584,6 @@
         "type": "github"
       }
     },
-    "paseo-bots": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1790589198,
-        "narHash": "sha256-bVKoX3NcKCSpq2MHRdGWG3aaWVGnTKVPitSDNLOwyYg=",
-        "owner": "gunbux",
-        "repo": "paseo-bots",
-        "rev": "39a700006c204aef25de4e0db11419b6f75ac814",
-        "type": "github"
-      },
-      "original": {
-        "owner": "gunbux",
-        "repo": "paseo-bots",
-        "type": "github"
-      }
-    },
     "prview": {
       "inputs": {
         "nixpkgs": [
@@ -638,7 +622,6 @@
         "noctalia-community-plugins": "noctalia-community-plugins",
         "noctalia-official-plugins": "noctalia-official-plugins",
         "paperwm": "paperwm",
-        "paseo-bots": "paseo-bots",
         "prview": "prview",
         "sops-nix": "sops-nix",
         "torlink": "torlink",
