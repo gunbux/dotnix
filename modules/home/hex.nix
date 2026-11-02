@@ -9,5 +9,8 @@
     autostart = true;
     # Download the selected model once the network is up; activation never does.
     installModel = true;
+    # muesli's capsule (modules/home/muesli.nix) replaces Hex's own during a
+    # meeting, so only one shows.
+    settings."meetings.show_recording_indicator" = false;
   };
 }

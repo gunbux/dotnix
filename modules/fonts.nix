@@ -7,6 +7,8 @@
     fontDir.enable = true;
     packages = with pkgs; [
       nerd-fonts.jetbrains-mono
+      # Hex's UI font; muesli's meeting capsule copies Hex and uses it too.
+      inter
       source-sans-pro
       source-serif-pro
     ];

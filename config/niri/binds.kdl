@@ -31,6 +31,8 @@ binds {
     Mod+Escape hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
     // niri has no key-release binds, so dictation toggles: press to start, press to paste.
     Alt+Space hotkey-overlay-title="Dictate: hex" { spawn "hex" "dictation" "toggle"; }
+    // No meeting: start one and open the notes field. In a meeting: open or close it.
+    Alt+M hotkey-overlay-title="Meeting notes: muesli" { spawn "muesli-overlay"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
