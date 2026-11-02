@@ -98,5 +98,18 @@ in {
     # only the directory (the manifest still names it `composio`), so keep it
     # clear of the vendored `composio` skill.
     plugins.composio-plugin-cc = "${inputs.composio-plugin-cc}/plugins/composio";
+    # Slack's hosted MCP server has no dynamic client registration, so each
+    # client needs a client ID Slack has published. This is the public ID from
+    # Slack's own Claude Code plugin. Codex has none yet (`codex mcp login`
+    # fails), so this stays out of the shared ../mcp-servers.nix.
+    # https://docs.slack.dev/ai/slack-mcp-server/connect-to-claude
+    mcpServers.slack = {
+      type = "http";
+      url = "https://mcp.slack.com/mcp";
+      oauth = {
+        clientId = "1601185624273.8899143856786";
+        callbackPort = 3118;
+      };
+    };
   };
 }
