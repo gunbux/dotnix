@@ -40,6 +40,19 @@
     installPhase = "install -Dm755 $src $out/bin/terragrunt";
   };
 
+  # Datadog's CLI, the only client greptilia's datadog skill allows (APM spans,
+  # metrics, monitors). nixpkgs' `pup` is an unrelated HTML parser.
+  datadog-pup = pkgs.stdenvNoCC.mkDerivation {
+    pname = "datadog-pup";
+    version = "2.3.10";
+    src = pkgs.fetchurl {
+      url = "https://github.com/DataDog/pup/releases/download/v2.3.10/pup_2.3.10_Darwin_arm64.tar.gz";
+      hash = "sha256-+gcU639TI7k5WHeHo+7bVoOL5uFQH6ZZJU4at9MTWi0=";
+    };
+    sourceRoot = ".";
+    installPhase = "install -Dm755 pup $out/bin/pup";
+  };
+
   # `helmfile apply` shells out to the helm-diff plugin.
   helm-greptile = pkgs.wrapHelm pkgs.kubernetes-helm {
     plugins = [pkgs.kubernetes-helmPlugins.helm-diff];
@@ -63,6 +76,7 @@ in {
     infisical # Secrets CLI
     postgresql # psql, used by internal/cli/variants.ts
     posthog-cli # Product analytics; custom package in pkgs/
+    datadog-pup # `pup`: Datadog traces, metrics, monitors
     greptile-cli # `greptile review` of local changes; custom package in pkgs/
     # The pre-commit hook lints staged .github/workflows changes with these
     # (scripts/lint/workflows.sh), so even merges from main need them.
