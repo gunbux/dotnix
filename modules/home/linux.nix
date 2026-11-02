@@ -4,6 +4,8 @@
   inputs,
   ...
 }: {
+  imports = [./hex.nix];
+
   home.packages = with pkgs; [
     # Linux-related System Utils
     ccid

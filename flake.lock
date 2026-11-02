@@ -160,6 +160,29 @@
         "url": "ssh://git@github.com/gunbux/glance"
       }
     },
+    "hex": {
+      "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793563205,
+        "narHash": "sha256-oZawpnJH9Fsh1unTC9Z7n5jLq7NN6/a8k9noyw546OU=",
+        "owner": "anomalyco",
+        "repo": "hex",
+        "rev": "152763f336a48466cb7b6085fda891e3d7205e3d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "repo": "hex",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -609,6 +632,7 @@
         "chaotic": "chaotic",
         "composio-plugin-cc": "composio-plugin-cc",
         "glance": "glance",
+        "hex": "hex",
         "home-manager": "home-manager_2",
         "llm-agents": "llm-agents",
         "minecraft-plymouth-theme": "minecraft-plymouth-theme",

@@ -65,6 +65,13 @@
       flake = false;
     };
     torlink.url = "github:baairon/torlink";
+    # Local voice dictation; upstream asks to follow nixpkgs so Vulkan finds
+    # drivers built against the same glibc.
+    hex = {
+      url = "github:anomalyco/hex";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
     # Screenshots, OCR and ask-about-screen (private repo; fetched over SSH as the user).
     glance = {
       url = "git+ssh://git@github.com/gunbux/glance";

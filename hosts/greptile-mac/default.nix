@@ -11,6 +11,8 @@
   users.users.chun.home = "/Users/chun";
   system.primaryUser = "chun";
 
+  homebrew.taps = ["anomalyco/tap"]; # Hex
+
   homebrew.casks = [
     # Window automation (PaperWM is configured through Home Manager)
     "hammerspoon"
@@ -35,6 +37,7 @@
 
     # Personal
     "discord"
+    "anomalyco/tap/hex" # Local voice dictation
     "localsend"
     "spotify"
     "t3-code"
