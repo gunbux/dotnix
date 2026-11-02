@@ -77,6 +77,11 @@
       url = "git+ssh://git@github.com/gunbux/glance";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Granola-style meeting notes on Hex (private repo; fetched over SSH as the user).
+    muesli = {
+      url = "git+ssh://git@github.com/gunbux/muesli";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # Local PR review dashboard (private repo; fetched over SSH as the user).
     prview = {
       url = "git+ssh://git@github.com/gunbux/prview";
