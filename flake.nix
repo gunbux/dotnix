@@ -64,6 +64,10 @@
       url = "github:ComposioHQ/composio-plugin-cc";
       flake = false;
     };
+    paseo-bots = {
+      url = "github:gunbux/paseo-bots";
+      flake = false;
+    };
     torlink.url = "github:baairon/torlink";
     # Local voice dictation; upstream asks to follow nixpkgs so Vulkan finds
     # drivers built against the same glibc.
@@ -98,6 +102,10 @@
         ## supergfxctl with a reverted version because of a regression in latest.
         supergfxctl = prev.callPackage ./pkgs/supergfxctl/default.nix {};
         scx-manager = prev.callPackage ./pkgs/scx_manager/default.nix {};
+        # Swing integration tests need the full JDK's font manager.
+        ninjabrain-bot = prev.ninjabrain-bot.override {
+          maven = prev.maven.override {jdk_headless = prev.jdk21;};
+        };
         ## Pokémon sprite greeting for interactive shells
         pokego = prev.callPackage ./pkgs/pokego/default.nix {};
         ## Fun cursor
@@ -272,6 +280,7 @@
         pkgs = import inputs.nixpkgs {
           inherit system;
           config.allowUnfree = true;
+          overlays = [overlays.custom-packages];
         };
         modules = [
           {
