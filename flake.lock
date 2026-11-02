@@ -305,6 +305,26 @@
         "type": "github"
       }
     },
+    "muesli": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793583870,
+        "narHash": "sha256-J12TtOBxd/DcXIARCPZ1ZeO5R7FfBFIaqx1CGD9QgPg=",
+        "ref": "refs/heads/main",
+        "rev": "52a5a73d4c6f5ee50ef67250d0284af9fd3cc5a4",
+        "revCount": 2,
+        "type": "git",
+        "url": "ssh://git@github.com/gunbux/muesli"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/gunbux/muesli"
+      }
+    },
     "nix-darwin": {
       "inputs": {
         "nixpkgs": [
@@ -637,6 +657,7 @@
         "llm-agents": "llm-agents",
         "minecraft-plymouth-theme": "minecraft-plymouth-theme",
         "minegrub-theme": "minegrub-theme",
+        "muesli": "muesli",
         "nix-darwin": "nix-darwin",
         "nix-index-database": "nix-index-database",
         "nixos-hardware": "nixos-hardware",
