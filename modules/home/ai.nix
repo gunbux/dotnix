@@ -30,7 +30,9 @@ in {
       opencode
     ])
     # Not packaged by llm-agents.nix; nixpkgs covers every host platform.
-    ++ [pkgs.devin-cli];
+    ++ [pkgs.devin-cli]
+    # Puts garmin-mcp-auth on PATH to refresh the Garmin MCP server's tokens.
+    ++ [pkgs.garmin-mcp];
 
   # Keep one repository-owned skill tree for Codex and Claude Code.
   # Codex discovers user skills in ~/.agents/skills. Claude Code receives the

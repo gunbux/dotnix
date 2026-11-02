@@ -7,6 +7,10 @@
     args = ["mcp"];
   };
 
+  # Reads cached tokens from ~/.garminconnect; run `garmin-mcp-auth` once
+  # (and again when they expire) to create them.
+  garmin.command = lib.getExe pkgs.garmin-mcp;
+
   trek.url = "https://trek.chunyu.sh/mcp";
 
   sure.url = "https://sure.chunyu.sh/mcp";

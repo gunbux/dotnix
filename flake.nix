@@ -117,6 +117,8 @@
         t3-activity = prev.callPackage ./pkgs/t3-activity/default.nix {};
         ## Greptile CLI (npm package, not in nixpkgs)
         greptile-cli = prev.callPackage ./pkgs/greptile-cli/default.nix {};
+        ## Garmin Connect MCP server (not in nixpkgs)
+        garmin-mcp = prev.callPackage ./pkgs/garmin-mcp/default.nix {};
       };
     };
 
