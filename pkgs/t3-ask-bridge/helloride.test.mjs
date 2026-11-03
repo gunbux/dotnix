@@ -15,13 +15,30 @@ const reply = value => async (url, options) => {
   assert.equal(b.action,'blue.ride.near.bikes'); assert.equal(b.bikeShowGuid,'');
   return new Response(JSON.stringify(value));
 };
-test('normalizes, sorts, freezes and caps bikes; count describes returned upstream bikes', async()=>{
-  const bikes=Array.from({length:30},(_,i)=>({bikeNo:`00${i}`,bikeLat:1.35+(30-i)*0.0001,bikeLng:103.85}));
+test('normalizes, sorts, freezes and caps regular bikes; count describes returned regular bikes', async()=>{
+  const bikes=Array.from({length:30},(_,i)=>({bikeType:0,bikeBizType:1,bikeNo:`00${i}`,bikeLat:1.35+(30-i)*0.0001,bikeLng:103.85}));
   bikes.push(null,{bikeNo:'bad',bikeLat:true,bikeLng:103.85});
   const r=await nearby(session,1.35,103.85,reply({code:0,data:{bikes}}));
   assert.equal(r.count,30); assert.equal(r.bikes.length,20); assert.equal(r.bikes[0].id,'0029');
   assert.ok(Object.isFrozen(r.bikes[0])); assert.ok(r.bikes[0].distance<r.bikes[19].distance);
   assert.equal(r.bikes[0].bearing,0);
+});
+test('excludes family and other bike types before counting and limiting nearby results', async()=>{
+  const regular = Array.from({length:25},(_,i)=>({bikeType:0,bikeBizType:1,bikeNo:`regular-${i}`,bikeLat:1.35+(i+1)*0.0001,bikeLng:103.85}));
+  const family = Array.from({length:30},(_,i)=>({bikeType:0,bikeBizType:2,bikeNo:`family-${i}`,bikeLat:1.35,bikeLng:103.85}));
+  const other = [{bikeType:1,bikeBizType:1,bikeNo:'electric',bikeLat:1.35,bikeLng:103.85},
+    {bikeType:2,bikeBizType:1,bikeNo:'scooter',bikeLat:1.35,bikeLng:103.85}];
+  const result=await nearby(session,1.35,103.85,reply({code:0,data:{bikes:[...family,...other,...regular]}}));
+  assert.equal(result.count,25);
+  assert.equal(result.bikes.length,20);
+  assert.deepEqual(result.bikes.map(b=>b.id),regular.slice(0,20).map(b=>b.bikeNo));
+});
+test('does not classify missing, unknown or string category values as regular bikes', async()=>{
+  const categories = [{}, {bikeType:0}, {bikeBizType:1}, {bikeType:99,bikeBizType:1},
+    {bikeType:0,bikeBizType:99}, {bikeType:'0',bikeBizType:1}, {bikeType:0,bikeBizType:'1'}];
+  const bikes=categories.map((category,i)=>({...category,bikeNo:`unknown-${i}`,bikeLat:1.35,bikeLng:103.85}));
+  const result=await nearby(session,1.35,103.85,reply({code:0,data:{bikes}}));
+  assert.deepEqual(result,{count:0,bikes:[]});
 });
 test('empty is distinct from expired, malformed, unsafe codes and unknown API errors',async()=>{
   assert.deepEqual((await nearby(session,0,0,reply({code:0,data:{bikes:[]}}))).bikes,[]);

@@ -46,7 +46,7 @@ export async function nearby(sessionFile, lat, lng, transport = fetch) {
   if (!Array.isArray(envelope.data?.bikes)) throw new BikeError('invalid_response');
   const bikes = [];
   for (const b of envelope.data.bikes) {
-    if (!b || typeof b.bikeNo !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(b.bikeNo) || !coord(b.bikeLat, 90) || !coord(b.bikeLng, 180)) continue;
+    if (!b || b.bikeType !== 0 || b.bikeBizType !== 1 || typeof b.bikeNo !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(b.bikeNo) || !coord(b.bikeLat, 90) || !coord(b.bikeLng, 180)) continue;
     const a = radians(lat), c = radians(b.bikeLat), dl = radians(b.bikeLng - lng);
     const h = Math.sin((c-a)/2)**2 + Math.cos(a)*Math.cos(c)*Math.sin(dl/2)**2;
     const distance = Math.round(6371000 * 2 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, h)))));
