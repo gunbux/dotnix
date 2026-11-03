@@ -22,6 +22,8 @@ buildGoModule {
 
   # modernc.org/sqlite is pure Go.
   env.CGO_ENABLED = 0;
+  # The page server test listens on 127.0.0.1; the macOS sandbox blocks that.
+  __darwinAllowLocalNetworking = true;
   ldflags = ["-s" "-w"];
 
   nativeBuildInputs = [makeWrapper];

@@ -45,9 +45,12 @@ function lineChart(box, spec) {
     el('text', {x: m.l - 6, y: y + 4, 'text-anchor': 'end'}, svg).textContent = fmtNum(v); }
   for (const tk of timeTicks(x0, x1, W - m.l - m.r))
     el('text', {x: X(tk.t), y: H - 6, 'text-anchor': 'middle'}, svg).textContent = tk.label;
+  // Markers close together stack their labels instead of overlapping.
+  let lastX = -1e9, row = 0;
   for (const mk of spec.markers || []) { const x = X(mk.t);
+    row = x - lastX < 60 ? row + 1 : 0; lastX = x;
     el('line', {x1: x, x2: x, y1: m.t, y2: H - m.b, stroke: 'var(--accent-2)', 'stroke-width': 1}, svg);
-    el('text', {x: x + 3, y: m.t + 9}, svg).textContent = mk.label; }
+    el('text', {x: x + 3, y: m.t + 9 + row * 12}, svg).textContent = mk.label; }
   if (spec.baseline != null) { const y = Y(spec.baseline);
     el('line', {x1: m.l, x2: W - m.r, y1: y, y2: y, stroke: 'var(--ink-2)', 'stroke-width': 1}, svg);
     el('text', {x: m.l + 4, y: y - 4}, svg).textContent = 'baseline ' + fmtNum(spec.baseline); }
