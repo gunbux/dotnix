@@ -102,6 +102,8 @@
         ninjabrain-bot = prev.ninjabrain-bot.override {
           maven = prev.maven.override {jdk_headless = prev.jdk21;};
         };
+        ## wakatime-cli release binary; nixpkgs lags behind (modules/home/wakatime.nix)
+        wakatime-cli = prev.callPackage ./pkgs/wakatime-cli/default.nix {};
         ## Pokémon sprite greeting for interactive shells
         pokego = prev.callPackage ./pkgs/pokego/default.nix {};
         ## Fun cursor

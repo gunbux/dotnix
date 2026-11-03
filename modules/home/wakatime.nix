@@ -13,12 +13,19 @@
 #
 # The work Mac hides file, project and branch names for every repo, so no
 # work detail leaves the machine. Patterns cannot express "all except X".
+#
+# wakatime-cli also turns Claude Code and Codex transcripts (T3 Code included)
+# into AI heartbeats, but only when an editor runs it. A timer runs
+# `wakatime-cli --sync-ai-activity` every 5 minutes, so agent work is sent
+# while no editor is open. Neovim uses the same pinned CLI (pkgs/wakatime-cli).
 {
   lib,
   pkgs,
   ...
 }: let
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
+  cli = lib.getExe pkgs.wakatime-cli;
+  syncInterval = 300; # seconds
 
   # Space-separated executable and arguments, no shell syntax (wakatime-cli).
   vaultCmd =
@@ -44,11 +51,46 @@
       hide_project_names = "true";
       hide_branch_names = "true";
     };
-in {
-  home.file.".wakatime.cfg".text = ''
-    [settings]
-    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "${k} = ${v}") settings)}
-    ignore =
-    ${lib.concatMapStringsSep "\n" (p: "    ${p}") ignore}
-  '';
-}
+in
+  lib.mkMerge [
+    {
+      home.packages = [pkgs.wakatime-cli];
+
+      home.file.".wakatime.cfg".text = ''
+        [settings]
+        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "${k} = ${v}") settings)}
+        ignore =
+        ${lib.concatMapStringsSep "\n" (p: "    ${p}") ignore}
+      '';
+    }
+
+    (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+      systemd.user.services.wakatime-ai-sync = {
+        Unit.Description = "Send Claude Code and Codex activity to Wakapi";
+        Service = {
+          Type = "oneshot";
+          ExecStart = "${cli} --sync-ai-activity";
+        };
+      };
+      systemd.user.timers.wakatime-ai-sync = {
+        Unit.Description = "Send Claude Code and Codex activity to Wakapi every 5 minutes";
+        Timer = {
+          OnStartupSec = "2min";
+          OnUnitActiveSec = "${toString syncInterval}s";
+        };
+        Install.WantedBy = ["timers.target"];
+      };
+    })
+
+    (lib.mkIf isDarwin {
+      launchd.agents.wakatime-ai-sync = {
+        enable = true;
+        config = {
+          ProgramArguments = [cli "--sync-ai-activity"];
+          StartInterval = syncInterval;
+          RunAtLoad = true;
+          ProcessType = "Background";
+        };
+      };
+    })
+  ]
