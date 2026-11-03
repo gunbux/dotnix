@@ -7,10 +7,10 @@ Home Manager loads its provider bootstrap before this configuration with
 `programs.neovim.sideloadInitLua`. Python and Ruby hosts come from Nix; unused
 Node and Perl hosts are explicitly disabled by that bootstrap.
 
-WakaTime starts when `WAKATIME_API_KEY` is set, or when you set
-`vim.g.wakatime_enabled = true` in `lua/config/options.lua` for credentials already
-stored in `~/.wakatime.cfg`. No key belongs in this repository. Without credentials,
-time tracking remains inactive rather than emitting repeated startup warnings.
+WakaTime (`vim-wakatime`) sends heartbeats to Wakapi. Home Manager writes
+`~/.wakatime.cfg` read-only from `modules/home/wakatime.nix`. The file holds no key:
+wakatime-cli reads it through `api_key_vault_cmd` (a sops secret on Linux, the
+Keychain on macOS). No key belongs in this repository.
 
 Snacks image previews use ImageMagick from Neovim's Nix runtime dependencies and
 Ghostty from the macOS application bundle. Open Neovim in Ghostty for image support.

@@ -3,6 +3,7 @@
   imports = [
     # Base home config
     ../../modules/home/base.nix
+    ../../modules/home/wakatime.nix
 
     ../../modules/home/linux.nix
     ../../modules/home/niri.nix
