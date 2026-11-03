@@ -110,18 +110,8 @@ in {
     package = llmAgents.claude-code;
     enableMcpIntegration = true;
     settings.theme = "dark";
-    # Slack's hosted MCP server has no dynamic client registration, so each
-    # client needs a client ID Slack has published. This is the public ID from
-    # Slack's own Claude Code plugin. Codex has none yet (`codex mcp login`
-    # fails), so this stays out of the shared ../mcp-servers.nix.
-    # https://docs.slack.dev/ai/slack-mcp-server/connect-to-claude
-    mcpServers.slack = {
-      type = "http";
-      url = "https://mcp.slack.com/mcp";
-      oauth = {
-        clientId = "1601185624273.8899143856786";
-        callbackPort = 3118;
-      };
-    };
+    # Slack comes from the claude.ai Slack connector, not a server here. A
+    # direct mcp.slack.com entry (2d41d85) dropped right after connecting
+    # whenever Claude Code ran through the Agent SDK (T3 Code, Paseo).
   };
 }
