@@ -59,11 +59,6 @@
       url = "github:noctalia-dev/community-plugins";
       flake = false;
     };
-    # Composio Claude Code plugin, linked in by modules/home/ai.nix.
-    composio-plugin-cc = {
-      url = "github:ComposioHQ/composio-plugin-cc";
-      flake = false;
-    };
     # Greptile's public skills (MIT); modules/home/ai.nix links in greploop.
     greptile-skills = {
       url = "github:greptileai/skills";

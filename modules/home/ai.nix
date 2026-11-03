@@ -110,11 +110,6 @@ in {
     package = llmAgents.claude-code;
     enableMcpIntegration = true;
     settings.theme = "dark";
-    # Third-party plugins pinned as flake inputs; bump with `nix flake update <input>`.
-    # Plugins share ~/.claude/skills with the skill tree above; the attr name is
-    # only the directory (the manifest still names it `composio`), so keep it
-    # clear of the vendored `composio` skill.
-    plugins.composio-plugin-cc = "${inputs.composio-plugin-cc}/plugins/composio";
     # Slack's hosted MCP server has no dynamic client registration, so each
     # client needs a client ID Slack has published. This is the public ID from
     # Slack's own Claude Code plugin. Codex has none yet (`codex mcp login`
