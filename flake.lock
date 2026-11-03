@@ -160,6 +160,22 @@
         "url": "ssh://git@github.com/gunbux/glance"
       }
     },
+    "greptile-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793056930,
+        "narHash": "sha256-DzInIlYkKImgJfaKCwF2nRd2ZFXvIAXQ5ZIVZvFEjjU=",
+        "owner": "greptileai",
+        "repo": "skills",
+        "rev": "4a13eb124ab175d018869fe7cc4d203e374571dc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "greptileai",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "hex": {
       "inputs": {
         "home-manager": [
@@ -652,6 +668,7 @@
         "chaotic": "chaotic",
         "composio-plugin-cc": "composio-plugin-cc",
         "glance": "glance",
+        "greptile-skills": "greptile-skills",
         "hex": "hex",
         "home-manager": "home-manager_2",
         "llm-agents": "llm-agents",
