@@ -178,12 +178,14 @@ function rateLimiter(perMinute) {
   };
 }
 
+// T3 request ids run to about 420 characters, so an answer body is near
+// 500 bytes. 4 KB leaves room and still bounds what a stranger can send.
 async function readJson(request) {
   let size = 0;
   const chunks = [];
   for await (const chunk of request) {
     size += chunk.length;
-    if (size > 1024) return undefined;
+    if (size > 4096) return undefined;
     chunks.push(chunk);
   }
   try {
