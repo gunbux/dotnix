@@ -60,7 +60,9 @@ test('HTTP route isolates tokens, validates query and method, disables without c
   await new Promise(r=>server.listen(0,'127.0.0.1',r)); t.after(()=>server.close());
   const url=`http://127.0.0.1:${server.address().port}/v1/helloride/nearby`;
   const headers={authorization:'Bearer dummy-watch-token-01234567890123456789'};
-  assert.equal((await fetch(url+'?lat=1.35&lng=103.85',{headers})).status,200);
+  const good=await (await fetch(url+'?lat=1.35&lng=103.85',{headers})).json();
+  assert.match(good.map.path,/^\/v1\/helloride\/map\/[a-f0-9]{32}\.png$/);
+  assert.equal((await fetch(url.replace('/nearby','/map/unknown.png'))).status,404);
   assert.equal((await fetch(url+'?lat=1&lng=2',{headers:{authorization:'Bearer t3-token'}})).status,401);
   for(const q of ['','?lat=&lng=2','?lat=NaN&lng=2','?lat=91&lng=2','?lat=1&lng=2&action=unlock','?lat=1&lat=2&lng=3']) assert.equal((await fetch(url+q,{headers})).status,400);
   assert.equal((await fetch(url,{headers,method:'POST'})).status,405);
@@ -99,4 +101,19 @@ test('shared and symlinked private files cannot supply credentials',async()=>{
   await assert.rejects(nearby(path,1,2,()=>assert.fail()),{message:'login_required'});
   symlinkSync(session,`${dir}/link`);
   await assert.rejects(nearby(`${dir}/link`,1,2,()=>assert.fail()),{message:'login_required'});
+});
+test('only authenticated nearby can mint images; headerless capability retries return PNG',async t=>{
+ const {mapService}=await import('./street-map.mjs');
+ let minted=0;
+ const maps=mapService({render:async()=>Buffer.from('dummy-png')});
+ const issue=maps.issue;maps.issue=(...args)=>{minted++;return issue(...args);};
+ const route=bikeRoute({sessionFile:session,tokenFile:token,transport:reply({code:0,data:{bikes:[]}}),maps});
+ const server=createServer(async(req,res)=>{if(!await route(req,res)){res.writeHead(404);res.end();}});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>server.close());
+ const origin=`http://127.0.0.1:${server.address().port}`;
+ assert.equal((await fetch(origin+'/v1/helloride/nearby?lat=1&lng=2')).status,401);assert.equal(minted,0);
+ const data=await(await fetch(origin+'/v1/helloride/nearby?lat=1&lng=2',{headers:{authorization:'Bearer dummy-watch-token-01234567890123456789',host:'evil.invalid'}})).json();
+ assert.equal(minted,1);assert.ok(!JSON.stringify(data).includes('evil.invalid'));
+ for(let i=0;i<2;i++) {const r=await fetch(origin+data.map.path);assert.equal(r.status,200);assert.equal(r.headers.get('content-type'),'image/png');assert.equal(await r.text(),'dummy-png');}
+ assert.equal((await fetch(origin+data.map.path+'?url=https://example.com')).status,404);
 });

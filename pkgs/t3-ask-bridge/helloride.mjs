@@ -1,4 +1,5 @@
 import { constants, existsSync, closeSync, openSync, fstatSync, readFileSync } from 'node:fs';
+import { mapService } from './street-map.mjs';
 import { createHash, timingSafeEqual } from 'node:crypto';
 
 export const API_URL = 'https://twblueride-sg.hellobike.com/api?action=blue.ride.near.bikes';
@@ -56,11 +57,17 @@ export async function nearby(sessionFile, lat, lng, transport = fetch) {
   bikes.sort((a,b) => a.distance - b.distance);
   return Object.freeze({ count: bikes.length, bikes: Object.freeze(bikes.slice(0,20)) });
 }
-export function bikeRoute({ sessionFile, tokenFile, transport, perMinute = 12 }) {
+export function bikeRoute({ sessionFile, tokenFile, transport, perMinute = 12, maps = mapService() }) {
   let window = 0, count = 0;
   return async (request, response) => {
     let url;
     try { url = new URL(request.url, 'http://localhost'); } catch { return false; }
+    if (url.pathname.startsWith('/v1/helloride/map/')) {
+      let png = null;
+      try { if (sessionFile && tokenFile && request.method === 'GET') png = await maps.image(request.url); } catch {}
+      response.writeHead(png ? 200 : 404, { 'content-type': png ? 'image/png' : 'text/plain', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' });
+      response.end(png ?? 'Not found'); return true;
+    }
     if (url.pathname !== '/v1/helloride/nearby') return false;
     const send = (status, body) => { response.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' }); response.end(JSON.stringify(body)); };
     if (!sessionFile || !tokenFile || !existsSync(sessionFile) || !existsSync(tokenFile)) { send(404, {error:'disabled'}); return true; }
@@ -74,7 +81,10 @@ export function bikeRoute({ sessionFile, tokenFile, transport, perMinute = 12 })
       if (++count > perMinute) { send(429,{error:'rate_limited'}); return true; }
       if (request.method !== 'GET') { send(405,{error:'method_not_allowed'}); return true; }
       if ([...url.searchParams.keys()].sort().join(',') !== 'lat,lng' || !['lat','lng'].every(k => /^-?\d+(\.\d+)?$/.test(url.searchParams.get(k)))) throw new BikeError('bad_coordinates',400);
-      send(200, await nearby(sessionFile, Number(url.searchParams.get('lat')), Number(url.searchParams.get('lng')), transport));
+      const lat=Number(url.searchParams.get('lat')), lng=Number(url.searchParams.get('lng'));
+      const result=await nearby(sessionFile,lat,lng,transport);
+      let map; try { map=maps.issue(lat,lng,result.bikes); } catch {}
+      send(200,{...result,...(map ? {map} : {})});
     } catch (error) { send(error instanceof BikeError ? error.status : 502, {error: error instanceof BikeError ? error.message : 'upstream_unavailable'}); }
     return true;
   };
