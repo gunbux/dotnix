@@ -3,6 +3,7 @@
   imports = [
     # Base home config
     ../../modules/home/base.nix
+    ../../modules/home/wakatime.nix
 
     ../../modules/home/darwin.nix
     ../../modules/home/greptile.nix
