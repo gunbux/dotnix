@@ -26,19 +26,20 @@ func now() int64 {
 	return time.Now().Unix()
 }
 
-func pageBase() string {
-	if v := os.Getenv("SPRINT_PAGE_URL"); v != "" {
-		return strings.TrimRight(v, "/")
+// dashboardURL links to the Grafana dashboard (modules/home/sprint.nix) for
+// a sprint, or for one subgoal of it, from the sprint's start until now.
+// SPRINT_DASHBOARD_URL moves the base.
+func dashboardURL(slug, subgoal string, startedAt int64) string {
+	base := "http://127.0.0.1:3001"
+	if v := os.Getenv("SPRINT_DASHBOARD_URL"); v != "" {
+		base = strings.TrimRight(v, "/")
 	}
-	return "http://127.0.0.1:3001"
-}
-
-func pagePath(slug, subgoal string) string {
-	p := "/s/" + url.PathEscape(slug)
-	if subgoal != "" {
-		p += "/" + url.PathEscape(subgoal)
+	if subgoal == "" {
+		subgoal = wholeSprint
 	}
-	return p
+	q := url.Values{"var-sprint": {slug}, "var-subgoal": {subgoal},
+		"from": {strconv.FormatInt(startedAt*1000, 10)}, "to": {"now"}}
+	return base + "/d/sprint/sprint?" + q.Encode()
 }
 
 func checkKey(kind, key string) {

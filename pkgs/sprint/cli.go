@@ -34,7 +34,6 @@ type command struct {
 	required []string
 	run      func(*call)
 	prefetch func(*call) // runs before the write lock
-	unlocked bool        // runs without a write transaction
 }
 
 // call is one parsed command line.
@@ -193,7 +192,7 @@ func usage(cmd *command) string {
 
 func topUsage() string {
 	var b strings.Builder
-	b.WriteString("sprint: append-only sprint log with local status pages\n\n" +
+	b.WriteString("sprint: append-only sprint log, shown on a local Grafana dashboard\n\n" +
 		"usage: sprint [--db <file>] [--sprint <slug>] <command> ...\n\ncommands:\n")
 	for _, c := range commands {
 		fmt.Fprintf(&b, "  %-12s %s\n", c.path, c.help)
@@ -275,10 +274,6 @@ func run(args []string, stdout, stderr io.Writer) (code int) {
 	s, closeDB := openWrite(c.dbPath)
 	defer closeDB()
 	c.store = s
-	if cmd.unlocked {
-		cmd.run(c)
-		return 0
-	}
 	if cmd.prefetch != nil {
 		cmd.prefetch(c)
 	}

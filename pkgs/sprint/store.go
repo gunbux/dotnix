@@ -13,7 +13,7 @@ import (
 )
 
 // SchemaVersion is stored in PRAGMA user_version. A bump recreates the views.
-const SchemaVersion = 3
+const SchemaVersion = 4
 
 const tablesSQL = `
 CREATE TABLE IF NOT EXISTS sprints (
@@ -118,7 +118,7 @@ var tables = []string{"sprints", "goal_versions", "item_events", "pr_events", "b
 
 // Views hold no data, so a schema bump drops and recreates them.
 var views = []string{"item_state", "pr_state", "goal_current", "progress", "burnup",
-	"subgoal_state", "subgoal_progress", "context_state"}
+	"subgoal_state", "subgoal_progress", "context_state", "scoped_burnup", "bench_summary", "activity"}
 
 var viewsSQL = []string{`
 CREATE VIEW item_state AS
@@ -187,7 +187,112 @@ CREATE VIEW context_state AS
   WHERE c.id = (SELECT MAX(c2.id) FROM context_versions c2
                 WHERE c2.sprint_id = c.sprint_id AND c2.key = c.key
                   AND c2.subgoal IS c.subgoal)
-    AND c.body != ''`,
+    AND c.body != ''`, `
+-- Burn-up per scope: '-' is the whole sprint, any other scope is one
+-- subgoal. An item counts in a subgoal only while it belongs there, so a
+-- move takes it off the old subgoal's line and onto the new one.
+CREATE VIEW scoped_burnup AS
+  WITH scopes AS (
+    SELECT id AS sprint_id, '-' AS scope FROM sprints
+    UNION SELECT DISTINCT sprint_id, key FROM subgoal_events
+  ),
+  ev AS (
+    SELECT s.sprint_id, s.scope, e.item, e.at, e.id,
+           (s.scope = '-' OR e.subgoal IS s.scope) AND e.status != 'dropped' AS in_scope,
+           (s.scope = '-' OR e.subgoal IS s.scope) AND e.status = 'done' AS done
+    FROM scopes s JOIN item_events e ON e.sprint_id = s.sprint_id
+  ),
+  delta AS (
+    SELECT sprint_id, scope, at,
+           in_scope - COALESCE(LAG(in_scope) OVER w, 0) AS d_scope,
+           done - COALESCE(LAG(done) OVER w, 0) AS d_done
+    FROM ev
+    WINDOW w AS (PARTITION BY sprint_id, scope, item ORDER BY at, id)
+  ),
+  per_time AS (
+    SELECT sprint_id, scope, at, SUM(d_scope) AS d_scope, SUM(d_done) AS d_done
+    FROM delta GROUP BY sprint_id, scope, at
+  )
+  SELECT sprint_id, scope, at AS time,
+         SUM(d_scope) OVER (PARTITION BY sprint_id, scope ORDER BY at) AS in_scope,
+         SUM(d_done) OVER (PARTITION BY sprint_id, scope ORDER BY at) AS done
+  FROM per_time`, `
+-- The latest run and the latest baseline of each benchmark, per subgoal: a
+-- baseline in one stage is never compared with a run in another.
+CREATE VIEW bench_summary AS
+  WITH ranked AS (
+    SELECT b.*, ROW_NUMBER() OVER (
+             PARTITION BY sprint_id, subgoal, suite, metric, unit, is_baseline
+             ORDER BY at DESC, id DESC) AS rn
+    FROM bench_results b
+  ),
+  grouped AS (
+    SELECT sprint_id, subgoal, suite, metric, unit,
+           MAX(CASE WHEN is_baseline = 0 AND rn = 1 THEN value END) AS latest,
+           MAX(CASE WHEN is_baseline = 1 AND rn = 1 THEN value END) AS baseline,
+           SUM(is_baseline = 0) AS runs, MAX(at) AS last_at
+    FROM ranked GROUP BY sprint_id, subgoal, suite, metric, unit
+  )
+  SELECT g.*, CASE WHEN baseline != 0
+                   THEN ROUND(100.0 * (latest - baseline) / baseline, 1) END AS change
+  FROM grouped g`, `
+-- Every change in the log as one line of plain text, for the activity list.
+CREATE VIEW activity AS
+  SELECT sprint_id, NULL AS subgoal, at, id, 'goal' AS kind,
+         'Goal v' || ROW_NUMBER() OVER (PARTITION BY sprint_id ORDER BY at, id) || ': ' || text
+           || CASE WHEN reason = 'sprint start' THEN '' ELSE ' — ' || reason END AS text,
+         NULL AS link
+  FROM goal_versions
+  UNION ALL
+  SELECT sprint_id, key, at, id, 'subgoal',
+         CASE WHEN rn = 1 THEN 'Subgoal added: ' || title || ' — ' || goal
+              ELSE title || ': ' || COALESCE(NULLIF(RTRIM(
+                CASE WHEN status != p_status THEN p_status || ' → ' || status || '; ' ELSE '' END
+                || CASE WHEN goal != p_goal THEN 'goal changed: ' || goal || '; ' ELSE '' END
+                || CASE WHEN done_when IS NOT p_done_when
+                        THEN 'done when changed: ' || COALESCE(p_done_when, 'none') || ' → '
+                             || COALESCE(done_when, 'none') || '; ' ELSE '' END
+                || CASE WHEN title != p_title THEN 'renamed from ' || p_title || '; ' ELSE '' END,
+                '; '), ''), 'edited')
+                || CASE WHEN reason IN ('edited', 'now ' || status) THEN '' ELSE ' — ' || reason END
+         END,
+         NULL
+  FROM (SELECT e.*, ROW_NUMBER() OVER w AS rn, LAG(status) OVER w AS p_status,
+               LAG(goal) OVER w AS p_goal, LAG(done_when) OVER w AS p_done_when,
+               LAG(title) OVER w AS p_title
+        FROM subgoal_events e WINDOW w AS (PARTITION BY sprint_id, key ORDER BY at, id))
+  UNION ALL
+  SELECT sprint_id, subgoal, at, id, 'item',
+         CASE WHEN rn = 1 THEN 'Planned #' || item || ' ' || title
+                               || CASE WHEN owner = 'user' THEN ' (your step)' ELSE '' END
+              WHEN status != p_status THEN '#' || item || ' ' || title || ': ' || status
+              WHEN subgoal IS NOT p_subgoal THEN '#' || item || ' ' || title || ' moved to '
+                || COALESCE((SELECT g.title FROM subgoal_state g
+                             WHERE g.sprint_id = x.sprint_id AND g.key = x.subgoal), 'the whole sprint')
+              ELSE '#' || item || ' ' || title || ' updated'
+         END || CASE WHEN COALESCE(note, '') != '' THEN ' — ' || note ELSE '' END,
+         NULL
+  FROM (SELECT e.*, ROW_NUMBER() OVER w AS rn, LAG(status) OVER w AS p_status,
+               LAG(subgoal) OVER w AS p_subgoal
+        FROM item_events e WINDOW w AS (PARTITION BY sprint_id, item ORDER BY at, id)) x
+  UNION ALL
+  SELECT sprint_id, subgoal, at, id, 'pr', 'PR ' || state || ': ' || title, url FROM pr_events
+  UNION ALL
+  SELECT sprint_id, subgoal, at, id, 'bench',
+         'Benchmark ' || suite || ' ' || metric || ' = ' || printf('%g', value) || ' ' || unit
+           || CASE WHEN is_baseline = 1 THEN ' (baseline)' ELSE '' END,
+         link
+  FROM bench_results
+  UNION ALL
+  SELECT sprint_id, subgoal, at, id, 'context',
+         'Section ' || CASE WHEN body = '' THEN 'removed'
+                            WHEN COALESCE(p_body, '') = '' THEN 'added'
+                            ELSE 'updated' END || ': ' || title,
+         NULL
+  FROM (SELECT c.*, LAG(body) OVER (PARTITION BY sprint_id, subgoal, key ORDER BY id) AS p_body
+        FROM context_versions c)
+  UNION ALL
+  SELECT sprint_id, subgoal, at, id, kind, text, link FROM log`,
 }
 
 // userError is a mistake in the command line or the request, shown as is.
@@ -209,8 +314,8 @@ type querier interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-// Store runs queries on one connection (CLI) or one read transaction (pages).
-// Query errors panic; run and the page handler turn them into messages.
+// Store runs queries on one pinned connection. Query errors panic, and run
+// turns them into messages.
 type Store struct{ q querier }
 
 var bg = context.Background()
@@ -336,13 +441,4 @@ func (s Store) write(fn func()) {
 	fn()
 	s.exec("COMMIT")
 	ok = true
-}
-
-// openRead opens the log read-only, for the pages.
-func openRead(path string) *sql.DB {
-	abs, err := filepath.Abs(path)
-	check(err)
-	db, err := sql.Open("sqlite", dsn(abs, "&mode=ro&_pragma=query_only(1)"))
-	check(err)
-	return db
 }
