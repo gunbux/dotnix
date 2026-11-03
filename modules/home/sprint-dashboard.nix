@@ -114,7 +114,7 @@ in
   lib.mkMerge [
     {home.packages = [pkgs.sprint];}
 
-    (lib.mkIf pkgs.stdenv.isLinux {
+    (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
       systemd.user.services.sprint-grafana = {
         Unit.Description = description;
         Service = {
@@ -127,7 +127,7 @@ in
       };
     })
 
-    (lib.mkIf pkgs.stdenv.isDarwin {
+    (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
       launchd.agents.sprint-grafana = {
         enable = true;
         config = {
