@@ -1,49 +1,40 @@
 ---
 name: chun-status-timeline
-description: Keep a live status timeline for long multi-PR work as an auto-reloading HTML dashboard on localhost, with done-today, the user's next steps in merge and deploy order, a merge verdict per open PR, running agents, and key links. Use for /chun-status-timeline, or when Chun asks for the timeline, overview, "what's next", "what's left", or status during multi-PR work.
+description: Track long multi-PR work as a sprint in an append-only log (the `sprint` CLI) shown on a local Grafana dashboard, with the goal and every change to it, progress over time, the user's next steps in merge and deploy order, PRs, and benchmark results. Use for /chun-status-timeline, or when Chun asks for the timeline, overview, "what's next", "what's left", "how far along", or status during multi-PR work.
 ---
 
 # Chun status timeline
 
-The user should never have to ask for status twice. Keep one live page that answers "what's done and what do I do next?" at a glance.
+The user should never have to ask for status twice, and never lose track of the goal after steering. Record the work as it happens in the sprint log. The dashboard draws everything from that log, so nothing gets summarized away.
 
-## Page
+The log is `~/.local/state/sprint/sprint.db`. It is append-only: nothing is edited or deleted. The dashboard is `http://127.0.0.1:3001/d/sprint/sprint`. Run `sprint --help` for every command. If `sprint` is not installed on this machine, say so and give the status in chat.
 
-One page per project at `/tmp/status/<project>/index.html`. Use the repo or feature name for `<project>`. Build it from live state: `gh pr view`, `gh pr checks`, review bot scores, agent status, and deploy output. Never build it from memory.
+## Start
 
-Put these on the page, top to bottom:
-
-1. **Do now.** The single next action for the user, with its link or command.
-2. **Timeline.** One ordered list of the user's remaining steps. Each merge is a step. Place each deploy, wizard run, or validation after the merge it follows. Mark steps done, next, waiting, or blocked.
-3. **Open PRs.** One row per PR in merge order: number and link, title, and a merge verdict. The verdict is "ready" or what the PR waits on: bot scores (`greptile`, `greptile-staging`), approvals, required checks, a deploy, or an earlier PR.
-4. **Done today.** Merges, deploys, and decisions, newest first.
-5. **Agents.** Each running agent with its task, status, and thread link.
-6. **Links.** Key docs, wizards, dashboards, and reports.
-
-Add `<meta http-equiv="refresh" content="30">` and an "updated at" time. Follow the chun-mode reply rules for prose. Use the **dataviz** skill for any chart.
-
-## Serve it
-
-Serve `/tmp/status` on localhost port 8800:
+At the start of multi-PR work, start a sprint. Use the user's own words for the goal, and confirm it with the question tool.
 
 ```bash
-mkdir -p /tmp/status
-curl -fsS -o /dev/null http://localhost:8800/ \
-  || nohup python3 -m http.server 8800 --bind 127.0.0.1 --directory /tmp/status \
-       >/tmp/status/.server.log 2>&1 &
+sprint start <slug> "<title>" --goal "<goal in the user's words>"
 ```
 
-Run this as a normal command, not as the harness's background task. Harness background tasks stop after 2 hours, and the page then goes dead. The `nohup` server outlives the agent. If the port already answers, reuse that server. Bind to `127.0.0.1` only. Give the user `http://localhost:8800/<project>/` once, when you create the page.
+One sprint can span repos. Each thread passes `--sprint <slug>` or sets `SPRINT=<slug>` when more than one sprint is open. Add the plan as items, in order. Give the user's own steps (merges, deploys, wizard runs, tests on a device) `--owner user`, in the order the user must do them. Put each deploy or validation after the merge it follows.
 
-## Update it
+## Record as you go
 
-Rewrite the page after each of these events:
+| Event | Command |
+| --- | --- |
+| The user steers or changes scope | `sprint goal "<new goal>" --reason "<the user's words>"`, then add or drop items |
+| Work on an item starts, is blocked, or ends | `sprint item set <n> doing\|blocked\|done\|dropped --note "<why>"` |
+| New work appears | `sprint item add "<title>" [--owner user] [--after <n>]` |
+| You open a PR | `sprint pr add <url>` |
+| A PR passes the review gate (Greptile 5/5) | `sprint pr ready <url>` |
+| A PR merges or closes | `sprint pr sync` |
+| A benchmark run finishes | `sprint bench <suite> <metric> <value> <unit> [--baseline] [--commit <sha>]` |
+| A decision or deploy | `sprint log decision\|deploy "<what>" [--link <url>]` |
+| The goal is met | `sprint end` |
 
-- A PR merges, opens, or changes its merge verdict.
-- A deploy or wizard run starts, finishes, or fails.
-- An agent finishes or gets blocked.
-- The user makes a decision.
+Never re-add an old item to rewrite it. Change its status, and drop it with a note if it no longer applies.
 
-Rewrite the whole file from live state each time. Don't patch it by hand.
+## Answer status questions
 
-When the user asks for status, refresh the page first. Then reply with the URL and the "Do now" step only. Don't post chat messages for updates the page already shows.
+Run `sprint pr sync`, then `sprint show`. Reply with the progress line, the "Do now" steps, and the dashboard link. Don't repeat what the dashboard shows. List running agents with their task and status in the reply, because the dashboard doesn't show them.
