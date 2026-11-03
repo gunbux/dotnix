@@ -5,6 +5,7 @@ import os
 import sqlite3
 import stat
 import tempfile
+import threading
 import unittest
 
 import sprint
@@ -126,11 +127,51 @@ class SprintTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("already exists", err)
 
-    def fake_gh(self, state, merged_at=None):
+    def test_parallel_item_adds_get_distinct_numbers(self):
+        self.ok("start", "s1", "One", "--goal", "g")
+        errors = []
+
+        def add(n):
+            for i in range(5):
+                code = sprint.main(["--db", self.db, "item", "add", f"t{n}-{i}"])
+                if code:
+                    errors.append(code)
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            threads = [threading.Thread(target=add, args=(n,)) for n in range(6)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+        self.assertEqual(errors, [])
+        self.assertEqual(self.query("SELECT COUNT(DISTINCT item), COUNT(*) FROM item_events"), [(30, 30)])
+
+    def test_slug_must_be_url_and_sql_safe(self):
+        for bad in ("a&b", "it's", "Big", "a b", ""):
+            with self.subTest(slug=bad):
+                code, _, err = self.run_cli("start", bad, "x", "--goal", "g")
+                self.assertEqual(code, 1)
+                self.assertIn("bad slug", err)
+        self.ok("start", "garmin.v2_x-1", "ok", "--goal", "g")
+        self.assertTrue(self.show()["dashboard"].endswith("?var-sprint=garmin.v2_x-1"))
+
+    def test_old_views_are_replaced_on_upgrade(self):
+        self.ok("start", "s1", "One", "--goal", "g")
+        db = sqlite3.connect(self.db)
+        db.execute("DROP VIEW burnup")
+        db.execute("CREATE VIEW burnup AS SELECT 1 AS sprint_id, 0 AS time, 0 AS in_scope, 0 AS done")
+        db.execute("PRAGMA user_version = 1")
+        db.commit()
+        db.close()
+        self.ok("item", "add", "a")
+        self.assertEqual(self.query("PRAGMA user_version"), [(sprint.SCHEMA_VERSION,)])
+        self.assertEqual(self.query("SELECT time, in_scope, done FROM burnup"), [(1000, 1, 0)])
+
+    def fake_gh(self, state, merged_at=None, closed_at=None, url="https://github.com/o/r/pull/3"):
         bindir = os.path.join(self.dir.name, "bin")
         os.makedirs(bindir, exist_ok=True)
-        info = {"title": "Add T3 Ask", "url": "https://github.com/o/r/pull/3", "state": state,
-                "createdAt": "2026-11-02T10:00:00Z", "mergedAt": merged_at, "closedAt": None}
+        info = {"title": "Add T3 Ask", "url": url, "state": state,
+                "createdAt": "2026-11-02T10:00:00Z", "mergedAt": merged_at, "closedAt": closed_at}
         path = os.path.join(bindir, "gh")
         with open(path, "w") as f:
             f.write(f"#!/bin/sh\ncat <<'EOF'\n{json.dumps(info)}\nEOF\n")
@@ -152,6 +193,39 @@ class SprintTest(unittest.TestCase):
             [("opened", 1793613600), ("ready", 5000), ("merged", 1793667600)],
         )
         self.assertEqual(self.show()["prs"][0]["state"], "merged")
+
+    def test_reopened_pr_is_tracked_again(self):
+        self.ok("start", "s1", "One", "--goal", "g")
+        url = "https://github.com/o/r/pull/3"
+        self.fake_gh("CLOSED", closed_at="2026-11-02T12:00:00Z")
+        self.ok("pr", "add", url)
+        self.clock(1793700000)
+        self.fake_gh("OPEN")
+        self.ok("pr", "sync")
+        self.fake_gh("MERGED", merged_at="2026-11-03T12:00:00Z")
+        self.ok("pr", "sync")
+        self.assertEqual([s for (s,) in self.query("SELECT state FROM pr_events ORDER BY id")],
+                         ["opened", "closed", "opened", "merged"])
+        self.assertEqual(self.show()["prs"][0]["state"], "merged")
+
+    def test_ready_never_replaces_a_merge(self):
+        self.ok("start", "s1", "One", "--goal", "g")
+        url = "https://github.com/o/r/pull/3"
+        self.fake_gh("MERGED", merged_at="2026-11-03T01:00:00Z")
+        self.ok("pr", "add", url)
+        code, _, err = self.run_cli("pr", "ready", url)
+        self.assertEqual(code, 1)
+        self.assertIn("already merged", err)
+        # Ready recorded before the merge is synced: the later-recorded merge
+        # wins even though GitHub's merge time is earlier than `ready`.
+        other = "https://github.com/o/r/pull/4"
+        self.fake_gh("OPEN", url=other)
+        self.ok("pr", "add", other)
+        self.clock(1793700000)
+        self.ok("pr", "ready", other)
+        self.fake_gh("MERGED", merged_at="2026-11-03T01:00:00Z", url=other)
+        self.ok("pr", "sync")
+        self.assertEqual({p["url"]: p["state"] for p in self.show()["prs"]}[other], "merged")
 
     def test_bench_and_log(self):
         self.ok("start", "s1", "One", "--goal", "g")

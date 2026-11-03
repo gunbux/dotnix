@@ -7,16 +7,22 @@ row per key, computed by the views below.
 
 import argparse
 import calendar
+import contextlib
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
 import time
+import urllib.parse
 
 DASHBOARD_URL = os.environ.get("SPRINT_DASHBOARD_URL", "http://127.0.0.1:3001/d/sprint/sprint")
 
-SCHEMA = """
+SCHEMA_VERSION = 2
+SLUG = re.compile(r"[a-z0-9][a-z0-9._-]{0,63}")
+
+TABLES_SQL = """
 CREATE TABLE IF NOT EXISTS sprints (
   id INTEGER PRIMARY KEY,
   slug TEXT NOT NULL UNIQUE,
@@ -70,27 +76,35 @@ CREATE TABLE IF NOT EXISTS log (
   text TEXT NOT NULL,
   link TEXT
 );
+CREATE INDEX IF NOT EXISTS item_events_latest ON item_events (sprint_id, item, at, id);
+CREATE INDEX IF NOT EXISTS pr_events_latest ON pr_events (sprint_id, url, id);
+CREATE INDEX IF NOT EXISTS goal_versions_latest ON goal_versions (sprint_id, at, id);
+"""
 
-CREATE VIEW IF NOT EXISTS item_state AS
+# Views hold no data, so a schema bump drops and recreates them.
+VIEWS = ("item_state", "pr_state", "goal_current", "progress", "burnup")
+VIEWS_SQL = """
+CREATE VIEW item_state AS
   SELECT e.* FROM item_events e
   WHERE e.id = (SELECT e2.id FROM item_events e2
                 WHERE e2.sprint_id = e.sprint_id AND e2.item = e.item
                 ORDER BY e2.at DESC, e2.id DESC LIMIT 1);
 
-CREATE VIEW IF NOT EXISTS pr_state AS
+-- The latest recorded state wins, not the latest timestamp: a merge synced
+-- after a `ready` keeps the earlier GitHub merge time but must still win.
+CREATE VIEW pr_state AS
   SELECT p.* FROM pr_events p
-  WHERE p.id = (SELECT p2.id FROM pr_events p2
-                WHERE p2.sprint_id = p.sprint_id AND p2.url = p.url
-                ORDER BY p2.at DESC, p2.id DESC LIMIT 1);
+  WHERE p.id = (SELECT MAX(p2.id) FROM pr_events p2
+                WHERE p2.sprint_id = p.sprint_id AND p2.url = p.url);
 
-CREATE VIEW IF NOT EXISTS goal_current AS
+CREATE VIEW goal_current AS
   SELECT g.sprint_id, g.at, g.text, g.reason, g.source,
          (SELECT COUNT(*) FROM goal_versions g2 WHERE g2.sprint_id = g.sprint_id) AS versions
   FROM goal_versions g
   WHERE g.id = (SELECT g2.id FROM goal_versions g2 WHERE g2.sprint_id = g.sprint_id
                 ORDER BY g2.at DESC, g2.id DESC LIMIT 1);
 
-CREATE VIEW IF NOT EXISTS progress AS
+CREATE VIEW progress AS
   SELECT s.id AS sprint_id,
          COALESCE(SUM(i.status = 'done'), 0) AS done,
          COALESCE(SUM(i.status != 'dropped'), 0) AS in_scope,
@@ -102,19 +116,25 @@ CREATE VIEW IF NOT EXISTS progress AS
   GROUP BY s.id;
 
 -- Done and in-scope counts after every item event, for the burn-up chart.
-CREATE VIEW IF NOT EXISTS burnup AS
-  WITH times AS (SELECT DISTINCT sprint_id, at FROM item_events),
-  snap AS (
-    SELECT t.sprint_id, t.at AS time, e.status
-    FROM times t JOIN item_events e ON e.sprint_id = t.sprint_id
-    WHERE e.id = (SELECT e2.id FROM item_events e2
-                  WHERE e2.sprint_id = t.sprint_id AND e2.item = e.item AND e2.at <= t.at
-                  ORDER BY e2.at DESC, e2.id DESC LIMIT 1)
+-- Each event adds the change it makes to the counts; running sums give
+-- the totals, so the cost grows with the number of events, not its square.
+CREATE VIEW burnup AS
+  WITH ev AS (
+    SELECT sprint_id, at,
+           (status != 'dropped')
+             - COALESCE(LAG(status != 'dropped') OVER w, 0) AS d_scope,
+           (status = 'done') - COALESCE(LAG(status = 'done') OVER w, 0) AS d_done
+    FROM item_events
+    WINDOW w AS (PARTITION BY sprint_id, item ORDER BY at, id)
+  ),
+  per_time AS (
+    SELECT sprint_id, at, SUM(d_scope) AS d_scope, SUM(d_done) AS d_done
+    FROM ev GROUP BY sprint_id, at
   )
-  SELECT sprint_id, time,
-         SUM(status != 'dropped') AS in_scope,
-         SUM(status = 'done') AS done
-  FROM snap GROUP BY sprint_id, time;
+  SELECT sprint_id, at AS time,
+         SUM(d_scope) OVER (PARTITION BY sprint_id ORDER BY at) AS in_scope,
+         SUM(d_done) OVER (PARTITION BY sprint_id ORDER BY at) AS done
+  FROM per_time;
 """
 
 TABLES = ("sprints", "goal_versions", "item_events", "pr_events", "bench_results", "log")
@@ -128,20 +148,42 @@ def now():
     return int(os.environ.get("SPRINT_NOW") or time.time())
 
 
+@contextlib.contextmanager
+def write(db):
+    """One write transaction. BEGIN IMMEDIATE takes the write lock before
+    any read, so parallel agents can't both read the same next item number."""
+    db.execute("BEGIN IMMEDIATE")
+    try:
+        yield
+    except BaseException:
+        db.execute("ROLLBACK")
+        raise
+    db.execute("COMMIT")
+
+
 def connect(path):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    db = sqlite3.connect(path)
+    db = sqlite3.connect(path, timeout=30, isolation_level=None)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA journal_mode=WAL")
     db.execute("PRAGMA foreign_keys=ON")
-    db.executescript(SCHEMA)
-    for table in TABLES:
-        for op in ("UPDATE", "DELETE"):
-            db.execute(
-                f"CREATE TRIGGER IF NOT EXISTS {table}_no_{op.lower()} BEFORE {op} ON {table} "
-                "BEGIN SELECT RAISE(ABORT, 'sprint log is append-only'); END"
-            )
-    db.commit()
+    with write(db):
+        for stmt in TABLES_SQL.split(";"):
+            if stmt.strip():
+                db.execute(stmt)
+        for table in TABLES:
+            for op in ("UPDATE", "DELETE"):
+                db.execute(
+                    f"CREATE TRIGGER IF NOT EXISTS {table}_no_{op.lower()} BEFORE {op} ON {table} "
+                    "BEGIN SELECT RAISE(ABORT, 'sprint log is append-only'); END"
+                )
+        if db.execute("PRAGMA user_version").fetchone()[0] < SCHEMA_VERSION:
+            for view in VIEWS:
+                db.execute(f"DROP VIEW IF EXISTS {view}")
+            for stmt in VIEWS_SQL.split(";\n"):
+                if stmt.strip():
+                    db.execute(stmt)
+            db.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     return db
 
 
@@ -179,6 +221,8 @@ def latest_item(db, sprint_id, item):
 
 
 def cmd_start(db, a):
+    if not SLUG.fullmatch(a.slug):
+        raise SprintError(f"bad slug {a.slug!r}: use lowercase letters, digits, '.', '_' or '-'")
     if db.execute("SELECT 1 FROM sprints WHERE slug = ?", (a.slug,)).fetchone():
         raise SprintError(f"sprint {a.slug!r} already exists")
     at = now()
@@ -257,42 +301,58 @@ def epoch(stamp):
     return calendar.timegm(time.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ"))
 
 
-def pr_states(db, sprint_id):
-    return {r["url"]: r for r in db.execute("SELECT * FROM pr_state WHERE sprint_id = ?", (sprint_id,))}
+def pr_latest(db, sprint_id, url):
+    row = db.execute(
+        "SELECT * FROM pr_state WHERE sprint_id = ? AND url = ?", (sprint_id, url)
+    ).fetchone()
+    return row
 
 
 def record_pr(db, sprint_id, info):
     """Write the events that GitHub shows and the log doesn't have yet."""
     url, title = info["url"], info["title"]
-    have = {r["state"] for r in db.execute(
-        "SELECT state FROM pr_events WHERE sprint_id = ? AND url = ?", (sprint_id, url))}
+    row = pr_latest(db, sprint_id, url)
+    latest = row["state"] if row else None
     wrote = []
-    if "opened" not in have:
-        wrote.append(("opened", epoch(info["createdAt"]) or now()))
-    if info["state"] == "MERGED" and "merged" not in have:
-        wrote.append(("merged", epoch(info["mergedAt"]) or now()))
-    elif info["state"] == "CLOSED" and "closed" not in have:
-        wrote.append(("closed", epoch(info["closedAt"]) or now()))
-    for state, at in wrote:
+
+    def add(state, at):
+        nonlocal latest
         db.execute(
             "INSERT INTO pr_events (sprint_id, at, url, title, state) VALUES (?, ?, ?, ?, ?)",
             (sprint_id, at, url, title, state),
         )
-    return [s for s, _ in wrote]
+        wrote.append(state)
+        latest = state
+
+    if latest is None:
+        add("opened", epoch(info["createdAt"]) or now())
+    if info["state"] == "OPEN" and latest == "closed":
+        add("opened", now())
+    elif info["state"] == "MERGED" and latest != "merged":
+        add("merged", epoch(info["mergedAt"]) or now())
+    elif info["state"] == "CLOSED" and latest not in ("closed", "merged"):
+        add("closed", epoch(info["closedAt"]) or now())
+    return wrote
+
+
+def fetch_pr_add(db, a):
+    return [gh_pr(url) for url in a.urls]
 
 
 def cmd_pr_add(db, a):
     s = resolve(db, a.sprint)
-    for url in a.urls:
-        wrote = record_pr(db, s["id"], gh_pr(url))
-        print(f"{url}: {', '.join(wrote) or 'already tracked'}")
+    for info in a.fetched:
+        wrote = record_pr(db, s["id"], info)
+        print(f"{info['url']}: {', '.join(wrote) or 'already tracked'}")
 
 
 def cmd_pr_ready(db, a):
     s = resolve(db, a.sprint)
-    cur = pr_states(db, s["id"]).get(a.url)
+    cur = pr_latest(db, s["id"], a.url)
     if cur is None:
         raise SprintError(f"{a.url} is not in this sprint; run `sprint pr add` first")
+    if cur["state"] in ("merged", "closed"):
+        raise SprintError(f"{a.url} is already {cur['state']}")
     db.execute(
         "INSERT INTO pr_events (sprint_id, at, url, title, state) VALUES (?, ?, ?, ?, 'ready')",
         (s["id"], now(), a.url, cur["title"]),
@@ -300,14 +360,21 @@ def cmd_pr_ready(db, a):
     print(f"{a.url}: ready")
 
 
+def fetch_pr_sync(db, a):
+    """Ask GitHub about every PR that isn't merged, closed ones included, so a
+    reopen is recorded. Runs before the write lock: gh can take seconds."""
+    s = resolve(db, a.sprint)
+    urls = [r["url"] for r in db.execute(
+        "SELECT url FROM pr_state WHERE sprint_id = ? AND state != 'merged'", (s["id"],))]
+    return [gh_pr(url) for url in urls]
+
+
 def cmd_pr_sync(db, a):
     s = resolve(db, a.sprint)
-    for url, cur in pr_states(db, s["id"]).items():
-        if cur["state"] in ("merged", "closed"):
-            continue
-        wrote = record_pr(db, s["id"], gh_pr(url))
+    for info in a.fetched:
+        wrote = record_pr(db, s["id"], info)
         if wrote:
-            print(f"{url}: {', '.join(wrote)}")
+            print(f"{info['url']}: {', '.join(wrote)}")
 
 
 def cmd_bench(db, a):
@@ -359,7 +426,7 @@ def summary(db, s):
         "do_now": [dict(r) for r in items if r["owner"] == "user" and r["status"] not in ("done", "dropped")],
         "items": [dict(r) for r in items],
         "prs": [dict(r) for r in prs],
-        "dashboard": f"{DASHBOARD_URL}?var-sprint={s['slug']}",
+        "dashboard": f"{DASHBOARD_URL}?var-sprint={urllib.parse.quote(s['slug'], safe='')}",
     }
 
 
@@ -434,11 +501,12 @@ def parser():
     pr = sub.add_parser("pr", help="pull requests").add_subparsers(dest="pr_cmd", required=True)
     s = pr.add_parser("add", help="track PRs; records their GitHub history")
     s.add_argument("urls", nargs="+")
-    s.set_defaults(fn=cmd_pr_add)
+    s.set_defaults(fn=cmd_pr_add, prefetch=fetch_pr_add)
     s = pr.add_parser("ready", help="mark a PR ready to merge (review gate passed)")
     s.add_argument("url")
     s.set_defaults(fn=cmd_pr_ready)
-    pr.add_parser("sync", help="record merges and closes from GitHub").set_defaults(fn=cmd_pr_sync)
+    pr.add_parser("sync", help="record merges, closes, and reopens from GitHub").set_defaults(
+        fn=cmd_pr_sync, prefetch=fetch_pr_sync)
 
     s = sub.add_parser("bench", help="record a benchmark result")
     s.add_argument("suite")
@@ -470,7 +538,9 @@ def main(argv=None):
     a = parser().parse_args(argv)
     db = connect(a.db)
     try:
-        with db:
+        prefetch = getattr(a, "prefetch", None)
+        a.fetched = prefetch(db, a) if prefetch else None
+        with write(db):
             a.fn(db, a)
     except (SprintError, subprocess.CalledProcessError) as e:
         msg = e.stderr.strip() if isinstance(e, subprocess.CalledProcessError) else str(e)
