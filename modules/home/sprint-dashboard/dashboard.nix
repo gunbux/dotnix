@@ -405,7 +405,7 @@ in {
       } "table" ''
         WITH latest AS (
           SELECT suite, metric, unit, is_baseline, value,
-                 ROW_NUMBER() OVER (PARTITION BY suite, metric, is_baseline
+                 ROW_NUMBER() OVER (PARTITION BY suite, metric, unit, is_baseline
                                     ORDER BY at DESC, id DESC) AS rn
           FROM bench_results WHERE sprint_id = ${sid}
         )
