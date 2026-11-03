@@ -126,6 +126,8 @@
         t3-activity = prev.callPackage ./pkgs/t3-activity/default.nix {};
         ## Lets the T3 Ask Garmin watch app answer T3 Code questions
         t3-ask-bridge = prev.callPackage ./pkgs/t3-ask-bridge/default.nix {};
+        ## Append-only sprint log read by the local sprint dashboard
+        sprint = prev.callPackage ./pkgs/sprint/default.nix {};
         ## Greptile CLI (npm package, not in nixpkgs)
         greptile-cli = prev.callPackage ./pkgs/greptile-cli/default.nix {};
         ## Garmin Connect MCP server (not in nixpkgs)
