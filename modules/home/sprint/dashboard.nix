@@ -36,6 +36,60 @@ let
 
   pos = x: y: w: h: {inherit x y w h;};
 
+  # CSS for the text panels, scoped to the panel by the plugin. Grafana's
+  # theme colors are not CSS variables, so neutrals use translucent grey
+  # (fine on light and dark) and accents use Grafana's palette hues.
+  textStyles = ''
+    .dt-row { border-bottom: 0; padding: 2px 4px; }
+
+    .hero .eyebrow { display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+      font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+    .hero .goal { font-size: 19px; line-height: 1.35; font-weight: 500; margin-bottom: 12px; }
+    .callout { border-left: 3px solid #73BF69; background: rgba(115, 191, 105, .10);
+      border-radius: 0 6px 6px 0; padding: 7px 12px; margin-bottom: 10px; line-height: 1.45; }
+    .callout-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+      color: #73BF69; margin-bottom: 2px; }
+    .chip { display: inline-block; font-size: 11px; padding: 2px 8px; margin: 0 6px 4px 0;
+      border-radius: 10px; background: rgba(128, 128, 128, .16); }
+    .note { font-size: 12px; line-height: 1.45; opacity: .75; margin-top: 4px; }
+    .pill { font-size: 10px; letter-spacing: .04em; padding: 1px 7px; border-radius: 9px;
+      background: rgba(128, 128, 128, .2); }
+    .pill-active { background: rgba(87, 148, 242, .22); color: #5794F2; }
+    .pill-done { background: rgba(115, 191, 105, .22); color: #73BF69; }
+
+    .ctx { --accent: #B877D9; margin: 0 0 12px; padding: 10px 14px 4px;
+      border: 1px solid rgba(128, 128, 128, .22); border-left: 3px solid var(--accent);
+      border-radius: 6px; background: rgba(128, 128, 128, .04); }
+    .ctx-decision { --accent: #FF9830; background: rgba(255, 152, 48, .06); }
+    .ctx-finding { --accent: #5794F2; }
+    .ctx-risk { --accent: #F2495C; }
+    .ctx-h { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+      margin-bottom: 8px; color: var(--accent);
+      font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+    .ctx-h .when { color: rgb(128, 128, 128); font-size: 11px; font-weight: 400;
+      letter-spacing: 0; text-transform: none; white-space: nowrap; }
+    .ctx p { margin: 0 0 8px; line-height: 1.55; }
+    .ctx ul, .ctx ol { margin: 0 0 8px; padding-left: 18px; }
+    .ctx li { margin: 0 0 6px; padding-left: 2px; line-height: 1.5; }
+    .ctx li::marker { color: var(--accent); }
+    .ctx strong { font-weight: 600; }
+    .ctx h1, .ctx h2, .ctx h3, .ctx h4 { margin: 12px 0 6px; font-size: 13px; font-weight: 600; }
+    .ctx table { border-collapse: separate; border-spacing: 0; margin: 4px 0 10px; font-size: 12.5px;
+      border: 1px solid rgba(128, 128, 128, .25); border-radius: 6px; overflow: hidden; }
+    .ctx th, .ctx td { border: 0; border-bottom: 1px solid rgba(128, 128, 128, .18);
+      padding: 5px 10px; text-align: left; vertical-align: top; }
+    .ctx tr:last-child td { border-bottom: 0; }
+    .ctx th { background: rgba(128, 128, 128, .12); font-weight: 600; }
+    .ctx tbody tr:nth-child(even) td { background: rgba(128, 128, 128, .05); }
+    .ctx code { font-size: .88em; padding: 1px 5px; border-radius: 4px; background: rgba(128, 128, 128, .16); }
+    .ctx pre { padding: 8px 10px; border-radius: 6px; overflow: auto; background: rgba(128, 128, 128, .12); }
+    .ctx pre code { padding: 0; background: none; }
+    .ctx blockquote { margin: 4px 0 10px; padding: 6px 12px; border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0; background: rgba(128, 128, 128, .08); }
+    .ctx blockquote p { margin: 0; color: inherit; }
+    .ctx a { text-decoration: none; border-bottom: 1px dotted; }
+  '';
+
   text = renderMode: content: defaultContent: {
     options = {
       inherit renderMode content defaultContent;
@@ -45,16 +99,7 @@ let
       afterRender = "";
       externalStyles = [];
       contentPartials = [];
-      styles = ''
-        h2 { font-size: 1.15rem; margin: 1.1em 0 .4em; }
-        h2:first-child { margin-top: 0; }
-        h3 { font-size: 1.3rem; margin: 0 0 .3em; }
-        table { border-collapse: collapse; margin: .4em 0 .8em; }
-        th, td { border: 1px solid rgba(128, 128, 128, .3); padding: 3px 8px; vertical-align: top; }
-        ul { padding-left: 1.3em; }
-        li { margin: .15em 0; }
-        .meta { opacity: .7; font-size: .85em; }
-      '';
+      styles = textStyles;
     };
   };
 
@@ -283,23 +328,32 @@ in {
 
   panels = [
     (panel 1 "Goal" "marcusolsson-dynamictext-panel" (pos 0 0 11 7) "table" [] ''
-        SELECT s.title AS title, g.text AS goal, NULL AS done_when,
-               'Goal v' || g.versions || ' · changed ' || strftime('%Y-%m-%d %H:%M', g.at, 'unixepoch', 'localtime')
-               || CASE WHEN g.reason = 'sprint start' THEN ''' ELSE ': ' || g.reason END AS meta
+        SELECT 'Sprint goal · ' || s.title AS eyebrow, NULL AS status, g.text AS goal, NULL AS done_when,
+               'Goal v' || g.versions AS version,
+               'changed ' || strftime('%Y-%m-%d %H:%M', g.at, 'unixepoch', 'localtime') AS changed,
+               CASE WHEN g.reason = 'sprint start' THEN NULL ELSE 'Why: ' || g.reason END AS note
         FROM sprints s JOIN goal_current g ON g.sprint_id = s.id
         WHERE s.id = ${sid} AND '$subgoal' = '-'
         UNION ALL
-        SELECT g.title, g.goal, g.done_when,
-               'Subgoal, ' || g.status || ' · sprint goal: ' || (SELECT text FROM goal_current WHERE sprint_id = ${sid})
+        SELECT 'Subgoal · ' || g.title, g.status, g.goal, g.done_when,
+               (SELECT p.done || ' of ' || p.in_scope || ' items done' FROM subgoal_progress p
+                WHERE p.sprint_id = g.sprint_id AND p.key = g.key),
+               'changed ' || strftime('%Y-%m-%d %H:%M', g.at, 'unixepoch', 'localtime'),
+               'Part of: ' || (SELECT text FROM goal_current WHERE sprint_id = ${sid})
         FROM subgoal_state g WHERE g.sprint_id = ${sid} AND g.key = '$subgoal' ''
+      # One HTML block (no blank lines), so Markdown leaves it alone.
       (text "everyRow" ''
-        <div class="meta">{{title}}</div>
-
-        ### {{goal}}
-
-        {{#if done_when}}**Done when:** {{done_when}}{{/if}}
-
-        <div class="meta">{{meta}}</div>
+        <div class="hero">
+        <div class="eyebrow">{{eyebrow}}{{#if status}}<span class="pill pill-{{status}}">{{status}}</span>{{/if}}</div>
+        <div class="goal">{{goal}}</div>
+        {{#if done_when}}
+        <div class="callout"><div class="callout-label">Done when</div>{{done_when}}</div>
+        {{/if}}
+        <div><span class="chip">{{version}}</span><span class="chip">{{changed}}</span></div>
+        {{#if note}}
+        <div class="note">{{note}}</div>
+        {{/if}}
+        </div>
       '' "No sprint is selected."))
 
     (panel 2 "Progress" "stat" (pos 11 0 5 7) "table" [] ''
@@ -461,15 +515,27 @@ in {
     })
 
     (panel 6 "Context" "marcusolsson-dynamictext-panel" (pos 0 16 14 15) "table" [] ''
-        SELECT title, body FROM context_state
+        SELECT title, body,
+               strftime('%Y-%m-%d %H:%M', at, 'unixepoch', 'localtime') AS updated,
+               CASE WHEN lower(title) LIKE '%decision%' THEN 'decision'
+                    WHEN lower(title) LIKE '%finding%' THEN 'finding'
+                    WHEN lower(title) LIKE '%risk%' OR lower(title) LIKE '%caveat%'
+                      OR lower(title) LIKE '%not measured%' OR lower(title) LIKE '%open question%' THEN 'risk'
+                    ELSE 'info' END AS kind
+        FROM context_state
         WHERE sprint_id = ${sid}
           AND subgoal IS (CASE WHEN '$subgoal' = '-' THEN NULL ELSE '$subgoal' END)
         ORDER BY position, id''
+      # Each section is a card: the <section> and header lines are HTML, and
+      # the blank lines around the body let Markdown render it.
       (text "allRows" ''
         {{#each data}}
-        ## {{title}}
+        <section class="ctx ctx-{{kind}}">
+        <div class="ctx-h"><span>{{title}}</span><span class="when">updated {{updated}}</span></div>
 
         {{{body}}}
+
+        </section>
 
         {{/each}}
       '' "No context sections yet. Agents add them with `sprint context set`."))
