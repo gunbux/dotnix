@@ -227,6 +227,52 @@ class SprintTest(unittest.TestCase):
         self.ok("pr", "sync")
         self.assertEqual({p["url"]: p["state"] for p in self.show()["prs"]}[other], "merged")
 
+    def stub_gh(self, during, state="CLOSED"):
+        """Replace the GitHub call; run `during` while it is in flight."""
+        real = sprint.gh_pr
+
+        def fake(url):
+            during()
+            return {"title": "T", "url": url, "state": state, "createdAt": "2026-11-02T10:00:00Z",
+                    "mergedAt": None, "closedAt": "2026-11-02T12:00:00Z"}
+
+        sprint.gh_pr = fake
+        self.addCleanup(setattr, sprint, "gh_pr", real)
+
+    def test_sync_keeps_the_sprint_it_started_with(self):
+        url = "https://github.com/o/r/pull/3"
+        self.ok("start", "a", "A", "--goal", "g")
+        self.fake_gh("OPEN")
+        self.ok("pr", "add", url)
+
+        def switch_sprint():
+            with contextlib.redirect_stdout(io.StringIO()):
+                sprint.main(["--db", self.db, "--sprint", "a", "end"])
+                sprint.main(["--db", self.db, "start", "b", "B", "--goal", "g"])
+
+        self.stub_gh(switch_sprint)
+        self.ok("pr", "sync")
+        self.assertEqual(
+            self.query("SELECT s.slug, p.state FROM pr_events p JOIN sprints s ON s.id = p.sprint_id ORDER BY p.id"),
+            [("a", "opened"), ("a", "closed")],
+        )
+
+    def test_stale_github_result_is_dropped(self):
+        url = "https://github.com/o/r/pull/3"
+        self.ok("start", "a", "A", "--goal", "g")
+        self.fake_gh("OPEN")
+        self.ok("pr", "add", url)
+
+        def newer_write():
+            with contextlib.redirect_stdout(io.StringIO()):
+                sprint.main(["--db", self.db, "pr", "ready", url])
+
+        self.stub_gh(newer_write, state="CLOSED")
+        out = self.ok("pr", "sync")
+        self.assertIn("changed during the GitHub call", out)
+        self.assertEqual([s for (s,) in self.query("SELECT state FROM pr_events ORDER BY id")],
+                         ["opened", "ready"])
+
     def test_bench_and_log(self):
         self.ok("start", "s1", "One", "--goal", "g")
         self.ok("bench", "build", "seconds", "48", "s", "--baseline")
