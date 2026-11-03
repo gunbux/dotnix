@@ -396,5 +396,28 @@ in {
         FROM log WHERE sprint_id = ${sid} ORDER BY at DESC, id DESC'' {
         fieldConfig.overrides = [(linkColumn "Link") (width "When" 165) (width "Kind" 80)];
       })
+
+    (panel 13 "Benchmarks: latest vs baseline" "table" {
+        x = 0;
+        y = 40;
+        w = 24;
+        h = 10;
+      } "table" ''
+        WITH latest AS (
+          SELECT suite, metric, unit, is_baseline, value,
+                 ROW_NUMBER() OVER (PARTITION BY suite, metric, is_baseline
+                                    ORDER BY at DESC, id DESC) AS rn
+          FROM bench_results WHERE sprint_id = ${sid}
+        )
+        SELECT suite AS "Suite", metric AS "Metric", unit AS "Unit",
+               MAX(CASE WHEN is_baseline = 0 THEN value END) AS "Latest",
+               MAX(CASE WHEN is_baseline = 1 THEN value END) AS "Baseline",
+               ROUND(100.0 * (MAX(CASE WHEN is_baseline = 0 THEN value END)
+                              - MAX(CASE WHEN is_baseline = 1 THEN value END))
+                     / MAX(CASE WHEN is_baseline = 1 THEN value END), 1) AS "Change %"
+        FROM latest WHERE rn = 1
+        GROUP BY suite, metric, unit ORDER BY suite, metric'' {
+        fieldConfig.overrides = [(width "Suite" 160) (width "Unit" 70)];
+      })
   ];
 }
