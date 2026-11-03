@@ -107,19 +107,27 @@ export async function peerItems(mcp, log = () => {}) {
 
 async function machineItems(mcp, link) {
   const environmentId = link.environmentId;
-  // A thread waiting on a question has run status "waiting". Approvals wait
-  // too; they list no question requests and drop out below.
+  // A thread asking a question keeps run status "running" (measured: the
+  // run stays running while the question item waits). "waiting" covers runs
+  // that wait on other things. The thread list has no pending count, so
+  // each candidate's question requests are listed; most have none.
   const { threads = [] } =
     (await mcp.call("t3_thread_list", {
       environmentId,
       allProjects: true,
-      statuses: ["waiting"],
-      limit: 20,
+      statuses: ["running", "waiting"],
+      limit: 50,
     })) ?? {};
+  const lists = await Promise.all(
+    threads.map(async (thread) => ({
+      thread,
+      requestIds:
+        ((await mcp.call("t3_pending_request", { action: "list", environmentId, threadId: thread.threadId })) ?? {})
+          .requestIds ?? [],
+    })),
+  );
   const items = [];
-  for (const thread of threads) {
-    const { requestIds = [] } =
-      (await mcp.call("t3_pending_request", { action: "list", environmentId, threadId: thread.threadId })) ?? {};
+  for (const { thread, requestIds } of lists) {
     for (const requestId of requestIds) {
       const read = await mcp.call("t3_pending_request", {
         action: "read",

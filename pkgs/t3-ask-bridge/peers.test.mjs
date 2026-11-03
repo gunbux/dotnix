@@ -46,7 +46,7 @@ test("peerItems lists waiting questions on reachable machines only", async () =>
   assert.equal(items[0].qs.length, 2);
   assert.equal(items[0].qs[1].m, true);
   const list = mcp.calls.find(([name]) => name === "t3_thread_list")[1];
-  assert.deepEqual(list, { environmentId: MAC, allProjects: true, statuses: ["waiting"], limit: 20 });
+  assert.deepEqual(list, { environmentId: MAC, allProjects: true, statuses: ["running", "waiting"], limit: 50 });
   assert.ok(!mcp.calls.some(([, args]) => args.environmentId === "x"));
 });
 
