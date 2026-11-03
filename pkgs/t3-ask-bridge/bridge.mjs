@@ -1,15 +1,20 @@
 // t3-ask-bridge: lets the T3 Ask watch app list and answer T3 Code questions.
 //
 //   watch -> Garmin Connect -> Tailscale Funnel -> this bridge -> T3 WebSocket RPC
+//                                                              -> T3 /mcp -> T3 Connect -> linked machines
+//
+// Questions on this machine come over the RPC. Questions on linked machines
+// come through T3 Connect (peers.mjs), when an MCP client token is set up.
 //
 // The watch holds its own token, which only this bridge accepts. The T3 token
 // (orchestration:read + operate) never leaves this machine. The bridge opens
 // one T3 connection per watch request, so it keeps no session state to repair.
 
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
-import { pendingItems, resolveAnswer } from "./watch-api.mjs";
+import { answerPeer, mcpClient, PeerError, peerItems } from "./peers.mjs";
+import { parsePeerTid, pendingItems, resolveAnswer } from "./watch-api.mjs";
 
 const configDir = `${process.env.XDG_CONFIG_HOME ?? `${process.env.HOME}/.config`}/t3-ask`;
 const config = {
@@ -17,6 +22,8 @@ const config = {
   t3Url: process.env.T3_ASK_T3_URL ?? "http://127.0.0.1:3773",
   t3TokenFile: process.env.T3_ASK_T3_TOKEN_FILE ?? `${configDir}/t3-token`,
   watchTokenFile: process.env.T3_ASK_WATCH_TOKEN_FILE ?? `${configDir}/watch-token`,
+  // Optional. Without it, only this machine's questions are listed.
+  t3McpTokenFile: process.env.T3_ASK_T3_MCP_TOKEN_FILE ?? `${configDir}/t3-mcp-token`,
   perMinute: Number(process.env.T3_ASK_RATE_PER_MINUTE ?? 30),
 };
 
@@ -126,6 +133,24 @@ async function listPending(t3) {
   return items;
 }
 
+// The MCP client for linked machines, or null when there is no MCP token.
+let peerMcp = null;
+
+// This machine's questions, then the linked machines'. A linked machine
+// that fails is logged and left out; this machine failing still fails.
+async function listAll(t3Token) {
+  const [local, remote] = await Promise.all([
+    withT3(t3Token, listPending),
+    peerMcp === null
+      ? []
+      : peerItems(peerMcp, log).catch((error) => {
+          log(`peers: ${error.message}`);
+          return [];
+        }),
+  ]);
+  return [...local, ...remote];
+}
+
 // A request the bridge is answering, or answered in the last 10 minutes,
 // gets 409 at once. T3 also refuses a second answer, but its projection can
 // lag the dispatch by a moment.
@@ -143,7 +168,7 @@ async function answer(t3Token, body) {
   if (answered.has(rid)) return [409, { error: "already_answered" }];
   answered.set(rid, Date.now());
   try {
-    const result = await withT3(t3Token, async (t3) => {
+    const result = parsePeerTid(tid) !== null ? await answerOnPeer(tid, rid, picks) : await withT3(t3Token, async (t3) => {
       const projection = await t3.projection(tid);
       const resolved = resolveAnswer(projection, rid, picks);
       if (resolved.status) return resolved;
@@ -158,6 +183,15 @@ async function answer(t3Token, body) {
     if (error.threadNotFound) return [404, { error: "not_found" }];
     throw error;
   }
+}
+
+async function answerOnPeer(tid, rid, picks) {
+  if (peerMcp === null) return { status: 404, error: "not_found" };
+  const resolved = await answerPeer(peerMcp, tid, rid, picks);
+  if (!resolved.status) {
+    log(`answered peer thread=${resolved.thread} question="${resolved.question}" choice="${resolved.label}" rid=${rid}`);
+  }
+  return resolved;
 }
 
 // ---- HTTP ----
@@ -199,12 +233,12 @@ async function readJson(request) {
 }
 
 const routes = {
-  "GET /v1/pending": async (t3Token) => [200, { items: await withT3(t3Token, listPending) }],
+  "GET /v1/pending": async (t3Token) => [200, { items: await listAll(t3Token) }],
   // The glance has 64 KB of memory and shows only a count, so it gets the
   // items without the full question text.
   "GET /v1/pending?brief=1": async (t3Token) => [
     200,
-    { items: (await withT3(t3Token, listPending)).map(({ qs, ...item }) => item) },
+    { items: (await listAll(t3Token)).map(({ qs, ...item }) => item) },
   ],
   "POST /v1/answer": async (t3Token, request) => answer(t3Token, await readJson(request)),
 };
@@ -213,6 +247,9 @@ function main() {
   const t3Token = readSecret(config.t3TokenFile);
   const watchToken = readSecret(config.watchTokenFile);
   const allow = rateLimiter(config.perMinute);
+  if (existsSync(config.t3McpTokenFile)) {
+    peerMcp = mcpClient({ url: new URL("/mcp", config.t3Url).href, token: readSecret(config.t3McpTokenFile) });
+  }
 
   const server = createServer(async (request, response) => {
     const started = Date.now();
@@ -232,13 +269,13 @@ function main() {
       send(status, body);
     } catch (error) {
       log(`error ${error.message}`);
-      send(502, { error: error instanceof T3Error ? "t3_unavailable" : "bridge_error" });
+      send(502, { error: error instanceof T3Error || error instanceof PeerError ? "t3_unavailable" : "bridge_error" });
     }
   });
   setInterval(() => {
     for (const [rid, at] of answered) if (Date.now() - at > ANSWERED_TTL_MS) answered.delete(rid);
   }, 60_000).unref();
-  server.listen(config.port, "127.0.0.1", () => log(`t3-ask-bridge on http://127.0.0.1:${config.port}, T3 at ${config.t3Url}`));
+  server.listen(config.port, "127.0.0.1", () => log(`t3-ask-bridge on http://127.0.0.1:${config.port}, T3 at ${config.t3Url}, linked machines ${peerMcp ? "on" : "off (no MCP token)"}`));
 }
 
 main();

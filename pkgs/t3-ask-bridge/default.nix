@@ -10,7 +10,7 @@ stdenvNoCC.mkDerivation {
 
   src = lib.fileset.toSource {
     root = ./.;
-    fileset = lib.fileset.unions [./bridge.mjs ./watch-api.mjs ./watch-api.test.mjs];
+    fileset = lib.fileset.unions [./bridge.mjs ./watch-api.mjs ./watch-api.test.mjs ./peers.mjs ./peers.test.mjs];
   };
 
   nativeBuildInputs = [makeWrapper];
@@ -19,13 +19,13 @@ stdenvNoCC.mkDerivation {
   doCheck = true;
   checkPhase = ''
     runHook preCheck
-    node --test watch-api.test.mjs
+    node --test watch-api.test.mjs peers.test.mjs
     runHook postCheck
   '';
 
   installPhase = ''
     runHook preInstall
-    install -Dm444 bridge.mjs watch-api.mjs -t $out/lib/t3-ask-bridge
+    install -Dm444 bridge.mjs watch-api.mjs peers.mjs -t $out/lib/t3-ask-bridge
     makeWrapper ${lib.getExe nodejs} $out/bin/t3-ask-bridge \
       --add-flags $out/lib/t3-ask-bridge/bridge.mjs
     runHook postInstall

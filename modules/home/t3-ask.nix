@@ -4,6 +4,8 @@
   # Tokens live outside this public repo, in ~/.config/t3-ask/ (mode 600):
   #   t3-token     T3 bearer token, scopes orchestration:read + operate
   #   watch-token  random token compiled into the watch app
+  #   t3-mcp-token optional T3 MCP client token (--subject mcp-client, same
+  #                scopes); adds questions from machines linked over T3 Connect
   systemd.user.services.t3-ask-bridge = {
     Unit = {
       Description = "T3 Ask bridge for the Garmin watch on http://127.0.0.1:8789";

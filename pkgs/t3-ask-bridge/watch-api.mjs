@@ -51,24 +51,46 @@ const watchQuestion = (question) => ({
   o: question.options.map((o) => [clip(o.label, LIMITS.label), clip(o.description, LIMITS.description)]),
 });
 
+// One pending request as the watch item. `questions` uses T3's question
+// shape ({ id, header, question, options, multiSelect }), which both the
+// thread projection and the MCP tool t3_pending_request return.
+export function watchItem({ rid, tid, thread, questions }) {
+  const item = {
+    rid,
+    tid,
+    thread: clip(thread, LIMITS.thread),
+    q: clip(questions[0]?.question ?? "Open T3 to see this question", LIMITS.legacyQuestion),
+  };
+  if (isLegacyAnswerable(questions)) {
+    item.opts = questions[0].options.map((o) => clip(o.label, LIMITS.option));
+  }
+  if (isWatchAnswerable(questions)) item.qs = questions.map(watchQuestion);
+  return item;
+}
+
 export function pendingItems(projection) {
   const { thread } = projection;
   return projection.runtimeRequests
     .filter((request) => request.kind === "user_input" && request.status === "pending")
-    .map((request) => {
-      const questions = questionItem(projection, request.id)?.questions ?? [];
-      const item = {
+    .map((request) =>
+      watchItem({
         rid: request.id,
         tid: thread.id,
-        thread: clip(thread.title, LIMITS.thread),
-        q: clip(questions[0]?.question ?? "Open T3 to see this question", LIMITS.legacyQuestion),
-      };
-      if (isLegacyAnswerable(questions)) {
-        item.opts = questions[0].options.map((o) => clip(o.label, LIMITS.option));
-      }
-      if (isWatchAnswerable(questions)) item.qs = questions.map(watchQuestion);
-      return item;
-    });
+        thread: thread.title,
+        questions: questionItem(projection, request.id)?.questions ?? [],
+      }),
+    );
+}
+
+// Questions on a linked machine reach the watch with tid "<environmentId>/<threadId>".
+// Thread ids can hold ":" (agent-launched threads) but never "/".
+const PEER_TID = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(.+)$/;
+
+export const peerTid = (environmentId, threadId) => `${environmentId}/${threadId}`;
+
+export function parsePeerTid(tid) {
+  const match = PEER_TID.exec(tid);
+  return match === null ? null : { environmentId: match[1], threadId: match[2] };
 }
 
 const optionValue = (option) => option.value ?? option.label;
@@ -83,18 +105,10 @@ function pickedOptions(question, picks) {
   return options.includes(undefined) ? null : options;
 }
 
-// Decides what one watch answer means for one thread projection. `picks` is
-// the `a` list, or a bare index from the first watch build. Returns either
-// { answer } with the T3 answers record, or { status, error } with the HTTP
-// status the watch gets.
-export function resolveAnswer(projection, requestId, picks) {
-  const request = projection.runtimeRequests.find(
-    (r) => r.id === requestId && r.kind === "user_input",
-  );
-  if (request === undefined) return { status: 404, error: "not_found" };
-  if (request.status === "resolved") return { status: 409, error: "already_answered" };
-  if (request.status !== "pending") return { status: 404, error: `not_pending:${request.status}` };
-  const questions = questionItem(projection, requestId)?.questions ?? [];
+// Turns watch picks into a T3 answers record for these questions. `picks`
+// is the `a` list, or a bare index from the first watch build. Returns
+// either { answer, question, label } or { status, error }.
+export function answerFor(questions, picks) {
   const legacy = !Array.isArray(picks);
   if (legacy ? !isLegacyAnswerable(questions) : !isWatchAnswerable(questions)) {
     return { status: 422, error: "answer_on_phone" };
@@ -115,4 +129,15 @@ export function resolveAnswer(projection, requestId, picks) {
     question: questions.map((q) => q.question).join(" | "),
     label: labels.join(" | "),
   };
+}
+
+// Decides what one watch answer means for one thread projection.
+export function resolveAnswer(projection, requestId, picks) {
+  const request = projection.runtimeRequests.find(
+    (r) => r.id === requestId && r.kind === "user_input",
+  );
+  if (request === undefined) return { status: 404, error: "not_found" };
+  if (request.status === "resolved") return { status: 409, error: "already_answered" };
+  if (request.status !== "pending") return { status: 404, error: `not_pending:${request.status}` };
+  return answerFor(questionItem(projection, requestId)?.questions ?? [], picks);
 }
