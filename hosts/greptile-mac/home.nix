@@ -6,5 +6,6 @@
 
     ../../modules/home/darwin.nix
     ../../modules/home/greptile.nix
+    ../../modules/home/sprint-dashboard.nix
   ];
 }

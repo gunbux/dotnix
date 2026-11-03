@@ -1,5 +1,6 @@
 # Local Grafana for the sprint log (pkgs/sprint). Runs as this user on
-# http://127.0.0.1:3001 with anonymous read-only access and no login.
+# http://127.0.0.1:3001 with anonymous read-only access and no login:
+# a systemd user service on Linux, a launchd agent on macOS.
 # The log lives in ~/.local/state/sprint/sprint.db and never leaves the
 # machine; only the dashboard JSON is in this public repo.
 {
@@ -100,22 +101,44 @@
     };
     news.news_feed_enabled = false;
   };
-in {
-  home.packages = [pkgs.sprint];
+  # Shared by systemd and launchd: launchd has no ExecStartPre.
+  start = pkgs.writeShellScript "sprint-grafana-start" ''
+    set -eu
+    export SPRINT_DB=${db}
+    ${pkgs.coreutils}/bin/mkdir -p ${dataDir}/log
+    ${lib.getExe pkgs.sprint} --db ${db} init
+    exec ${lib.getExe' pkgs.grafana "grafana"} server --homepath ${pkgs.grafana}/share/grafana --config ${ini}
+  '';
+  description = "Grafana sprint dashboard on http://127.0.0.1:${toString port}";
+in
+  lib.mkMerge [
+    {home.packages = [pkgs.sprint];}
 
-  systemd.user.services.sprint-grafana = {
-    Unit.Description = "Grafana sprint dashboard on http://127.0.0.1:${toString port}";
-    Service = {
-      Environment = ["SPRINT_DB=${db}"];
-      ExecStartPre = [
-        "${pkgs.coreutils}/bin/mkdir -p ${dataDir}/log"
-        "${lib.getExe pkgs.sprint} --db ${db} init"
-      ];
-      ExecStart = "${lib.getExe' pkgs.grafana "grafana"} server --homepath ${pkgs.grafana}/share/grafana --config ${ini}";
-      Restart = "on-failure";
-      RestartSec = 5;
-      NoNewPrivileges = true;
-    };
-    Install.WantedBy = ["default.target"];
-  };
-}
+    (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+      systemd.user.services.sprint-grafana = {
+        Unit.Description = description;
+        Service = {
+          ExecStart = "${start}";
+          Restart = "on-failure";
+          RestartSec = 5;
+          NoNewPrivileges = true;
+        };
+        Install.WantedBy = ["default.target"];
+      };
+    })
+
+    (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+      launchd.agents.sprint-grafana = {
+        enable = true;
+        config = {
+          Program = "${start}";
+          RunAtLoad = true;
+          KeepAlive.SuccessfulExit = false;
+          ThrottleInterval = 30;
+          ProcessType = "Background";
+          StandardOutPath = "${config.home.homeDirectory}/Library/Logs/sprint-grafana.log";
+          StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/sprint-grafana.log";
+        };
+      };
+    })
+  ]
