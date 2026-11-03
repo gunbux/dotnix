@@ -13,7 +13,11 @@
     };
     Service = {
       ExecStart = "${pkgs.t3-ask-bridge}/bin/t3-ask-bridge";
-      Environment = ["T3_ASK_PORT=8789"];
+      Environment = [
+        "T3_ASK_PORT=8789"
+        "HELLORIDE_SESSION_FILE=%h/.config/helloride/session.json"
+        "HELLORIDE_WATCH_TOKEN_FILE=%h/.config/helloride/watch-token"
+      ];
       Restart = "always";
       RestartSec = 5;
       NoNewPrivileges = true;

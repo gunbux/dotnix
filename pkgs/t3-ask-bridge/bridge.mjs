@@ -10,6 +10,7 @@
 // (orchestration:read + operate) never leaves this machine. The bridge opens
 // one T3 connection per watch request, so it keeps no session state to repair.
 
+import { bikeRoute } from "./helloride.mjs";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
@@ -251,7 +252,9 @@ function main() {
     peerMcp = mcpClient({ url: new URL("/mcp", config.t3Url).href, token: readSecret(config.t3McpTokenFile) });
   }
 
+  const bikes = bikeRoute({ sessionFile: process.env.HELLORIDE_SESSION_FILE, tokenFile: process.env.HELLORIDE_WATCH_TOKEN_FILE });
   const server = createServer(async (request, response) => {
+    if (await bikes(request, response)) return;
     const started = Date.now();
     const route = routes[`${request.method} ${request.url}`];
     const send = (status, body) => {
