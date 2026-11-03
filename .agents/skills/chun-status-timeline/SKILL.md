@@ -1,20 +1,20 @@
 ---
 name: chun-status-timeline
-description: Track long multi-PR work as a sprint (one goal) split into subgoals (stages with their own goal and exit check), in an append-only log (the `sprint` CLI) shown as local status pages. The pages hold the goal and every change to it, progress over time, the user's next steps, PRs, benchmarks, and agent-written context such as architecture, findings, and caveats. Use for /chun-status-timeline, or when Chun asks for the timeline, overview, "what's next", "what's left", "how far along", or status during multi-PR work.
+description: Track long multi-PR work as a sprint (one goal) split into subgoals (stages with their own goal and exit check), in an append-only log (the `sprint` CLI) shown on a local Grafana dashboard. The dashboard holds the goal and every change to it, progress over time, the user's next steps, PRs, benchmarks, and agent-written context such as architecture, findings, and caveats. Use for /chun-status-timeline, or when Chun asks for the timeline, overview, "what's next", "what's left", "how far along", or status during multi-PR work.
 ---
 
 # Chun status timeline
 
-The user must never ask for status twice, and must never lose the goal after steering. Record the work as it happens in the sprint log. The status pages draw everything from that log, so nothing gets summarized away.
+The user must never ask for status twice, and must never lose the goal after steering. Record the work as it happens in the sprint log. The dashboard draws everything from that log, so nothing gets summarized away.
 
-The log is `~/.local/state/sprint/sprint.db`. It is append-only: nothing is edited or deleted. The pages are at `http://127.0.0.1:3001`. Run `sprint --help` and `sprint <command> --help` for every command. If `sprint` is not installed on this machine, say so and give the status in chat.
+The log is `~/.local/state/sprint/sprint.db`. It is append-only: nothing is edited or deleted. The dashboard is Grafana at `http://127.0.0.1:3001`. Its "View" dropdown shows the whole sprint or one subgoal. `sprint show` prints the link for each. Run `sprint --help` and `sprint <command> --help` for every command. If `sprint` is not installed on this machine, say so and give the status in chat.
 
 ## Terms
 
 | Term | Meaning | Example |
 | --- | --- | --- |
-| Sprint | One goal that takes days or weeks. It has a goal page. | Kubernetes backend for Grepbox |
-| Subgoal | One stage of the sprint goal. It has its own goal, a "done when" check, a plan, and a page. One or two are active at a time. | Parity; Hot snapshotting |
+| Sprint | One goal that takes days or weeks. The dashboard's "Whole sprint" view shows it. | Kubernetes backend for Grepbox |
+| Subgoal | One stage of the sprint goal. It has its own goal, a "done when" check, a plan, and its own dashboard view. One or two are active at a time. | Parity; Hot snapshotting |
 | Item | One step of the plan, in a subgoal. The user's own steps have `--owner user`. | Port the exec API |
 | Context section | Markdown that explains the work: what a reader needs without the chat. | Architecture; Findings |
 
@@ -68,18 +68,18 @@ Never re-add an old item or subgoal to rewrite it. Change its status, and drop i
 
 ## Context sections
 
-The pages show the numbers. Context sections show what the numbers mean. Keep them current, so that the user can read the page instead of the chat. They show under "Do now", above the charts, in the order you add them. Write each section in ASD-STE100 Simplified Technical English, with tables, lists, and links to code and runs. Markdown can hold inline SVG for diagrams.
+The charts show the numbers. Context sections show what the numbers mean. Keep them current, so that the user can read the dashboard instead of the chat. They show in the Context panel, in the order you add them. Write each section in ASD-STE100 Simplified Technical English, with Markdown tables, lists, and links to code and runs.
 
-| Page | Sections to keep, in this order |
+| View | Sections to keep, in this order |
 | --- | --- |
-| Goal page (no `--subgoal`) | Findings so far; Decisions waiting for Chun; Architecture (how the parts fit); How to run it; Environment (clusters, accounts, flags); Risks and open questions |
-| Subgoal page (`--subgoal <key>`) | Findings so far; Approach; Comparison with the reference system (in parity work); Not measured yet; Caveats |
+| Whole sprint (no `--subgoal`) | Findings so far; Decisions waiting for Chun; Architecture (how the parts fit); How to run it; Environment (clusters, accounts, flags); Risks and open questions |
+| One subgoal (`--subgoal <key>`) | Findings so far; Approach; Comparison with the reference system (in parity work); Not measured yet; Caveats |
 
 - Findings so far: 3 to 6 bullets. Start each with the conclusion in bold. Then give its cause, or write "cause not measured yet". Link the evidence: a run, a report, or a file.
 - Decisions waiting for Chun: each open decision with your recommendation first. Ask about it with the question tool too.
 - Not measured yet and Caveats: what the numbers do not show, and why a result can mislead.
 
-Replace a section with `sprint context set <same key>`. The old version stays in the log. Use `--first` to put a section at the top of its page. Remove a section that no longer applies with `sprint context rm <key>`. Update a section when its facts change, not on every step. Keep secrets, customer names, and customer data out: the log stays on this machine, but the user shares screenshots.
+Replace a section with `sprint context set <same key>`. The old version stays in the log. Use `--first` to put a section at the top of its view. Remove a section that no longer applies with `sprint context rm <key>`. Update a section when its facts change, not on every step. Keep secrets, customer names, and customer data out: the log stays on this machine, but the user shares screenshots.
 
 ## Answer status questions
 
@@ -87,6 +87,6 @@ Run `sprint pr sync`, then `sprint show`. Reply with:
 
 1. The active subgoals with their progress (`3 of 5 done`) and "done when" checks.
 2. The "Do now" steps for the user.
-3. The page link: the goal page, or the subgoal page when the question is about one stage.
+3. The dashboard link from `sprint show`: the whole-sprint link, or the subgoal link when the question is about one stage.
 
-Don't repeat what the page shows. List running agents with their task and status in the reply, because the page doesn't show them.
+Don't repeat what the dashboard shows. List running agents with their task and status in the reply, because the dashboard doesn't show them.

@@ -87,18 +87,16 @@ func init() {
 			args: []argDef{{name: "key"}},
 			flags: map[string]flagDef{
 				"title":   {help: "required for a new section"},
-				"first":   {isBool: true, help: "show this section first on its page"},
+				"first":   {isBool: true, help: "show this section first"},
 				"file":    {help: "Markdown file, or - for stdin"},
-				"subgoal": {help: "put it on this subgoal's page (default: the goal page)"}},
+				"subgoal": {help: "show it in this subgoal's view (default: the whole sprint)"}},
 			required: []string{"file"}},
-		{path: "context rm", help: "remove a context section from the page", run: cmdContextRm,
+		{path: "context rm", help: "remove a context section", run: cmdContextRm,
 			args:  []argDef{{name: "key"}},
 			flags: map[string]flagDef{"subgoal": {help: "the subgoal the section is on"}}},
 		{path: "end", help: "end the sprint", run: cmdEnd, flags: map[string]flagDef{"note": {help: "how it ended"}}},
-		{path: "show", help: "goal, subgoals, progress, do-now list, PRs, page link", run: cmdShow,
+		{path: "show", help: "goal, subgoals, progress, do-now list, PRs, dashboard link", run: cmdShow,
 			flags: map[string]flagDef{"json": {isBool: true}}},
-		{path: "serve", help: "serve the status pages", run: cmdServe, unlocked: true,
-			flags: map[string]flagDef{"host": {help: "default 127.0.0.1"}, "port": {help: "default 3001"}}},
 	}
 }
 
@@ -393,15 +391,15 @@ type summaryPR struct {
 }
 
 type summarySubgoal struct {
-	Key      string `json:"key"`
-	Title    string `json:"title"`
-	Goal     string `json:"goal"`
-	DoneWhen any    `json:"done_when"`
-	Status   string `json:"status"`
-	Done     int64  `json:"done"`
-	InScope  int64  `json:"in_scope"`
-	Percent  int64  `json:"percent"`
-	Page     string `json:"page"`
+	Key       string `json:"key"`
+	Title     string `json:"title"`
+	Goal      string `json:"goal"`
+	DoneWhen  any    `json:"done_when"`
+	Status    string `json:"status"`
+	Done      int64  `json:"done"`
+	InScope   int64  `json:"in_scope"`
+	Percent   int64  `json:"percent"`
+	Dashboard string `json:"dashboard"`
 }
 
 type summary struct {
@@ -417,7 +415,7 @@ type summary struct {
 	Items       []summaryItem    `json:"items"`
 	PRs         []summaryPR      `json:"prs"`
 	Subgoals    []summarySubgoal `json:"subgoals"`
-	Page        string           `json:"page"`
+	Dashboard   string           `json:"dashboard"`
 }
 
 func orNil(v string) any {
@@ -428,7 +426,7 @@ func orNil(v string) any {
 }
 
 func makeSummary(s Store, sp Sprint) summary {
-	out := summary{Sprint: sp.Slug, Title: sp.Title, Page: pageBase() + pagePath(sp.Slug, ""),
+	out := summary{Sprint: sp.Slug, Title: sp.Title, Dashboard: dashboardURL(sp.Slug, "", sp.StartedAt),
 		DoNow: []summaryItem{}, Items: []summaryItem{}, PRs: []summaryPR{}, Subgoals: []summarySubgoal{}}
 	s.one("SELECT text, versions FROM goal_current WHERE sprint_id = ?", []any{sp.ID}, &out.Goal, &out.GoalVersion)
 	var pct float64
@@ -454,7 +452,7 @@ func makeSummary(s Store, sp Sprint) summary {
 		var dw string
 		var pct float64
 		check(r.Scan(&g.Key, &g.Title, &g.Goal, &dw, &g.Status, &g.Done, &g.InScope, &pct))
-		g.DoneWhen, g.Percent, g.Page = orNil(dw), int64(pct), pageBase()+pagePath(sp.Slug, g.Key)
+		g.DoneWhen, g.Percent, g.Dashboard = orNil(dw), int64(pct), dashboardURL(sp.Slug, g.Key, sp.StartedAt)
 		out.Subgoals = append(out.Subgoals, g)
 	})
 	return out
@@ -490,7 +488,7 @@ func cmdShow(c *call) {
 	for _, p := range d.PRs {
 		c.printf("  PR %-7s %s\n", p.State, p.URL)
 	}
-	c.printf("%s\n", d.Page)
+	c.printf("%s\n", d.Dashboard)
 }
 
 func fmtNum(v float64) string { return strconv.FormatFloat(v, 'g', -1, 64) }

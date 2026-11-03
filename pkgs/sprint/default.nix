@@ -6,7 +6,7 @@
 }:
 buildGoModule {
   pname = "sprint";
-  version = "0.2.0";
+  version = "0.3.0";
 
   src = lib.fileset.toSource {
     root = ./.;
@@ -14,16 +14,13 @@ buildGoModule {
       ./go.mod
       ./go.sum
       (lib.fileset.fileFilter (f: f.hasExt "go") ./.)
-      ./assets
     ];
   };
 
-  vendorHash = "sha256-BF3w5Fi7X0Sl5ozEV98WHjuI92p+8DVXrZKfWXLYtOc=";
+  vendorHash = "sha256-zafxVNQsomtOwZ3RCyAeIgBg4Aj4Pf6yD3qZt6umd+Y=";
 
   # modernc.org/sqlite is pure Go.
   env.CGO_ENABLED = 0;
-  # The page server test listens on 127.0.0.1; the macOS sandbox blocks that.
-  __darwinAllowLocalNetworking = true;
   ldflags = ["-s" "-w"];
 
   nativeBuildInputs = [makeWrapper];
@@ -34,7 +31,7 @@ buildGoModule {
   '';
 
   meta = {
-    description = "Append-only sprint log (goal, subgoals, plan, PRs, benchmarks, context) with local status pages";
+    description = "Append-only sprint log (goal, subgoals, plan, PRs, benchmarks, context) shown on a local Grafana dashboard";
     mainProgram = "sprint";
     platforms = lib.platforms.unix;
   };

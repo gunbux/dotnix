@@ -6,14 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
-	"time"
 )
 
 type harness struct {
@@ -265,8 +263,8 @@ func TestSlugMustBeURLAndSQLSafe(t *testing.T) {
 		contains_(t, h.fails("start", bad, "x", "--goal", "g"), "bad slug")
 	}
 	h.ok("start", "garmin.v2_x-1", "ok", "--goal", "g")
-	if !strings.HasSuffix(h.show().Page, "/s/garmin.v2_x-1") {
-		t.Fatal(h.show().Page)
+	if !strings.HasSuffix(h.show().Dashboard, "/d/sprint/sprint?from=1000000&to=now&var-sprint=garmin.v2_x-1&var-subgoal=-") {
+		t.Fatal(h.show().Dashboard)
 	}
 }
 
@@ -480,8 +478,8 @@ func TestSubgoalsHoldTheirOwnGoalAndItems(t *testing.T) {
 	}
 	eq(t, strings.Join(items, ","), "sprint-wide chore:<nil>,port the runner:parity,snapshot API:hot-snap")
 	eq(t, strings.Join(subs, ","), "parity:active:1/1,hot-snap:planned:0/1")
-	if !strings.HasSuffix(d.Subgoals[0].Page, "/s/k8s/parity") {
-		t.Fatal(d.Subgoals[0].Page)
+	if !strings.HasSuffix(d.Subgoals[0].Dashboard, "&var-sprint=k8s&var-subgoal=parity") {
+		t.Fatal(d.Subgoals[0].Dashboard)
 	}
 	h.ok("sub", "set", "hot-snap", "active")
 	contains_(t, h.fails("item", "add", "which one?"), "several active subgoals (parity, hot-snap)")
@@ -547,9 +545,9 @@ func TestContextSectionsAreVersioned(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Pages
+// Dashboard views (scoped_burnup, bench_summary, activity)
 
-func pageHarness(t *testing.T) *harness {
+func viewHarness(t *testing.T) *harness {
 	h := newHarness(t)
 	h.ok("start", "k8s", "K8s <backend>", "--goal", "Kubernetes backend for Grepbox")
 	h.ok("sub", "add", "parity", "Parity", "--goal", "match <Firecracker>", "--done-when", "bench within 5%", "--status", "active")
@@ -562,91 +560,58 @@ func pageHarness(t *testing.T) *harness {
 	h.ok("sub", "set", "parity", "--goal", "match <Firecracker> on results", "--reason", "boot can trail")
 	h.ok("bench", "boot", "p50", "900", "ms", "--baseline")
 	h.ok("bench", "boot", "p50", "800", "ms", "--commit", "abcdef123456")
-	h.ok("context", "set", "arch", "--title", "Architecture",
-		"--file", h.file("a.md", "## Layers\n\n| a | b |\n|---|---|\n| 1 | 2 |\n"))
+	h.ok("context", "set", "arch", "--title", "Architecture", "--file", h.file("a.md", "v1"))
 	return h
 }
 
-func (h *harness) sprintData(now int64) (Store, *sprintData) {
-	db := openRead(h.db)
-	h.t.Cleanup(func() { db.Close() })
-	tx, err := db.Begin()
-	if err != nil {
-		h.t.Fatal(err)
-	}
-	h.t.Cleanup(func() { tx.Rollback() })
-	s := Store{tx}
-	return s, loadSprint(s, "k8s", now)
+func TestScopedBurnupFollowsAnItemIntoAnotherSubgoal(t *testing.T) {
+	h := viewHarness(t)
+	eq(t, h.query("SELECT scope, time, in_scope, done FROM scoped_burnup ORDER BY scope, time"),
+		"(-, 1000, 2, 0) (-, 2000, 2, 1) "+
+			"(hot-snap, 1000, 0, 0) (hot-snap, 2000, 1, 0) "+
+			"(parity, 1000, 2, 0) (parity, 2000, 1, 1)")
 }
 
-func TestBurnupFollowsAnItemIntoAnotherSubgoal(t *testing.T) {
-	h := pageHarness(t)
-	_, d := h.sprintData(3000)
-	eq(t, fmt.Sprint(d.burnup("", true)), "[[1000 2 0] [2000 2 1] [3000 2 1]]")
-	eq(t, fmt.Sprint(d.burnup("parity", false)), "[[1000 2 0] [2000 1 1] [3000 1 1]]")
-	eq(t, fmt.Sprint(d.burnup("hot-snap", false)), "[[1000 0 0] [2000 1 0] [3000 1 0]]")
+func TestBenchSummaryKeepsEachSubgoalApart(t *testing.T) {
+	h := viewHarness(t)
+	h.clock(2500)
+	h.ok("sub", "set", "hot-snap", "active")
+	h.ok("bench", "boot", "p50", "100", "ms", "--baseline", "--subgoal", "hot-snap")
+	h.ok("bench", "boot", "p50", "720", "ms", "--subgoal", "parity")
+	// parity's latest run against parity's baseline; hot-snap's baseline alone.
+	eq(t, h.query("SELECT subgoal, latest, baseline, change, runs, last_at FROM bench_summary ORDER BY subgoal"),
+		"(hot-snap, <nil>, 100, <nil>, 0, 2500) (parity, 720, 900, -20, 2, 2500)")
 }
 
-func TestPagesRenderAndEscape(t *testing.T) {
-	h := pageHarness(t)
-	s, d := h.sprintData(3000)
-	goal := goalPage(s, d, false)
-	for _, want := range []string{"K8s &lt;backend&gt;", "match &lt;Firecracker&gt;", `href="/s/k8s/parity"`,
-		"<h2>Architecture</h2>", "<table>", "50%"} {
-		contains_(t, goal, want)
-	}
-	if strings.Contains(goal, "<Firecracker>") {
-		t.Fatal("unescaped subgoal goal")
-	}
-	sub := subgoalPage(s, d, "parity", false)
-	for _, want := range []string{"bench within 5%", "-11.1%", "Subgoal history", "boot can trail"} {
-		contains_(t, sub, want)
-	}
-	if strings.Contains(sub, "<h2>Architecture</h2>") {
-		t.Fatal("sprint context on a subgoal page")
-	}
-	hot := subgoalPage(s, d, "hot-snap", false)
-	contains_(t, hot, "Do now (you)")
-	contains_(t, hot, "merge the runner")
-}
-
-func TestServerRoutesAndRefusesOtherHosts(t *testing.T) {
-	h := pageHarness(t)
-	ln, handler := listen(h.db, "127.0.0.1", "0")
-	srv := &http.Server{Handler: handler}
-	go srv.Serve(ln)
-	t.Cleanup(func() { srv.Close() })
-	get := func(path, host string) (int, string) {
-		req, _ := http.NewRequest("GET", "http://"+ln.Addr().String()+path, nil)
-		if host != "" {
-			req.Host = host
-		}
-		c := &http.Client{Timeout: 5 * time.Second}
-		r, err := c.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer r.Body.Close()
-		b, _ := io.ReadAll(r.Body)
-		return r.StatusCode, string(b)
-	}
-	for path, want := range map[string]int{"/": 200, "/s/k8s": 200, "/s/k8s/hot-snap": 200,
-		"/s/k8s/nope": 404, "/s/nope": 404, "/s/k8s/parity/x": 404} {
-		code, _ := get(path, "")
-		eq(t, fmt.Sprint(path, " ", code), fmt.Sprint(path, " ", want))
-	}
-	code, body := get("/api/stamp", "")
-	eq(t, code, 200)
-	if strings.Trim(body, "0123456789.") != "" {
-		t.Fatal(body)
-	}
-	code, _ = get("/s/k8s", "evil.example:80")
-	eq(t, code, 403)
-	// The page server's handle can't change the log.
-	ro := openRead(h.db)
-	defer ro.Close()
-	if _, err := ro.Exec("INSERT INTO log (sprint_id, at, kind, text) VALUES (1, 1, 'note', 'x')"); err == nil {
-		t.Fatal("read-only handle wrote to the log")
+func TestActivityDescribesEveryChange(t *testing.T) {
+	h := viewHarness(t)
+	h.clock(2500)
+	h.ok("sub", "set", "parity", "--done-when", "bench within 2%", "--reason", "tighter bar")
+	h.ok("sub", "set", "hot-snap", "active")
+	h.ok("context", "set", "arch", "--file", h.file("a2.md", "v2"))
+	h.ok("context", "rm", "arch")
+	h.ok("log", "decision", "keep Kata", "--subgoal", "-")
+	fakeGH(t, "OPEN", "", "", pr3)
+	h.ok("pr", "add", pr3, "--subgoal", "parity")
+	got := h.query("SELECT COALESCE(subgoal, '-'), kind, text FROM activity ORDER BY at, kind, id")
+	for _, want := range []string{
+		"(-, goal, Goal v1: Kubernetes backend for Grepbox)",
+		"(parity, subgoal, Subgoal added: Parity — match <Firecracker>)",
+		"(parity, item, Planned #1 port the runner)",
+		"(parity, item, Planned #2 merge the runner (your step))",
+		"(parity, item, #1 port the runner: done)",
+		"(hot-snap, item, #2 merge the runner moved to Hot snapshotting)",
+		"(parity, subgoal, Parity: goal changed: match <Firecracker> on results — boot can trail)",
+		"(parity, bench, Benchmark boot p50 = 900 ms (baseline))",
+		"(-, context, Section added: Architecture)",
+		"(parity, subgoal, Parity: done when changed: bench within 5% → bench within 2% — tighter bar)",
+		"(hot-snap, subgoal, Hot snapshotting: planned → active)",
+		"(-, context, Section updated: Architecture)",
+		"(-, context, Section removed: Architecture)",
+		"(-, decision, keep Kata)",
+		"(parity, pr, PR opened: Add T3 Ask)",
+	} {
+		contains_(t, got, want)
 	}
 }
 
@@ -668,27 +633,4 @@ func TestNewRecordsMustNameOneOfSeveralActiveSubgoals(t *testing.T) {
 	h.ok("bench", "boot", "p50", "1", "ms", "--subgoal", "b")
 	eq(t, h.query("SELECT DISTINCT subgoal FROM pr_events"), "(a)")
 	eq(t, h.query("SELECT subgoal FROM log"), "(<nil>)")
-}
-
-func TestHistoryShowsBenchStagesExitChecksAndContextVersions(t *testing.T) {
-	h := pageHarness(t)
-	h.clock(2500)
-	h.ok("sub", "set", "parity", "--done-when", "bench within 2%", "--reason", "tighter bar")
-	h.ok("sub", "set", "hot-snap", "active")
-	h.ok("bench", "boot", "p50", "100", "ms", "--baseline", "--subgoal", "hot-snap")
-	h.ok("context", "set", "arch", "--file", h.file("a2.md", "second *version*"))
-	h.ok("context", "rm", "arch")
-	s, d := h.sprintData(3000)
-	goal := goalPage(s, d, false)
-	// parity's run against parity's baseline; hot-snap's baseline alone.
-	contains_(t, goal, "<td>Parity</td><td class=num>800</td><td class=num>900</td>")
-	contains_(t, goal, "<td>Hot snapshotting</td><td class=num></td><td class=num>100</td>")
-	contains_(t, goal, "done when changed: <s>bench within 5%</s> → bench within 2%")
-	contains_(t, goal, "tighter bar")
-	contains_(t, goal, "Section updated: <b>Architecture</b>")
-	contains_(t, goal, "<em>version</em>")
-	contains_(t, goal, "Section removed: <b>Architecture</b>")
-	sub := subgoalPage(s, d, "parity", false)
-	contains_(t, sub, "<th>Done when</th>")
-	contains_(t, sub, "<td>bench within 2%</td>")
 }

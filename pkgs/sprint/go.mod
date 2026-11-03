@@ -2,10 +2,7 @@ module sprint
 
 go 1.26.0
 
-require (
-	github.com/yuin/goldmark v1.8.7
-	modernc.org/sqlite v1.61.1
-)
+require modernc.org/sqlite v1.61.1
 
 require (
 	github.com/dustin/go-humanize v1.1.0 // indirect
