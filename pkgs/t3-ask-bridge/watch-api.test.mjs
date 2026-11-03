@@ -89,7 +89,8 @@ test("long text is clipped to the watch limits", () => {
   const [q] = item.qs;
   assert.equal(q.q.length, 240);
   assert.equal(q.h.length, 16);
-  assert.equal(q.o[0][0].length, 24);
+  assert.equal(q.o[0][0].length, 60);
+  assert.equal(item.opts[0].length, 24);
   assert.equal(q.o[0][1].length, 90);
   assert.equal(item.q.length, 120);
 });

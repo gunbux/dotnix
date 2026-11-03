@@ -19,6 +19,7 @@ export const LIMITS = {
   legacyQuestion: 120,
   header: 16,
   option: 24,
+  label: 60,
   description: 90,
   options: 4,
   questions: 4,
@@ -47,7 +48,7 @@ const watchQuestion = (question) => ({
   h: clip(question.header, LIMITS.header),
   q: clip(question.question, LIMITS.question),
   m: question.multiSelect === true,
-  o: question.options.map((o) => [clip(o.label, LIMITS.option), clip(o.description, LIMITS.description)]),
+  o: question.options.map((o) => [clip(o.label, LIMITS.label), clip(o.description, LIMITS.description)]),
 });
 
 export function pendingItems(projection) {
