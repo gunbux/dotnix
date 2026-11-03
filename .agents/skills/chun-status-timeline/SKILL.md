@@ -27,11 +27,13 @@ Add `<meta http-equiv="refresh" content="30">` and an "updated at" time. Follow 
 Serve `/tmp/status` on localhost port 8800:
 
 ```bash
+mkdir -p /tmp/status
 curl -fsS -o /dev/null http://localhost:8800/ \
-  || python3 -m http.server 8800 --bind 127.0.0.1 --directory /tmp/status
+  || nohup python3 -m http.server 8800 --bind 127.0.0.1 --directory /tmp/status \
+       >/tmp/status/.server.log 2>&1 &
 ```
 
-Start the server as a background task so it outlives the turn. If the port already answers, reuse that server. Bind to `127.0.0.1` only. Give the user `http://localhost:8800/<project>/` once, when you create the page.
+Run this as a normal command, not as the harness's background task. Harness background tasks stop after 2 hours, and the page then goes dead. The `nohup` server outlives the agent. If the port already answers, reuse that server. Bind to `127.0.0.1` only. Give the user `http://localhost:8800/<project>/` once, when you create the page.
 
 ## Update it
 

@@ -18,7 +18,24 @@
       };
     })
     skillDirectories;
-  globalSkillFiles = skillFilesFor ".agents/skills" // skillFilesFor ".claude/skills";
+  # Third-party skills pinned as flake inputs; bump with `nix flake update <input>`.
+  vendoredSkills = {
+    greploop = "${inputs.greptile-skills}/skills/greploop";
+  };
+  vendoredSkillFilesFor = parent:
+    lib.mapAttrs' (name: source: {
+      name = "${parent}/${name}";
+      value = {
+        inherit source;
+        force = true;
+      };
+    })
+    vendoredSkills;
+  globalSkillFiles =
+    skillFilesFor ".agents/skills"
+    // skillFilesFor ".claude/skills"
+    // vendoredSkillFilesFor ".agents/skills"
+    // vendoredSkillFilesFor ".claude/skills";
   mcpServers = import ../mcp-servers.nix {inherit lib pkgs;};
   # Agent CLIs come from numtide/llm-agents.nix (updated daily, binary cached)
   # rather than nixpkgs. GUI counterparts live in applications.nix.

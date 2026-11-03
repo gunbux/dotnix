@@ -20,6 +20,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Keep it short. Write for a reader without the project's context. Spell out what a milestone or option label means instead of writing "M3" or "option B". Restate IDs you made up ("G7") with their meaning and path.
 - Make every file, doc, and PR reference clickable. Use a repo-relative or absolute path in backticks, or a full URL. Never a bare filename.
 - Ask for decisions and blocked items with the question tool (`AskUserQuestion` in Claude Code, `request_user_input` in Codex). Give the context and trade-offs in the question or the report page. Put your recommendation first. Without the tool, use a numbered list.
+- The user answers questions from a Garmin watch. Keep each question to 240 characters, each option label to 60, and each description to 90, or the watch cuts them off. Put the long context on the report page.
 - Explain an unfamiliar concept before you ask the user to decide on it.
 - When the user states their understanding ("correct me if I'm wrong"), say plainly whether it's right and fix the wrong part.
 - Fact-check claims against the code and cite the file. List the claims you couldn't verify. Say "not measured", not "not measurable".
@@ -32,6 +33,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - "Feel free" means go ahead without asking. Disagree when you have a reason.
 - Stay in scope. For a bug outside the task, check whether `origin/main` already fixed it, write it down, and tell the user. Don't fix it.
 - Don't add something the user is still trying to understand.
+- Don't bring back something the user removed. Before you re-add a package, module, or tool, run `git log -S<name>` to see if a commit removed it on purpose. A task prompt that names it is not permission to restore it.
 - Make design calls inside the code you own. Pick the best option, or copy the reference system in parity work. Record the decision and its reason where the project keeps decisions.
 - Never run `terraform apply`, `terragrunt apply`, or any `destroy`, even on sandbox infra. Plan to a file, give the user the commands, wait for "done", then read their output.
 - Hand privileged steps (SSO login, VPN, installs) to the user as exact commands. Turn verbose output, such as a Terragrunt plan, into a short human-readable summary. Under a bypass grant, do these steps yourself when they have no production impact.
@@ -41,7 +43,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Before anything that touches staging or prod, run the **blast-radius** skill. Say what could break, whether you can reverse it, which open PRs or teammates' work it conflicts with, and who to tell. Ship new behavior behind an off-by-default flag.
 - Read-only requests stay read-only. Don't comment on a PR or post anywhere when the user asked for an assessment.
 - Before an unattended run ("going to bed"), ask every question in one batch up front. Then decide alone and report each decision through the **show-me-your-work** skill.
-- Near the end of the user's day, offer the work that can run overnight. Give a time estimate for each run and the steps the user must do first, such as an SSO login that lasts the whole run.
+- Near the end of the user's day, offer the work that can run overnight. Give a time estimate for each run and the steps the user must do first, such as an SSO login that lasts the whole run. Compare the SSO session's expiry time with the run's end time, and ask for a new login if the session ends first.
 - When blocked, find the work that isn't blocked and do it. List only what truly needs the user.
 - Do everything the user asked. If you drop an item, say which one and why.
 
@@ -72,10 +74,22 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 
 - In work repos, keep one `gh stack` chain per feature. Each milestone is a draft PR on top of the previous one. Put follow-ups on top of the chain, never beside a lower milestone. Split a PR that gets large. Put hotfixes on their own branch. In personal repos, use one PR unless the user asks for more.
 - Rebase onto the base. Don't merge `main` in. Squash to a short, readable history. Name work branches `chun/<topic>`.
-- A PR is done when Greptile scores it 5/5 with no unresolved threads. In work repos, both `greptile` and `greptile-staging` must score 5/5. Use the **greploop** skill (`.claude/skills/greploop` in greptilia). Fix valid comments. Reply to the rest with the reason and resolve them. Run greploop yourself until the gate passes. Don't stop to offer it.
+- A PR is done when Greptile scores it 5/5 with no unresolved threads. In work repos, both `greptile` and `greptile-staging` must score 5/5. Use the **greploop** skill. In greptilia, use its repo copy (`.claude/skills/greploop`), which handles both bots. Elsewhere, use the global copy (`~/.claude/skills/greploop`, from `greptileai/skills`). Fix valid comments. Reply to the rest with the reason and resolve them. Run greploop yourself until the gate passes. Don't stop to offer it.
+- When you create a repo or open its first PR, check that Greptile reviews it. If no review comes, ask the user to enable Greptile for the repo. Your token can't change app installs.
 - Enforce merge order on GitHub, not only in chat. Keep a PR as a draft, or base it on the PR it waits for. Keep "do not merge yet" notes in PR descriptions current.
+- Before you give a merge order, find other threads that work on the same PRs (`t3_thread_search`) and agree on one order with them. Test-merge the PRs in that order on a scratch branch to find conflicts.
+- When the user asks about release pings, check every staging and prod release PR since the last check:
+  - Match each Greptile finding to the user's code by file and source PR, not by Grepfred's owner tag. Grepfred often leaves the tag out.
+  - Include P2 findings. Grepfred pings only for P0 and P1.
+  - Check each finding against `origin/main` with read-only subagents.
+  - Give a fix or ignore verdict for each finding, then ask which to fix. If no finding touches the user's code, say so in one line.
 - For visual changes or PRs to upstream projects, let the user try the change locally or see a preview before you open the PR.
 - Tools and settings go in dotnix (`~/repo/dotnix` on the Mac, `~/dotnix` on legion-nix). Don't install ad hoc. Commit and push straight to `main` without asking, then run `nh darwin switch` or `nh os switch` yourself. If a switch fails more than once, find the root cause. dotnix is public, so keep secrets and private config out of it.
+- Other sessions edit dotnix at the same time. Protect their uncommitted work:
+  - Before a pull, commit the changes or stash them with a named message. Never run `git reset --hard` or `git checkout -- .` over uncommitted work.
+  - Run git commands on the tree one at a time, never in parallel.
+  - Flakes ignore untracked files. `git add` a new module before you switch.
+  - If the push is rejected, rebase. On a `flake.lock` conflict, keep the version from `origin/main`, then run your `nix flake update <input>` commands again. Don't merge the lock file by hand.
 - Prefer declarative infrastructure (Nix, Terragrunt) over commands run on the fly. Fix the root cause instead of a workaround. Package tools properly in Nix. On the Mac, Homebrew is the fallback, declared in dotnix.
 - When you find tooling the user doesn't use, offer to remove it.
 - Keep personal files out of repos. Handover docs go in `/tmp` or the notes repo. Local ignores go in the global gitignore.

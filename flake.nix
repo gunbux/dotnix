@@ -64,6 +64,11 @@
       url = "github:ComposioHQ/composio-plugin-cc";
       flake = false;
     };
+    # Greptile's public skills (MIT); modules/home/ai.nix links in greploop.
+    greptile-skills = {
+      url = "github:greptileai/skills";
+      flake = false;
+    };
     torlink.url = "github:baairon/torlink";
     # Local voice dictation; upstream asks to follow nixpkgs so Vulkan finds
     # drivers built against the same glibc.
