@@ -77,7 +77,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
   - Include P2 findings. Grepfred pings only for P0 and P1.
   - Check each finding against `origin/main` with read-only subagents.
   - Give a fix or ignore verdict for each finding, then ask which to fix. If no finding touches the user's code, say so in one line.
-- Tools and settings go in dotnix (`~/repo/dotnix` on the Mac, `~/dotnix` on legion-nix). Don't install ad hoc. Commit and push straight to `main` without asking, then run `nh darwin switch` or `nh os switch` yourself. If a switch fails more than once, find the root cause. dotnix is public, so keep secrets and private config out of it.
+- Tools and settings go in dotnix (`~/repo/dotnix` on the Mac, `~/dotnix` on legion-nix). Don't install ad hoc. Commit and push straight to `main` without asking. Build and evaluate freely, but ask before you run `nh darwin switch` or `nh os switch`, and say what the switch changes. If a switch fails more than once, find the root cause. dotnix is public, so keep secrets and private config out of it.
 - Prefer declarative infrastructure (Nix, Terragrunt) over commands run on the fly. Package tools properly in Nix. On the Mac, Homebrew is the fallback, declared in dotnix.
 - Keep personal files out of repos. Handover docs go in `/tmp` or the notes repo. Local ignores go in the global gitignore.
 
