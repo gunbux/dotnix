@@ -537,9 +537,12 @@ func TestContextSectionsAreVersioned(t *testing.T) {
 	contains_(t, h.fails("context", "set", "arch", "--file", h.file("e.md", "  \n")), "empty section")
 	eq(t, h.query("SELECT subgoal, title, body FROM context_state ORDER BY id"),
 		"(<nil>, Architecture, v2\n) (parity, Parity matrix, | a | b |\n)")
+	h.ok("context", "set", "findings", "--title", "Findings so far", "--first", "--file", h.file("f.md", "f"))
+	eq(t, h.query("SELECT key FROM context_state WHERE subgoal IS NULL ORDER BY position"), "(findings) (arch)")
+	h.ok("context", "rm", "findings")
 	h.ok("context", "rm", "arch")
 	eq(t, h.query("SELECT subgoal FROM context_state"), "(parity)")
-	eq(t, h.query("SELECT COUNT(*) FROM context_versions"), "(4)")
+	eq(t, h.query("SELECT COUNT(*) FROM context_versions"), "(6)")
 	contains_(t, h.fails("context", "rm", "arch"), `no section "arch"`)
 }
 
@@ -645,4 +648,47 @@ func TestServerRoutesAndRefusesOtherHosts(t *testing.T) {
 	if _, err := ro.Exec("INSERT INTO log (sprint_id, at, kind, text) VALUES (1, 1, 'note', 'x')"); err == nil {
 		t.Fatal("read-only handle wrote to the log")
 	}
+}
+
+func TestNewRecordsMustNameOneOfSeveralActiveSubgoals(t *testing.T) {
+	h := newHarness(t)
+	h.ok("start", "k8s", "K8s", "--goal", "g")
+	h.ok("sub", "add", "a", "A", "--goal", "g", "--status", "active")
+	fakeGH(t, "OPEN", "", "", pr3)
+	h.ok("pr", "add", pr3)
+	h.ok("sub", "add", "b", "B", "--goal", "g", "--status", "active")
+	for _, args := range [][]string{{"bench", "boot", "p50", "1", "ms"}, {"log", "note", "x"},
+		{"pr", "add", "https://github.com/o/r/pull/4"}} {
+		fakeGH(t, "OPEN", "", "", "https://github.com/o/r/pull/4")
+		contains_(t, h.fails(args...), "several active subgoals (a, b)")
+	}
+	fakeGH(t, "OPEN", "", "", pr3)
+	h.ok("pr", "add", pr3) // already tracked: keeps subgoal a
+	h.ok("log", "note", "whole sprint", "--subgoal", "-")
+	h.ok("bench", "boot", "p50", "1", "ms", "--subgoal", "b")
+	eq(t, h.query("SELECT DISTINCT subgoal FROM pr_events"), "(a)")
+	eq(t, h.query("SELECT subgoal FROM log"), "(<nil>)")
+}
+
+func TestHistoryShowsBenchStagesExitChecksAndContextVersions(t *testing.T) {
+	h := pageHarness(t)
+	h.clock(2500)
+	h.ok("sub", "set", "parity", "--done-when", "bench within 2%", "--reason", "tighter bar")
+	h.ok("sub", "set", "hot-snap", "active")
+	h.ok("bench", "boot", "p50", "100", "ms", "--baseline", "--subgoal", "hot-snap")
+	h.ok("context", "set", "arch", "--file", h.file("a2.md", "second *version*"))
+	h.ok("context", "rm", "arch")
+	s, d := h.sprintData(3000)
+	goal := goalPage(s, d, false)
+	// parity's run against parity's baseline; hot-snap's baseline alone.
+	contains_(t, goal, "<td>Parity</td><td class=num>800</td><td class=num>900</td>")
+	contains_(t, goal, "<td>Hot snapshotting</td><td class=num></td><td class=num>100</td>")
+	contains_(t, goal, "done when changed: <s>bench within 5%</s> → bench within 2%")
+	contains_(t, goal, "tighter bar")
+	contains_(t, goal, "Section updated: <b>Architecture</b>")
+	contains_(t, goal, "<em>version</em>")
+	contains_(t, goal, "Section removed: <b>Architecture</b>")
+	sub := subgoalPage(s, d, "parity", false)
+	contains_(t, sub, "<th>Done when</th>")
+	contains_(t, sub, "<td>bench within 2%</td>")
 }

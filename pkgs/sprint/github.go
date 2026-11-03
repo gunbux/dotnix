@@ -176,7 +176,16 @@ func savePRs(c *call, quietUnchanged bool, subgoal string) {
 
 func cmdPRAdd(c *call) {
 	f := c.fetched.(fetchedPRs)
-	savePRs(c, false, c.store.pickSubgoal(f.sprintID, c.flag("subgoal"), c.has("subgoal"), false))
+	// Only a PR new to the log takes a subgoal, so only then must it be clear.
+	isNew := false
+	for _, p := range f.prs {
+		isNew = isNew || p.seen == 0
+	}
+	subgoal := ""
+	if isNew || c.has("subgoal") {
+		subgoal = c.store.pickSubgoal(f.sprintID, c.flag("subgoal"), c.has("subgoal"), true)
+	}
+	savePRs(c, false, subgoal)
 }
 
 func cmdPRSync(c *call) { savePRs(c, true, "") }

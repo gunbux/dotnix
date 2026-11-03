@@ -68,3 +68,5 @@ details summary{cursor:pointer;list-style:none}details summary h2{display:inline
 padding:6px 8px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);white-space:nowrap;z-index:3;display:none}
 .tip b{font-size:13px}.tip i{display:inline-block;width:10px;height:2px;vertical-align:middle;margin-right:5px}
 @media (max-width:760px){.hero{flex-direction:column}.hero-figure{text-align:left}}
+details.version{margin-top:4px}details.version summary{color:var(--series-1);font-size:13px}
+#activity li>span{min-width:0;flex:1}

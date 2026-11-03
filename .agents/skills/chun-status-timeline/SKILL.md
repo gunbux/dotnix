@@ -68,14 +68,18 @@ Never re-add an old item or subgoal to rewrite it. Change its status, and drop i
 
 ## Context sections
 
-The pages show the numbers. Context sections show what the numbers mean. Keep them current, so that the user can read the page instead of the chat. Write each section in ASD-STE100 Simplified Technical English, with tables, lists, and links to code and runs. Markdown can hold inline SVG for diagrams.
+The pages show the numbers. Context sections show what the numbers mean. Keep them current, so that the user can read the page instead of the chat. They show under "Do now", above the charts, in the order you add them. Write each section in ASD-STE100 Simplified Technical English, with tables, lists, and links to code and runs. Markdown can hold inline SVG for diagrams.
 
-| Page | Sections to keep |
+| Page | Sections to keep, in this order |
 | --- | --- |
-| Goal page (no `--subgoal`) | Architecture (how the parts fit), How to run it, Environment (clusters, accounts, flags), Risks and open questions |
-| Subgoal page (`--subgoal <key>`) | Approach, Findings so far, Comparison with the reference system (in parity work), Benchmark method and caveats, What is left |
+| Goal page (no `--subgoal`) | Findings so far; Decisions waiting for Chun; Architecture (how the parts fit); How to run it; Environment (clusters, accounts, flags); Risks and open questions |
+| Subgoal page (`--subgoal <key>`) | Findings so far; Approach; Comparison with the reference system (in parity work); Not measured yet; Caveats |
 
-Replace a section with `sprint context set <same key>`. The old version stays in the log. Remove a section that no longer applies with `sprint context rm <key>`. Update a section when its facts change, not on every step. Keep secrets, customer names, and customer data out: the log stays on this machine, but the user shares screenshots.
+- Findings so far: 3 to 6 bullets. Start each with the conclusion in bold. Then give its cause, or write "cause not measured yet". Link the evidence: a run, a report, or a file.
+- Decisions waiting for Chun: each open decision with your recommendation first. Ask about it with the question tool too.
+- Not measured yet and Caveats: what the numbers do not show, and why a result can mislead.
+
+Replace a section with `sprint context set <same key>`. The old version stays in the log. Use `--first` to put a section at the top of its page. Remove a section that no longer applies with `sprint context rm <key>`. Update a section when its facts change, not on every step. Keep secrets, customer names, and customer data out: the log stays on this machine, but the user shares screenshots.
 
 ## Answer status questions
 

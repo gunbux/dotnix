@@ -138,6 +138,7 @@ type sprintData struct {
 	bench         []Bench
 	log           []LogRow
 	context       []Context
+	contextEvents []Context
 	titles        map[string]string
 }
 
@@ -189,6 +190,9 @@ func loadSprint(s Store, slug string, now int64) *sprintData {
 	})
 	s.each("SELECT "+contextCols+" FROM context_state WHERE sprint_id = ? ORDER BY position, id", id, func(r *sql.Rows) {
 		d.context = append(d.context, scanContext(r))
+	})
+	s.each("SELECT "+contextCols+" FROM context_versions WHERE sprint_id = ? ORDER BY at, id", id, func(r *sql.Rows) {
+		d.contextEvents = append(d.contextEvents, scanContext(r))
 	})
 	return d
 }
@@ -292,16 +296,29 @@ func (d *sprintData) activity(key string, all bool) []event {
 		old, had := lastSub[e.Key]
 		lastSub[e.Key] = e
 		name := fmt.Sprintf(`<a href="%s">%s</a>`, esc(d.url(e.Key)), esc(e.Title))
-		var text string
-		switch {
-		case !had:
-			text = fmt.Sprintf("Subgoal added: %s — %s", name, esc(e.Goal))
-		case old.Goal != e.Goal:
-			text = fmt.Sprintf("%s goal changed: %s", name, esc(e.Goal)) + why(e.Reason)
-		case old.Status != e.Status:
-			text = fmt.Sprintf("%s %s → %s", name, pill(old.Status), pill(e.Status))
-		default:
-			text = name + " edited"
+		if !had {
+			out = append(out, event{e.At, "subgoal", e.Key, fmt.Sprintf("Subgoal added: %s — %s", name, esc(e.Goal))})
+			continue
+		}
+		var changes []string
+		if old.Status != e.Status {
+			changes = append(changes, pill(old.Status)+" → "+pill(e.Status))
+		}
+		if old.Goal != e.Goal {
+			changes = append(changes, "goal changed: "+esc(e.Goal))
+		}
+		if old.DoneWhen != e.DoneWhen {
+			changes = append(changes, fmt.Sprintf(`done when changed: <s>%s</s> → %s`, esc(old.DoneWhen), esc(e.DoneWhen)))
+		}
+		if old.Title != e.Title {
+			changes = append(changes, "renamed from "+esc(old.Title))
+		}
+		if len(changes) == 0 {
+			changes = append(changes, "edited")
+		}
+		text := name + " " + strings.Join(changes, "; ")
+		if e.Reason != "edited" && e.Reason != "now "+e.Status {
+			text += why(e.Reason)
 		}
 		out = append(out, event{e.At, "subgoal", e.Key, text})
 	}
@@ -345,6 +362,30 @@ func (d *sprintData) activity(key string, all bool) []event {
 			text += " · " + link(b.Link, "run")
 		}
 		out = append(out, event{b.At, "bench", b.Subgoal, text})
+	}
+	// Every version of a context section, readable in place.
+	lastCtx := map[[2]string]Context{}
+	for _, c := range d.contextEvents {
+		k := [2]string{c.Subgoal, c.Key}
+		old, had := lastCtx[k]
+		lastCtx[k] = c
+		verb, body := "updated", c.Body
+		switch {
+		case c.Body == "":
+			verb, body = "removed", old.Body
+		case !had || old.Body == "":
+			verb = "added"
+		}
+		text := fmt.Sprintf(`Section %s: <b>%s</b>`, verb, esc(c.Title))
+		if body != "" {
+			label := "this version"
+			if verb == "removed" {
+				label = "the removed text"
+			}
+			text += fmt.Sprintf(`<details class="version"><summary>Show %s</summary><div class="md">%s</div></details>`,
+				label, md(body))
+		}
+		out = append(out, event{c.At, "context", c.Subgoal, text})
 	}
 	for _, l := range d.log {
 		text := fmt.Sprintf(`<span class="kind">%s</span> %s`, esc(l.Kind), esc(l.Text))
@@ -436,23 +477,34 @@ func (d *sprintData) timeline() map[string]any {
 // Sections
 
 type version struct {
-	at           int64
-	text, reason string
+	at                     int64
+	text, doneWhen, reason string
 }
 
 func goalHistory(versions []version, title string) string {
 	if len(versions) < 2 {
 		return ""
 	}
+	hasCheck := false
+	for _, v := range versions {
+		hasCheck = hasCheck || v.doneWhen != ""
+	}
 	var rows strings.Builder
 	for n := len(versions) - 1; n >= 0; n-- {
 		v := versions[n]
-		fmt.Fprintf(&rows, "<tr><td class=num>v%d</td><td>%s</td><td>%s</td><td>%s</td></tr>",
-			n+1, when(v.at), esc(v.text), esc(v.reason))
+		fmt.Fprintf(&rows, "<tr><td class=num>v%d</td><td>%s</td><td>%s</td>", n+1, when(v.at), esc(v.text))
+		if hasCheck {
+			fmt.Fprintf(&rows, "<td>%s</td>", esc(v.doneWhen))
+		}
+		fmt.Fprintf(&rows, "<td>%s</td></tr>", esc(v.reason))
+	}
+	check := ""
+	if hasCheck {
+		check = "<th>Done when</th>"
 	}
 	return fmt.Sprintf(`<details class="card"><summary><h2>%s</h2> <span class="muted">%d versions</span></summary>`+
-		`<table><thead><tr><th>#</th><th>When</th><th>Goal</th><th>Why it changed</th></tr></thead><tbody>%s</tbody>`+
-		`</table></details>`, title, len(versions), rows.String())
+		`<table><thead><tr><th>#</th><th>When</th><th>Goal</th>%s<th>Why it changed</th></tr></thead><tbody>%s</tbody>`+
+		`</table></details>`, title, len(versions), check, rows.String())
 }
 
 func (d *sprintData) tag(key string) string {
@@ -590,14 +642,16 @@ func timelineChart(d *sprintData) string {
 }
 
 func benchSection(d *sprintData, key string, all bool) string {
-	type gk struct{ suite, metric, unit string }
+	// Each subgoal keeps its own results: a baseline in one stage is never
+	// compared with a run in another.
+	type gk struct{ subgoal, suite, metric, unit string }
 	groups := map[gk][]Bench{}
 	var order []gk
 	for _, b := range d.bench {
 		if !all && b.Subgoal != key {
 			continue
 		}
-		k := gk{b.Suite, b.Metric, b.Unit}
+		k := gk{b.Subgoal, b.Suite, b.Metric, b.Unit}
 		if _, ok := groups[k]; !ok {
 			order = append(order, k)
 		}
@@ -608,7 +662,8 @@ func benchSection(d *sprintData, key string, all bool) string {
 	}
 	sort.Slice(order, func(i, j int) bool {
 		a, b := order[i], order[j]
-		return a.suite+"\x00"+a.metric+"\x00"+a.unit < b.suite+"\x00"+b.metric+"\x00"+b.unit
+		return strings.Join([]string{a.subgoal, a.suite, a.metric, a.unit}, "\x00") <
+			strings.Join([]string{b.subgoal, b.suite, b.metric, b.unit}, "\x00")
 	})
 	var table, charts strings.Builder
 	for _, k := range order {
@@ -634,7 +689,7 @@ func benchSection(d *sprintData, key string, all bool) string {
 		}
 		where := ""
 		if all {
-			where = "<td>" + esc(d.titleOr(rs[len(rs)-1].Subgoal, "—")) + "</td>"
+			where = "<td>" + esc(d.titleOr(k.subgoal, "—")) + "</td>"
 		}
 		fmt.Fprintf(&table, "<tr><td>%s</td><td>%s</td>%s<td class=num>%s</td><td class=num>%s</td><td>%s</td>"+
 			"<td class=num>%s</td><td class=num>%d</td><td>%s</td></tr>",
@@ -649,8 +704,12 @@ func benchSection(d *sprintData, key string, all bool) string {
 			if base != nil {
 				spec["baseline"] = base.Value
 			}
-			fmt.Fprintf(&charts, `<figure class="mini"><figcaption>%s · %s (%s)</figcaption><div class="chart" data-spec="line">`+
-				`</div><script type="application/json">%s</script></figure>`, esc(k.suite), esc(k.metric), esc(k.unit), asJSON(spec))
+			stage := ""
+			if all && k.subgoal != "" {
+				stage = esc(d.titleOr(k.subgoal, k.subgoal)) + ": "
+			}
+			fmt.Fprintf(&charts, `<figure class="mini"><figcaption>%s%s · %s (%s)</figcaption><div class="chart" data-spec="line">`+
+				`</div><script type="application/json">%s</script></figure>`, stage, esc(k.suite), esc(k.metric), esc(k.unit), asJSON(spec))
 		}
 	}
 	sub := ""
@@ -836,15 +895,15 @@ func goalPage(s Store, d *sprintData, showAll bool) string {
 	}
 	versions := make([]version, len(d.goals))
 	for i, g := range d.goals {
-		versions[i] = version{g.At, g.Text, g.Reason}
+		versions[i] = version{at: g.At, text: g.Text, reason: g.Reason}
 	}
 	items := ""
 	if len(d.subgoals) == 0 || loose {
 		items = plan(d, "", true, "All items")
 	}
 	body := hero(d.Title, `<p class="goal">`+esc(g.Text)+"</p>", done, total, extra) +
-		subgoalCards(d) + doNow(d, "", true) + timelineChart(d) + burnupChart(d, "", true) +
-		contextSections(d, "") + items + benchSection(d, "", true) + prTable(d, "", true) +
+		subgoalCards(d) + doNow(d, "", true) + contextSections(d, "") + timelineChart(d) +
+		burnupChart(d, "", true) + items + benchSection(d, "", true) + prTable(d, "", true) +
 		goalHistory(versions, "Goal history") + activitySection(d, "", true, showAll)
 	return layout(d.Title, []crumb{{"Sprints", "/"}, {d.Title, ""}}, body, stamp(s))
 }
@@ -853,8 +912,9 @@ func subgoalPage(s Store, d *sprintData, key string, showAll bool) string {
 	g := d.subgoal(key)
 	var versions []version
 	for _, e := range d.subgoalEvents {
-		if e.Key == key && (len(versions) == 0 || versions[len(versions)-1].text != e.Goal) {
-			versions = append(versions, version{e.At, e.Goal, e.Reason})
+		last := len(versions) - 1
+		if e.Key == key && (last < 0 || versions[last].text != e.Goal || versions[last].doneWhen != e.DoneWhen) {
+			versions = append(versions, version{e.At, e.Goal, e.DoneWhen, e.Reason})
 		}
 	}
 	extra := ""
@@ -863,8 +923,8 @@ func subgoalPage(s Store, d *sprintData, key string, showAll bool) string {
 	}
 	extra += fmt.Sprintf(`<p class="muted">Part of: <a href="%s">%s</a></p>`, esc(d.url("")), esc(d.goals[len(d.goals)-1].Text))
 	body := hero(g.Title, "<p>"+pill(g.Status)+`</p><p class="goal">`+esc(g.Goal)+"</p>", g.Done, g.InScope, extra) +
-		doNow(d, key, false) + plan(d, key, false, "Plan") + burnupChart(d, key, false) + benchSection(d, key, false) +
-		contextSections(d, key) + prTable(d, key, false) + goalHistory(versions, "Subgoal history") +
+		doNow(d, key, false) + contextSections(d, key) + plan(d, key, false, "Plan") + burnupChart(d, key, false) +
+		benchSection(d, key, false) + prTable(d, key, false) + goalHistory(versions, "Subgoal history") +
 		activitySection(d, key, false, showAll)
 	return layout(g.Title+" · "+d.Title, []crumb{{"Sprints", "/"}, {d.Title, d.url("")}, {g.Title, ""}}, body, stamp(s))
 }

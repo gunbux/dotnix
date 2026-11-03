@@ -87,6 +87,7 @@ func init() {
 			args: []argDef{{name: "key"}},
 			flags: map[string]flagDef{
 				"title":   {help: "required for a new section"},
+				"first":   {isBool: true, help: "show this section first on its page"},
 				"file":    {help: "Markdown file, or - for stdin"},
 				"subgoal": {help: "put it on this subgoal's page (default: the goal page)"}},
 			required: []string{"file"}},
@@ -260,7 +261,7 @@ func cmdBench(c *call) {
 	s.exec("INSERT INTO bench_results (sprint_id, at, suite, metric, value, unit, is_baseline, commit_sha, link, subgoal) "+
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		sp.ID, now(), c.pos["suite"], c.pos["metric"], v, c.pos["unit"], c.has("baseline"),
-		null(c.flag("commit")), null(c.flag("link")), null(s.pickSubgoal(sp.ID, c.flag("subgoal"), c.has("subgoal"), false)))
+		null(c.flag("commit")), null(c.flag("link")), null(s.pickSubgoal(sp.ID, c.flag("subgoal"), c.has("subgoal"), true)))
 	c.printf("%s %s = %s %s\n", c.pos["suite"], c.pos["metric"], fmtNum(v), c.pos["unit"])
 }
 
@@ -269,7 +270,7 @@ func cmdLog(c *call) {
 	sp := s.resolve(c.flag("sprint"))
 	s.exec("INSERT INTO log (sprint_id, at, kind, text, link, subgoal) VALUES (?, ?, ?, ?, ?, ?)",
 		sp.ID, now(), c.pos["kind"], c.pos["text"], null(c.flag("link")),
-		null(s.pickSubgoal(sp.ID, c.flag("subgoal"), c.has("subgoal"), false)))
+		null(s.pickSubgoal(sp.ID, c.flag("subgoal"), c.has("subgoal"), true)))
 }
 
 // readBody reads the section text before the write lock: stdin can be slow.
@@ -319,9 +320,17 @@ func cmdContextSet(c *call) {
 		fail("new section %q needs --title", c.pos["key"])
 	}
 	var position float64
-	if cur != nil {
+	switch {
+	case c.has("first"):
+		top, ok := s.float("SELECT MIN(position) FROM context_state WHERE sprint_id = ? AND subgoal IS ? AND key != ?",
+			sp.ID, null(subgoal), c.pos["key"])
+		position = top - 1
+		if !ok {
+			position = s.positionAfter("context_versions", sp.ID, nil)
+		}
+	case cur != nil:
 		position = cur.Position
-	} else {
+	default:
 		position = s.positionAfter("context_versions", sp.ID, nil)
 	}
 	s.exec("INSERT INTO context_versions (sprint_id, subgoal, key, at, title, body, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
