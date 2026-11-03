@@ -11,6 +11,7 @@
     ../../modules/home/applications.nix
     ../../modules/home/mpv.nix
     ../../modules/home/swaylock.nix
+    ../../modules/home/t3-ask.nix
 
     # GNOME specific settings
     ../../modules/home/dconf.nix

@@ -119,6 +119,8 @@
         posthog-cli = prev.callPackage ./pkgs/posthog-cli/default.nix {};
         ## Reads T3 Code agent activity for the Noctalia t3-activity plugin
         t3-activity = prev.callPackage ./pkgs/t3-activity/default.nix {};
+        ## Lets the T3 Ask Garmin watch app answer T3 Code questions
+        t3-ask-bridge = prev.callPackage ./pkgs/t3-ask-bridge/default.nix {};
         ## Greptile CLI (npm package, not in nixpkgs)
         greptile-cli = prev.callPackage ./pkgs/greptile-cli/default.nix {};
         ## Garmin Connect MCP server (not in nixpkgs)
