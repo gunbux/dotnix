@@ -23,6 +23,19 @@
     }
   ];
 
+  # Keep swapped-out pages compressed in RAM before they reach the swap file,
+  # so a game's memory comes back from RAM, not disk, after a big build.
+  boot.zswap = {
+    enable = true;
+    compressor = "zstd";
+    maxPoolPercent = 25;
+    shrinkerEnabled = true;
+  };
+
+  # Builds give up memory before the desktop does (14 GB of RAM). Past this,
+  # the kernel reclaims build memory first; builds slow down, games don't.
+  systemd.services.nix-daemon.serviceConfig.MemoryHigh = "6G";
+
   # scx
   # services.scx_loader = {
   #   enable = true;
