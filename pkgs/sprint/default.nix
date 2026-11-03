@@ -1,40 +1,38 @@
 {
   lib,
-  stdenvNoCC,
+  buildGoModule,
   makeWrapper,
-  python3,
   gh,
 }:
-stdenvNoCC.mkDerivation {
+buildGoModule {
   pname = "sprint";
-  version = "0.1.0";
+  version = "0.2.0";
 
   src = lib.fileset.toSource {
     root = ./.;
-    fileset = lib.fileset.unions [./sprint.py ./test_sprint.py];
+    fileset = lib.fileset.unions [
+      ./go.mod
+      ./go.sum
+      (lib.fileset.fileFilter (f: f.hasExt "go") ./.)
+      ./assets
+    ];
   };
 
+  vendorHash = "sha256-BF3w5Fi7X0Sl5ozEV98WHjuI92p+8DVXrZKfWXLYtOc=";
+
+  # modernc.org/sqlite is pure Go.
+  env.CGO_ENABLED = 0;
+  ldflags = ["-s" "-w"];
+
   nativeBuildInputs = [makeWrapper];
-  nativeCheckInputs = [python3];
 
-  doCheck = true;
-  checkPhase = ''
-    runHook preCheck
-    python3 -m unittest -v test_sprint
-    runHook postCheck
-  '';
-
-  installPhase = ''
-    runHook preInstall
-    install -Dm444 sprint.py -t $out/lib/sprint
-    makeWrapper ${lib.getExe python3} $out/bin/sprint \
-      --add-flags "-I $out/lib/sprint/sprint.py" \
-      --suffix PATH : ${lib.makeBinPath [gh]}
-    runHook postInstall
+  # `sprint pr add` and `pr sync` ask GitHub through gh.
+  postInstall = ''
+    wrapProgram $out/bin/sprint --suffix PATH : ${lib.makeBinPath [gh]}
   '';
 
   meta = {
-    description = "Append-only sprint log (goal versions, plan, PRs, benchmarks) for a local Grafana dashboard";
+    description = "Append-only sprint log (goal, subgoals, plan, PRs, benchmarks, context) with local status pages";
     mainProgram = "sprint";
     platforms = lib.platforms.unix;
   };
