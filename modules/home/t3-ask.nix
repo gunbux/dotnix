@@ -18,4 +18,24 @@
     };
     Install.WantedBy = ["default.target"];
   };
+
+  # Publishes the bridge at https://legion-nix.<tailnet>.ts.net:8443 with
+  # Tailscale Funnel. Port 443 stays with T3's own Tailscale serve setting.
+  # Needs HTTPS certificates and the funnel node attribute in the tailnet,
+  # and this user as the tailscale operator.
+  systemd.user.services.t3-ask-funnel = let
+    tailscale = "${pkgs.tailscale}/bin/tailscale";
+  in {
+    Unit = {
+      Description = "Tailscale Funnel :8443 to the T3 Ask bridge";
+      After = ["t3-ask-bridge.service"];
+    };
+    Service = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${tailscale} funnel --bg --https=8443 http://127.0.0.1:8789";
+      ExecStop = "${tailscale} funnel --https=8443 off";
+    };
+    Install.WantedBy = ["default.target"];
+  };
 }
