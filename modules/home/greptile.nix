@@ -44,10 +44,10 @@
   # metrics, monitors). nixpkgs' `pup` is an unrelated HTML parser.
   datadog-pup = pkgs.stdenvNoCC.mkDerivation {
     pname = "datadog-pup";
-    version = "2.3.10";
+    version = "2.4.1";
     src = pkgs.fetchurl {
-      url = "https://github.com/DataDog/pup/releases/download/v2.3.10/pup_2.3.10_Darwin_arm64.tar.gz";
-      hash = "sha256-+gcU639TI7k5WHeHo+7bVoOL5uFQH6ZZJU4at9MTWi0=";
+      url = "https://github.com/DataDog/pup/releases/download/v2.4.1/pup_2.4.1_Darwin_arm64.tar.gz";
+      hash = "sha256-1TUqgLuoBSdQuh9ftj/MHqHI/X8QT4dypRmlVb/nOl0=";
     };
     sourceRoot = ".";
     installPhase = "install -Dm755 pup $out/bin/pup";
