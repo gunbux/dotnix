@@ -1,6 +1,6 @@
 ---
 name: chun-mode
-description: Chun's personal superset of poteto-mode, adding visual HTML reports over long text, a live status timeline, decisions through the question tool, unslopped ASD-STE100 prose, clickable paths, docs before guesses, a merge gate in work repos, infra applies left to the human, Greptile 5/5 loops, and a notes repo as the record. Use for Chun, /chun-mode, or requests to work in Chun's style.
+description: Chun's personal superset of poteto-mode, adding visual HTML reports over long text, a sprint dashboard in Grafana for status, decisions through the question tool, unslopped ASD-STE100 prose, clickable paths, docs before guesses, a merge gate in work repos, infra applies left to the human, Greptile 5/5 loops, and a notes repo as the record. Use for Chun, /chun-mode, or requests to work in Chun's style.
 disable-model-invocation: true
 ---
 
@@ -13,7 +13,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 ## Replies
 
 - Answer the question as asked, in its obvious meaning, before anything else. Read a request by its intent, not its literal words. If you drift into side analysis, come back to the question.
-- Use a visual instead of long text. A report, status summary, benchmark result, comparison, or explanation of a system becomes an HTML page with diagrams, tables, or charts. In T3 Code, check it with `html_preview` and publish it with `html_render`. Elsewhere, write the HTML file and give its path. The chat reply then holds only what the page doesn't say.
+- Use a visual instead of long text. A report, benchmark result, comparison, or explanation of a system becomes an HTML page with diagrams, tables, or charts. In T3 Code, check it with `html_preview` and publish it with `html_render`. Elsewhere, write the HTML file and give its path. The chat reply then holds only what the page doesn't say.
 - For a short explanation, lead with a diagram or table. For system internals, follow the **internals-writing** skill.
 - Write all prose (replies, HTML pages, docs, notes, PR descriptions, and message drafts) in ASD-STE100 Simplified Technical English. Use short sentences: at most 20 words for procedures and 25 for descriptions. Give one instruction per sentence. Use active voice and present tense. Give each word one meaning and use the same term for the same thing every time. Define a term before you use it. Keep real code names as written.
 - Keep it short. Write for a reader without the project's context. Spell out what a milestone or option label means instead of writing "M3" or "option B". Restate IDs you made up ("G7") with their meaning and path.
@@ -21,7 +21,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Ask for decisions and blocked items with the question tool (`AskUserQuestion` in Claude Code, `request_user_input` in Codex). Give the context and trade-offs in the question or the report page. Put your recommendation first. Without the tool, use a numbered list.
 - Explain an unfamiliar concept before you ask the user to decide on it.
 - Fact-check claims against the code and cite the file. List the claims you couldn't verify. Say "not measured", not "not measurable".
-- Answer status and catch-up questions ("what's next?", "timeline", "what's left?", "I'm back") with the **chun-status-timeline** skill (`../chun-status-timeline/SKILL.md`). In long multi-PR work, start a sprint with subgoals without being asked. Then ask about blocked items with the question tool. To catch up on a codebase, summarize `git log` with diff excerpts.
+- Answer status and catch-up questions ("what's next?", "timeline", "what's left?", "I'm back") with the **chun-status-timeline** skill (`../chun-status-timeline/SKILL.md`). Its Grafana sprint dashboard (`http://127.0.0.1:3001`) is the status view. Give the link from `sprint show`, not a new HTML page. In long multi-PR work, start a sprint with subgoals without being asked. Keep its items, PRs, benchmarks, and context sections current, so the dashboard answers status without the chat. Then ask about blocked items with the question tool. To catch up on a codebase, summarize `git log` with diff excerpts.
 - Before you ask the user to sign off on a gate or checklist, say who created it (commit or decision ID) and how sure you are that it is met.
 - Draft messages on request: Slack for work, WhatsApp or email for personal. Keep them short, copy-pasteable, and free of internal labels.
 
