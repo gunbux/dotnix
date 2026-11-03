@@ -273,6 +273,24 @@ class SprintTest(unittest.TestCase):
         self.assertEqual([s for (s,) in self.query("SELECT state FROM pr_events ORDER BY id")],
                          ["opened", "ready"])
 
+    def test_renamed_repo_keeps_syncing(self):
+        old = "https://github.com/o/old-name/pull/3"
+        self.ok("start", "a", "A", "--goal", "g")
+        self.fake_gh("OPEN", url=old)
+        self.ok("pr", "add", old)
+        self.fake_gh("MERGED", merged_at="2026-11-03T01:00:00Z", url="https://github.com/o/new-name/pull/3")
+        self.ok("pr", "sync")
+        self.assertEqual(self.query("SELECT url, state FROM pr_events ORDER BY id"),
+                         [(old, "opened"), (old, "merged")])
+
+    def test_pr_add_by_number_uses_githubs_url(self):
+        url = "https://github.com/o/r/pull/3"
+        self.ok("start", "a", "A", "--goal", "g")
+        self.fake_gh("OPEN", url=url)
+        self.ok("pr", "add", "3")
+        self.ok("pr", "add", url)
+        self.assertEqual(self.query("SELECT url, state FROM pr_events"), [(url, "opened")])
+
     def test_bench_and_log(self):
         self.ok("start", "s1", "One", "--goal", "g")
         self.ok("bench", "build", "seconds", "48", "s", "--baseline")

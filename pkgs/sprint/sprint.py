@@ -314,14 +314,16 @@ def last_pr_event(db, sprint_id, url):
     ).fetchone()[0]
 
 
-def record_pr(db, sprint_id, info, seen):
+def record_pr(db, sprint_id, url, info, seen):
     """Write the events that GitHub shows and the log doesn't have yet.
 
-    `seen` is the PR's newest event id from before the GitHub call. If another
-    writer added an event since, this result may be older than theirs, so it
-    is dropped; the next sync fetches again.
+    `url` is the PR's key in the log. GitHub may return a different URL after
+    a repo rename, so the key is never taken from `info`. `seen` is the key's
+    newest event id from before the GitHub call. If another writer added an
+    event since, this result may be older than theirs, so it is dropped; the
+    next sync fetches again.
     """
-    url, title = info["url"], info["title"]
+    title = info["title"]
     if last_pr_event(db, sprint_id, url) != seen:
         return None
     row = pr_latest(db, sprint_id, url)
@@ -348,32 +350,36 @@ def record_pr(db, sprint_id, info, seen):
     return wrote
 
 
-def fetch(db, a, urls):
-    """Pick the sprint once, note each PR's newest event, then ask GitHub.
-    Runs before the write lock because gh can take seconds."""
-    s = resolve(db, a.sprint)
-    seen = {url: last_pr_event(db, s["id"], url) for url in urls(s)}
-    return s["id"], [(gh_pr(url), seen[url]) for url in seen]
-
-
 def fetch_pr_add(db, a):
-    return fetch(db, a, lambda s: a.urls)
+    """Pick the sprint once, then ask GitHub. Runs before the write lock
+    because gh can take seconds. New PRs are keyed by GitHub's own URL, so
+    `sprint pr add 12` and the full URL name the same PR."""
+    s = resolve(db, a.sprint)
+    results = []
+    for arg in a.urls:
+        info = gh_pr(arg)
+        results.append((info["url"], info, last_pr_event(db, s["id"], info["url"])))
+    return s["id"], results
 
 
 def fetch_pr_sync(db, a):
-    """Every PR that isn't merged, closed ones included, so a reopen shows."""
-    return fetch(db, a, lambda s: [r["url"] for r in db.execute(
-        "SELECT url FROM pr_state WHERE sprint_id = ? AND state != 'merged'", (s["id"],))])
+    """Every PR that isn't merged, closed ones included, so a reopen shows.
+    Keyed by the URL already in the log; `seen` is read before the GitHub call."""
+    s = resolve(db, a.sprint)
+    urls = [r["url"] for r in db.execute(
+        "SELECT url FROM pr_state WHERE sprint_id = ? AND state != 'merged'", (s["id"],))]
+    seen = {url: last_pr_event(db, s["id"], url) for url in urls}
+    return s["id"], [(url, gh_pr(url), seen[url]) for url in urls]
 
 
 def save_prs(db, a, quiet_unchanged):
     sprint_id, results = a.fetched
-    for info, seen in results:
-        wrote = record_pr(db, sprint_id, info, seen)
+    for url, info, seen in results:
+        wrote = record_pr(db, sprint_id, url, info, seen)
         if wrote is None:
-            print(f"{info['url']}: changed during the GitHub call; run `sprint pr sync` again")
+            print(f"{url}: changed during the GitHub call; run `sprint pr sync` again")
         elif wrote or not quiet_unchanged:
-            print(f"{info['url']}: {', '.join(wrote) or 'already tracked'}")
+            print(f"{url}: {', '.join(wrote) or 'already tracked'}")
 
 
 def cmd_pr_add(db, a):
