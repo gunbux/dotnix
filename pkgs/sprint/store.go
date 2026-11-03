@@ -1,0 +1,348 @@
+package main
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	_ "modernc.org/sqlite"
+)
+
+// SchemaVersion is stored in PRAGMA user_version. A bump recreates the views.
+const SchemaVersion = 3
+
+const tablesSQL = `
+CREATE TABLE IF NOT EXISTS sprints (
+  id INTEGER PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  started_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS goal_versions (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  at INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  source TEXT NOT NULL CHECK (source IN ('user', 'agent'))
+);
+CREATE TABLE IF NOT EXISTS item_events (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  item INTEGER NOT NULL,
+  at INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('planned', 'doing', 'blocked', 'done', 'dropped')),
+  owner TEXT NOT NULL CHECK (owner IN ('agent', 'user')),
+  position REAL NOT NULL,
+  note TEXT,
+  subgoal TEXT
+);
+CREATE TABLE IF NOT EXISTS pr_events (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  at INTEGER NOT NULL,
+  url TEXT NOT NULL,
+  title TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('opened', 'ready', 'merged', 'closed')),
+  subgoal TEXT
+);
+CREATE TABLE IF NOT EXISTS bench_results (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  at INTEGER NOT NULL,
+  suite TEXT NOT NULL,
+  metric TEXT NOT NULL,
+  value REAL NOT NULL,
+  unit TEXT NOT NULL,
+  is_baseline INTEGER NOT NULL CHECK (is_baseline IN (0, 1)),
+  commit_sha TEXT,
+  link TEXT,
+  subgoal TEXT
+);
+CREATE TABLE IF NOT EXISTS log (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  at INTEGER NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('decision', 'steer', 'deploy', 'note', 'end')),
+  text TEXT NOT NULL,
+  link TEXT,
+  subgoal TEXT
+);
+-- A subgoal is one stage of the sprint goal, with its own goal and exit
+-- check. key is its slug, and every change adds a row.
+CREATE TABLE IF NOT EXISTS subgoal_events (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  key TEXT NOT NULL,
+  at INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  goal TEXT NOT NULL,
+  done_when TEXT,
+  status TEXT NOT NULL CHECK (status IN ('planned', 'active', 'done', 'dropped')),
+  position REAL NOT NULL,
+  reason TEXT NOT NULL,
+  source TEXT NOT NULL CHECK (source IN ('user', 'agent'))
+);
+-- Context sections: Markdown that explains the work (architecture, how to
+-- run it, caveats, findings). An empty body removes the section.
+CREATE TABLE IF NOT EXISTS context_versions (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  subgoal TEXT,
+  key TEXT NOT NULL,
+  at INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  position REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS item_events_latest ON item_events (sprint_id, item, at, id);
+CREATE INDEX IF NOT EXISTS pr_events_latest ON pr_events (sprint_id, url, id);
+CREATE INDEX IF NOT EXISTS goal_versions_latest ON goal_versions (sprint_id, at, id);
+CREATE INDEX IF NOT EXISTS subgoal_events_latest ON subgoal_events (sprint_id, key, at, id);
+CREATE INDEX IF NOT EXISTS context_versions_latest ON context_versions (sprint_id, subgoal, key, id);
+`
+
+// Columns added after the first release. ADD COLUMN is not an UPDATE, so the
+// append-only triggers allow it, and old rows read as NULL (no subgoal).
+var addedColumns = [][2]string{
+	{"item_events", "subgoal"}, {"pr_events", "subgoal"}, {"bench_results", "subgoal"}, {"log", "subgoal"},
+}
+
+var tables = []string{"sprints", "goal_versions", "item_events", "pr_events", "bench_results", "log",
+	"subgoal_events", "context_versions"}
+
+// Views hold no data, so a schema bump drops and recreates them.
+var views = []string{"item_state", "pr_state", "goal_current", "progress", "burnup",
+	"subgoal_state", "subgoal_progress", "context_state"}
+
+var viewsSQL = []string{`
+CREATE VIEW item_state AS
+  SELECT e.* FROM item_events e
+  WHERE e.id = (SELECT e2.id FROM item_events e2
+                WHERE e2.sprint_id = e.sprint_id AND e2.item = e.item
+                ORDER BY e2.at DESC, e2.id DESC LIMIT 1)`, `
+-- The latest recorded state wins, not the latest timestamp: a merge synced
+-- after a ready keeps the earlier GitHub merge time but must still win.
+CREATE VIEW pr_state AS
+  SELECT p.* FROM pr_events p
+  WHERE p.id = (SELECT MAX(p2.id) FROM pr_events p2
+                WHERE p2.sprint_id = p.sprint_id AND p2.url = p.url)`, `
+CREATE VIEW goal_current AS
+  SELECT g.sprint_id, g.at, g.text, g.reason, g.source,
+         (SELECT COUNT(*) FROM goal_versions g2 WHERE g2.sprint_id = g.sprint_id) AS versions
+  FROM goal_versions g
+  WHERE g.id = (SELECT g2.id FROM goal_versions g2 WHERE g2.sprint_id = g.sprint_id
+                ORDER BY g2.at DESC, g2.id DESC LIMIT 1)`, `
+CREATE VIEW progress AS
+  SELECT s.id AS sprint_id,
+         COALESCE(SUM(i.status = 'done'), 0) AS done,
+         COALESCE(SUM(i.status != 'dropped'), 0) AS in_scope,
+         COALESCE(SUM(i.status = 'dropped'), 0) AS dropped,
+         CASE WHEN SUM(i.status != 'dropped') > 0
+              THEN ROUND(100.0 * SUM(i.status = 'done') / SUM(i.status != 'dropped'))
+              ELSE 0 END AS percent
+  FROM sprints s LEFT JOIN item_state i ON i.sprint_id = s.id
+  GROUP BY s.id`, `
+-- Done and in-scope counts after every item event. Each event adds the
+-- change it makes to the counts, and running sums give the totals.
+CREATE VIEW burnup AS
+  WITH ev AS (
+    SELECT sprint_id, at,
+           (status != 'dropped')
+             - COALESCE(LAG(status != 'dropped') OVER w, 0) AS d_scope,
+           (status = 'done') - COALESCE(LAG(status = 'done') OVER w, 0) AS d_done
+    FROM item_events
+    WINDOW w AS (PARTITION BY sprint_id, item ORDER BY at, id)
+  ),
+  per_time AS (
+    SELECT sprint_id, at, SUM(d_scope) AS d_scope, SUM(d_done) AS d_done
+    FROM ev GROUP BY sprint_id, at
+  )
+  SELECT sprint_id, at AS time,
+         SUM(d_scope) OVER (PARTITION BY sprint_id ORDER BY at) AS in_scope,
+         SUM(d_done) OVER (PARTITION BY sprint_id ORDER BY at) AS done
+  FROM per_time`, `
+CREATE VIEW subgoal_state AS
+  SELECT e.* FROM subgoal_events e
+  WHERE e.id = (SELECT e2.id FROM subgoal_events e2
+                WHERE e2.sprint_id = e.sprint_id AND e2.key = e.key
+                ORDER BY e2.at DESC, e2.id DESC LIMIT 1)`, `
+CREATE VIEW subgoal_progress AS
+  SELECT g.sprint_id, g.key,
+         COALESCE(SUM(i.status = 'done'), 0) AS done,
+         COALESCE(SUM(i.status != 'dropped'), 0) AS in_scope,
+         CASE WHEN SUM(i.status != 'dropped') > 0
+              THEN ROUND(100.0 * SUM(i.status = 'done') / SUM(i.status != 'dropped'))
+              ELSE 0 END AS percent
+  FROM subgoal_state g
+  LEFT JOIN item_state i ON i.sprint_id = g.sprint_id AND i.subgoal = g.key
+  GROUP BY g.sprint_id, g.key`, `
+CREATE VIEW context_state AS
+  SELECT c.* FROM context_versions c
+  WHERE c.id = (SELECT MAX(c2.id) FROM context_versions c2
+                WHERE c2.sprint_id = c.sprint_id AND c2.key = c.key
+                  AND c2.subgoal IS c.subgoal)
+    AND c.body != ''`,
+}
+
+// userError is a mistake in the command line or the request, shown as is.
+type userError struct{ msg string }
+
+func (e userError) Error() string { return e.msg }
+
+func fail(format string, args ...any) { panic(userError{fmt.Sprintf(format, args...)}) }
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+type querier interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+// Store runs queries on one connection (CLI) or one read transaction (pages).
+// Query errors panic; run and the page handler turn them into messages.
+type Store struct{ q querier }
+
+var bg = context.Background()
+
+func (s Store) exec(query string, args ...any) sql.Result {
+	r, err := s.q.ExecContext(bg, query, args...)
+	check(err)
+	return r
+}
+
+func (s Store) insert(query string, args ...any) int64 {
+	id, err := s.exec(query, args...).LastInsertId()
+	check(err)
+	return id
+}
+
+// one scans a single row into dest and reports whether there was one.
+func (s Store) one(query string, args []any, dest ...any) bool {
+	err := s.q.QueryRowContext(bg, query, args...).Scan(dest...)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false
+	}
+	check(err)
+	return true
+}
+
+func (s Store) int(query string, args ...any) int64 {
+	var n sql.NullInt64
+	s.one(query, args, &n)
+	return n.Int64
+}
+
+func (s Store) float(query string, args ...any) (float64, bool) {
+	var n sql.NullFloat64
+	s.one(query, args, &n)
+	return n.Float64, n.Valid
+}
+
+// each calls scan for every row. The rows are closed before it returns.
+func (s Store) each(query string, args []any, scan func(*sql.Rows)) {
+	rows, err := s.q.QueryContext(bg, query, args...)
+	check(err)
+	defer rows.Close()
+	for rows.Next() {
+		scan(rows)
+	}
+	check(rows.Err())
+}
+
+func (s Store) strings(query string, args ...any) []string {
+	var out []string
+	s.each(query, args, func(r *sql.Rows) {
+		var v string
+		check(r.Scan(&v))
+		out = append(out, v)
+	})
+	return out
+}
+
+// null stores "" as NULL, for optional text columns.
+func null(v string) any {
+	if v == "" {
+		return nil
+	}
+	return v
+}
+
+func dsn(path string, extra string) string {
+	return "file:" + path + "?_pragma=busy_timeout(30000)&_pragma=foreign_keys(1)" + extra
+}
+
+// openWrite opens the log on one pinned connection and brings the schema up
+// to date. close releases the connection and the pool.
+func openWrite(path string) (s Store, close func()) {
+	abs, err := filepath.Abs(path)
+	check(err)
+	check(os.MkdirAll(filepath.Dir(abs), 0o755))
+	db, err := sql.Open("sqlite", dsn(abs, ""))
+	check(err)
+	db.SetMaxOpenConns(1)
+	conn, err := db.Conn(bg)
+	check(err)
+	s = Store{conn}
+	close = func() { conn.Close(); db.Close() }
+	s.exec("PRAGMA journal_mode=WAL")
+	s.write(func() {
+		s.exec(tablesSQL)
+		for _, t := range tables {
+			for _, op := range []string{"UPDATE", "DELETE"} {
+				s.exec(fmt.Sprintf("CREATE TRIGGER IF NOT EXISTS %s_no_%s BEFORE %s ON %s "+
+					"BEGIN SELECT RAISE(ABORT, 'sprint log is append-only'); END", t, strings.ToLower(op), op, t))
+			}
+		}
+		for _, tc := range addedColumns {
+			if s.int(fmt.Sprintf("SELECT COUNT(*) FROM pragma_table_info('%s') WHERE name = ?", tc[0]), tc[1]) == 0 {
+				s.exec(fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s TEXT", tc[0], tc[1]))
+			}
+		}
+		if s.int("PRAGMA user_version") < SchemaVersion {
+			for _, v := range views {
+				s.exec("DROP VIEW IF EXISTS " + v)
+			}
+			for _, v := range viewsSQL {
+				s.exec(v)
+			}
+			s.exec(fmt.Sprintf("PRAGMA user_version = %d", SchemaVersion))
+		}
+	})
+	return s, close
+}
+
+// write runs fn in one write transaction. BEGIN IMMEDIATE takes the write
+// lock before any read, so parallel agents can't both read the same next
+// item number.
+func (s Store) write(fn func()) {
+	s.exec("BEGIN IMMEDIATE")
+	ok := false
+	defer func() {
+		if !ok {
+			s.q.ExecContext(bg, "ROLLBACK")
+		}
+	}()
+	fn()
+	s.exec("COMMIT")
+	ok = true
+}
+
+// openRead opens the log read-only, for the pages.
+func openRead(path string) *sql.DB {
+	abs, err := filepath.Abs(path)
+	check(err)
+	db, err := sql.Open("sqlite", dsn(abs, "&mode=ro&_pragma=query_only(1)"))
+	check(err)
+	return db
+}

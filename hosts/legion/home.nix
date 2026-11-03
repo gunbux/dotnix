@@ -12,7 +12,7 @@
     ../../modules/home/mpv.nix
     ../../modules/home/swaylock.nix
     ../../modules/home/t3-ask.nix
-    ../../modules/home/sprint-dashboard.nix
+    ../../modules/home/sprint.nix
 
     # GNOME specific settings
     ../../modules/home/dconf.nix

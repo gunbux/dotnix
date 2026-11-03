@@ -21,7 +21,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Ask for decisions and blocked items with the question tool (`AskUserQuestion` in Claude Code, `request_user_input` in Codex). Give the context and trade-offs in the question or the report page. Put your recommendation first. Without the tool, use a numbered list.
 - Explain an unfamiliar concept before you ask the user to decide on it.
 - Fact-check claims against the code and cite the file. List the claims you couldn't verify. Say "not measured", not "not measurable".
-- Answer status and catch-up questions ("what's next?", "timeline", "what's left?", "I'm back") with the **chun-status-timeline** skill (`../chun-status-timeline/SKILL.md`). In long multi-PR work, start its live dashboard without being asked. Then ask about blocked items with the question tool. To catch up on a codebase, summarize `git log` with diff excerpts.
+- Answer status and catch-up questions ("what's next?", "timeline", "what's left?", "I'm back") with the **chun-status-timeline** skill (`../chun-status-timeline/SKILL.md`). In long multi-PR work, start a sprint with subgoals without being asked. Then ask about blocked items with the question tool. To catch up on a codebase, summarize `git log` with diff excerpts.
 - Before you ask the user to sign off on a gate or checklist, say who created it (commit or decision ID) and how sure you are that it is met.
 - Draft messages on request: Slack for work, WhatsApp or email for personal. Keep them short, copy-pasteable, and free of internal labels.
 
