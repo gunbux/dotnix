@@ -133,8 +133,11 @@ const answered = new Map();
 const ANSWERED_TTL_MS = 10 * 60 * 1000;
 
 async function answer(t3Token, body) {
-  const { rid, tid, i } = body ?? {};
-  if (typeof rid !== "string" || typeof tid !== "string" || !Number.isInteger(i)) {
+  // `a` (one index list per question) comes from current watch builds; `i`
+  // (one index) from the first build. resolveAnswer checks the contents.
+  const { rid, tid, a, i } = body ?? {};
+  const picks = Array.isArray(a) ? a : i;
+  if (typeof rid !== "string" || typeof tid !== "string" || !(Array.isArray(picks) || Number.isInteger(picks))) {
     return [400, { error: "bad_body" }];
   }
   if (answered.has(rid)) return [409, { error: "already_answered" }];
@@ -142,7 +145,7 @@ async function answer(t3Token, body) {
   try {
     const result = await withT3(t3Token, async (t3) => {
       const projection = await t3.projection(tid);
-      const resolved = resolveAnswer(projection, rid, i);
+      const resolved = resolveAnswer(projection, rid, picks);
       if (resolved.status) return resolved;
       await t3.respond(tid, rid, resolved.answer);
       log(`answered thread="${projection.thread.title}" question="${resolved.question}" choice="${resolved.label}" rid=${rid}`);
@@ -197,6 +200,12 @@ async function readJson(request) {
 
 const routes = {
   "GET /v1/pending": async (t3Token) => [200, { items: await withT3(t3Token, listPending) }],
+  // The glance has 64 KB of memory and shows only a count, so it gets the
+  // items without the full question text.
+  "GET /v1/pending?brief=1": async (t3Token) => [
+    200,
+    { items: (await withT3(t3Token, listPending)).map(({ qs, ...item }) => item) },
+  ],
   "POST /v1/answer": async (t3Token, request) => answer(t3Token, await readJson(request)),
 };
 

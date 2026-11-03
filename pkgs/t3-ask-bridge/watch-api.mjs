@@ -2,28 +2,53 @@
 // gets back the small shapes the watch reads, so these rules test without T3.
 //
 // Pending item, as the watch receives it:
-//   { rid, tid, thread, q, opts? }
-// `opts` is present only when the watch can answer: exactly one question,
-// single-select, 1 to 4 options. Without `opts` the watch shows
-// "Answer on phone".
+//   { rid, tid, thread, q, opts?, qs? }
+// `qs` is present when the watch can answer the whole request: 1 to 4
+// questions, each with 1 to 4 options, single- or multi-select. Each entry is
+//   { h: header, q: question, m: multi-select, o: [[label, description], ...] }
+// `opts` is the format of the first watch build (one single-select question,
+// labels only). It stays so that build keeps working. Without `qs` the watch
+// shows "Answer on phone".
+//
+// Answer body: { rid, tid, a: [[option index, ...], ...] }, one list per
+// question in order. The first build sends { rid, tid, i } instead.
 
-export const LIMITS = { thread: 40, question: 120, option: 24, options: 4 };
+export const LIMITS = {
+  thread: 40,
+  question: 240,
+  legacyQuestion: 120,
+  header: 16,
+  option: 24,
+  description: 90,
+  options: 4,
+  questions: 4,
+};
 
 const clip = (text, max) => {
-  const flat = String(text).replace(/\s+/g, " ").trim();
+  const flat = String(text ?? "").replace(/\s+/g, " ").trim();
   return flat.length <= max ? flat : flat.slice(0, max - 1) + "…";
 };
 
+const hasWatchOptions = (question) =>
+  question.options.length >= 1 && question.options.length <= LIMITS.options;
+
 const isWatchAnswerable = (questions) =>
-  questions.length === 1 &&
-  !questions[0].multiSelect &&
-  questions[0].options.length >= 1 &&
-  questions[0].options.length <= LIMITS.options;
+  questions.length >= 1 && questions.length <= LIMITS.questions && questions.every(hasWatchOptions);
+
+const isLegacyAnswerable = (questions) =>
+  questions.length === 1 && !questions[0].multiSelect && hasWatchOptions(questions[0]);
 
 const questionItem = (projection, requestId) =>
   projection.turnItems.find(
     (item) => item.type === "user_input_request" && item.requestId === requestId,
   );
+
+const watchQuestion = (question) => ({
+  h: clip(question.header, LIMITS.header),
+  q: clip(question.question, LIMITS.question),
+  m: question.multiSelect === true,
+  o: question.options.map((o) => [clip(o.label, LIMITS.option), clip(o.description, LIMITS.description)]),
+});
 
 export function pendingItems(projection) {
   const { thread } = projection;
@@ -31,22 +56,37 @@ export function pendingItems(projection) {
     .filter((request) => request.kind === "user_input" && request.status === "pending")
     .map((request) => {
       const questions = questionItem(projection, request.id)?.questions ?? [];
-      const base = {
+      const item = {
         rid: request.id,
         tid: thread.id,
         thread: clip(thread.title, LIMITS.thread),
-        q: clip(questions[0]?.question ?? "Open T3 to see this question", LIMITS.question),
+        q: clip(questions[0]?.question ?? "Open T3 to see this question", LIMITS.legacyQuestion),
       };
-      return isWatchAnswerable(questions)
-        ? { ...base, opts: questions[0].options.map((o) => clip(o.label, LIMITS.option)) }
-        : base;
+      if (isLegacyAnswerable(questions)) {
+        item.opts = questions[0].options.map((o) => clip(o.label, LIMITS.option));
+      }
+      if (isWatchAnswerable(questions)) item.qs = questions.map(watchQuestion);
+      return item;
     });
 }
 
-// Decides what one watch answer means for one thread projection. Returns
-// either { answer } with the T3 answers record, or { status, error } with the
-// HTTP status the watch gets.
-export function resolveAnswer(projection, requestId, index) {
+const optionValue = (option) => option.value ?? option.label;
+
+// Checks one question's picked indices: exactly one for single-select, one or
+// more distinct ones for multi-select, all in range.
+function pickedOptions(question, picks) {
+  if (!Array.isArray(picks) || picks.length === 0) return null;
+  if (!question.multiSelect && picks.length !== 1) return null;
+  if (new Set(picks).size !== picks.length) return null;
+  const options = picks.map((i) => (Number.isInteger(i) ? question.options[i] : undefined));
+  return options.includes(undefined) ? null : options;
+}
+
+// Decides what one watch answer means for one thread projection. `picks` is
+// the `a` list, or a bare index from the first watch build. Returns either
+// { answer } with the T3 answers record, or { status, error } with the HTTP
+// status the watch gets.
+export function resolveAnswer(projection, requestId, picks) {
   const request = projection.runtimeRequests.find(
     (r) => r.id === requestId && r.kind === "user_input",
   );
@@ -54,13 +94,24 @@ export function resolveAnswer(projection, requestId, index) {
   if (request.status === "resolved") return { status: 409, error: "already_answered" };
   if (request.status !== "pending") return { status: 404, error: `not_pending:${request.status}` };
   const questions = questionItem(projection, requestId)?.questions ?? [];
-  if (!isWatchAnswerable(questions)) return { status: 422, error: "answer_on_phone" };
-  const [question] = questions;
-  const option = question.options[index];
-  if (!Number.isInteger(index) || option === undefined) return { status: 422, error: "bad_index" };
+  const legacy = !Array.isArray(picks);
+  if (legacy ? !isLegacyAnswerable(questions) : !isWatchAnswerable(questions)) {
+    return { status: 422, error: "answer_on_phone" };
+  }
+  const lists = legacy ? [[picks]] : picks;
+  if (lists.length !== questions.length) return { status: 422, error: "bad_index" };
+  const answer = {};
+  const labels = [];
+  for (const [n, question] of questions.entries()) {
+    const options = pickedOptions(question, lists[n]);
+    if (options === null) return { status: 422, error: "bad_index" };
+    // T3 takes a string for single-select and a list for multi-select.
+    answer[question.id] = question.multiSelect ? options.map(optionValue) : optionValue(options[0]);
+    labels.push(options.map((o) => o.label).join(", "));
+  }
   return {
-    answer: { [question.id]: option.value ?? option.label },
-    question: question.question,
-    label: option.label,
+    answer,
+    question: questions.map((q) => q.question).join(" | "),
+    label: labels.join(" | "),
   };
 }
