@@ -282,6 +282,8 @@ class SprintTest(unittest.TestCase):
         self.ok("pr", "sync")
         self.assertEqual(self.query("SELECT url, state FROM pr_events ORDER BY id"),
                          [(old, "opened"), (old, "merged")])
+        self.ok("pr", "add", old)
+        self.assertEqual(self.query("SELECT COUNT(DISTINCT url) FROM pr_events"), [(1,)])
 
     def test_pr_add_by_number_uses_githubs_url(self):
         url = "https://github.com/o/r/pull/3"

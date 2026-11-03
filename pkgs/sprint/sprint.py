@@ -353,12 +353,17 @@ def record_pr(db, sprint_id, url, info, seen):
 def fetch_pr_add(db, a):
     """Pick the sprint once, then ask GitHub. Runs before the write lock
     because gh can take seconds. New PRs are keyed by GitHub's own URL, so
-    `sprint pr add 12` and the full URL name the same PR."""
+    `sprint pr add 12` and the full URL name the same PR. A URL already in the
+    log keeps its key, even if the repo was renamed since."""
     s = resolve(db, a.sprint)
     results = []
     for arg in a.urls:
+        known = last_pr_event(db, s["id"], arg)
         info = gh_pr(arg)
-        results.append((info["url"], info, last_pr_event(db, s["id"], info["url"])))
+        if known is not None:
+            results.append((arg, info, known))
+        else:
+            results.append((info["url"], info, last_pr_event(db, s["id"], info["url"])))
     return s["id"], results
 
 
