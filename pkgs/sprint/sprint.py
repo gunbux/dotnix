@@ -374,7 +374,14 @@ def fetch_pr_sync(db, a):
     urls = [r["url"] for r in db.execute(
         "SELECT url FROM pr_state WHERE sprint_id = ? AND state != 'merged'", (s["id"],))]
     seen = {url: last_pr_event(db, s["id"], url) for url in urls}
-    return s["id"], [(url, gh_pr(url), seen[url]) for url in urls]
+    results = []
+    for url in urls:
+        # One deleted or private repo must not stop the other PRs updating.
+        try:
+            results.append((url, gh_pr(url), seen[url]))
+        except subprocess.CalledProcessError as e:
+            print(f"sprint: could not read {url}: {(e.stderr or '').strip()}", file=sys.stderr)
+    return s["id"], results
 
 
 def save_prs(db, a, quiet_unchanged):

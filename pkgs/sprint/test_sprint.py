@@ -293,6 +293,28 @@ class SprintTest(unittest.TestCase):
         self.ok("pr", "add", url)
         self.assertEqual(self.query("SELECT url, state FROM pr_events"), [(url, "opened")])
 
+    def test_sync_skips_a_pr_it_cannot_read(self):
+        gone, ok = "https://github.com/o/gone/pull/1", "https://github.com/o/r/pull/3"
+        self.ok("start", "a", "A", "--goal", "g")
+        self.fake_gh("OPEN", url=gone)
+        self.ok("pr", "add", gone)
+        self.fake_gh("OPEN", url=ok)
+        self.ok("pr", "add", ok)
+        real = sprint.gh_pr
+
+        def flaky(url):
+            if url == gone:
+                raise sprint.subprocess.CalledProcessError(1, "gh", stderr="Could not resolve to a Repository")
+            return {"title": "T", "url": url, "state": "MERGED", "createdAt": "2026-11-02T10:00:00Z",
+                    "mergedAt": "2026-11-03T01:00:00Z", "closedAt": None}
+
+        sprint.gh_pr = flaky
+        self.addCleanup(setattr, sprint, "gh_pr", real)
+        code, _, err = self.run_cli("pr", "sync")
+        self.assertEqual(code, 0)
+        self.assertIn("could not read https://github.com/o/gone/pull/1", err)
+        self.assertEqual({p["url"]: p["state"] for p in self.show()["prs"]}, {gone: "opened", ok: "merged"})
+
     def test_bench_and_log(self):
         self.ok("start", "s1", "One", "--goal", "g")
         self.ok("bench", "build", "seconds", "48", "s", "--baseline")
