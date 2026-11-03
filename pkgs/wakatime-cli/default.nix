@@ -10,11 +10,11 @@
   assets = {
     x86_64-linux = {
       arch = "linux-amd64";
-      hash = "sha256-DlDVf2jh9rMrdcwy5xmSxMDS8komRQ5i6VVVC8ERN5g=";
+      hash = "sha256-QFsrayZpDUDEsKD/zhtw315nPzpbWQC0x7sjVWHtyO8=";
     };
     aarch64-darwin = {
       arch = "darwin-arm64";
-      hash = "sha256-zlx3DTLEsGP79ayMDxBJPjHjGccM0LFJ2eshDxW8EOs=";
+      hash = "sha256-7sVaRXS9r1Fp1YmAZjDvZQWyU/ATNWnv4DXLcgKoD8U=";
     };
   };
   asset = assets.${stdenvNoCC.hostPlatform.system} or (throw "wakatime-cli: no release binary for ${stdenvNoCC.hostPlatform.system}");
