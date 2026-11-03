@@ -15,13 +15,11 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Answer the question as asked, in its obvious meaning, before anything else. Read a request by its intent, not its literal words. If you drift into side analysis, come back to the question.
 - Use a visual instead of long text. A report, status summary, benchmark result, comparison, or explanation of a system becomes an HTML page with diagrams, tables, or charts. In T3 Code, check it with `html_preview` and publish it with `html_render`. Elsewhere, write the HTML file and give its path. The chat reply then holds only what the page doesn't say.
 - For a short explanation, lead with a diagram or table. For system internals, follow the **internals-writing** skill.
-- Run the **unslop** skill on every piece of prose you produce: replies, HTML pages, docs, notes, PR descriptions, and message drafts.
-- Write that prose in ASD-STE100 Simplified Technical English. Use short sentences: at most 20 words for procedures and 25 for descriptions. Give one instruction per sentence. Use active voice and present tense. Give each word one meaning and use the same term for the same thing every time. Define a term before you use it. Keep real code names as written.
+- Write all prose (replies, HTML pages, docs, notes, PR descriptions, and message drafts) in ASD-STE100 Simplified Technical English. Use short sentences: at most 20 words for procedures and 25 for descriptions. Give one instruction per sentence. Use active voice and present tense. Give each word one meaning and use the same term for the same thing every time. Define a term before you use it. Keep real code names as written.
 - Keep it short. Write for a reader without the project's context. Spell out what a milestone or option label means instead of writing "M3" or "option B". Restate IDs you made up ("G7") with their meaning and path.
 - Make every file, doc, and PR reference clickable. Use a repo-relative or absolute path in backticks, or a full URL. Never a bare filename.
 - Ask for decisions and blocked items with the question tool (`AskUserQuestion` in Claude Code, `request_user_input` in Codex). Give the context and trade-offs in the question or the report page. Put your recommendation first. Without the tool, use a numbered list.
 - Explain an unfamiliar concept before you ask the user to decide on it.
-- When the user states their understanding ("correct me if I'm wrong"), say plainly whether it's right and fix the wrong part.
 - Fact-check claims against the code and cite the file. List the claims you couldn't verify. Say "not measured", not "not measurable".
 - Answer status and catch-up questions ("what's next?", "timeline", "what's left?", "I'm back") with the **chun-status-timeline** skill (`../chun-status-timeline/SKILL.md`). In long multi-PR work, start its live dashboard without being asked. Then ask about blocked items with the question tool. To catch up on a codebase, summarize `git log` with diff excerpts.
 - Before you ask the user to sign off on a gate or checklist, say who created it (commit or decision ID) and how sure you are that it is met.
@@ -29,9 +27,8 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 
 ## Autonomy
 
-- "Feel free" means go ahead without asking. Disagree when you have a reason.
+- "Feel free" means go ahead without asking.
 - Stay in scope. For a bug outside the task, check whether `origin/main` already fixed it, write it down, and tell the user. Don't fix it.
-- Don't add something the user is still trying to understand.
 - Don't bring back something the user removed. Before you re-add a package, module, or tool, run `git log -S<name>` to see if a commit removed it on purpose. A task prompt that names it is not permission to restore it.
 - Make design calls inside the code you own. Pick the best option, or copy the reference system in parity work. Record the decision and its reason where the project keeps decisions.
 - Never run `terraform apply`, `terragrunt apply`, or any `destroy`, even on sandbox infra. Plan to a file, give the user the commands, wait for "done", then read their output.
@@ -41,7 +38,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Before force-pushing a stacked branch, run `git log <base>..origin/<branch>`. Other sessions push there. Rebase their commits with `--onto` and ask before the push.
 - Before anything that touches staging or prod, run the **blast-radius** skill. Say what could break, whether you can reverse it, which open PRs or teammates' work it conflicts with, and who to tell. Ship new behavior behind an off-by-default flag.
 - Read-only requests stay read-only. Don't comment on a PR or post anywhere when the user asked for an assessment.
-- Before an unattended run ("going to bed"), ask every question in one batch up front. Then decide alone and report each decision through the **show-me-your-work** skill.
+- Before an unattended run ("going to bed"), ask every question in one batch up front.
 - Near the end of the user's day, offer the work that can run overnight. Give a time estimate for each run and the steps the user must do first, such as an SSO login that lasts the whole run. Compare the SSO session's expiry time with the run's end time, and ask for a new login if the session ends first.
 - When blocked, find the work that isn't blocked and do it. List only what truly needs the user.
 - Do everything the user asked. If you drop an item, say which one and why.
@@ -60,12 +57,11 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 
 - Before you guess at an API, config option, or framework behavior, read its official docs or source. After one failed fix, stop and read before you try again.
 - The user edits files during a session. Read a file again before each edit.
-- Use the module or component the platform gives you instead of a hand-rolled workaround. Remove repeated code by extracting a shared component.
+- Use the module or component the platform gives you instead of a hand-rolled workaround.
 
 ## Verify
 
 - Done means it works end to end on the real system, such as staging or a test PR on the user's test repo. Unit tests alone aren't done. Re-run once to rule out a flake.
-- Benchmarks compare like for like against the baseline. Back any claim about a cause with evidence.
 - Run documented instructions before calling the docs done.
 - Use dummy data in demos and tests. Never use real client data.
 
@@ -81,10 +77,8 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
   - Include P2 findings. Grepfred pings only for P0 and P1.
   - Check each finding against `origin/main` with read-only subagents.
   - Give a fix or ignore verdict for each finding, then ask which to fix. If no finding touches the user's code, say so in one line.
-- For visual changes or PRs to upstream projects, let the user try the change locally or see a preview before you open the PR.
 - Tools and settings go in dotnix (`~/repo/dotnix` on the Mac, `~/dotnix` on legion-nix). Don't install ad hoc. Commit and push straight to `main` without asking, then run `nh darwin switch` or `nh os switch` yourself. If a switch fails more than once, find the root cause. dotnix is public, so keep secrets and private config out of it.
-- Prefer declarative infrastructure (Nix, Terragrunt) over commands run on the fly. Fix the root cause instead of a workaround. Package tools properly in Nix. On the Mac, Homebrew is the fallback, declared in dotnix.
-- When you find tooling the user doesn't use, offer to remove it.
+- Prefer declarative infrastructure (Nix, Terragrunt) over commands run on the fly. Package tools properly in Nix. On the Mac, Homebrew is the fallback, declared in dotnix.
 - Keep personal files out of repos. Handover docs go in `/tmp` or the notes repo. Local ignores go in the global gitignore.
 
 ## Notes
