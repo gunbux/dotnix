@@ -474,20 +474,21 @@ in {
         {{/each}}
       '' "No context sections yet. Agents add them with `sprint context set`."))
 
-    # A table of (time, subgoal, status), split into one row per subgoal by
+    # A table of (time, key, title, status), split into one row per subgoal by
     # the partitionByValues transformation. Each status lasts until the next.
     (panel 7 "Subgoal status over time" "state-timeline" (pos 14 16 10 5) "table" ["time"] ''
-      SELECT e.at AS time, g.title AS subgoal, e.status AS status
+      SELECT e.at AS time, e.key AS key, g.title AS subgoal, e.status AS status
       FROM subgoal_events e JOIN subgoal_state g ON g.sprint_id = e.sprint_id AND g.key = e.key
       WHERE e.sprint_id = ${sid}
       UNION ALL
-      SELECT ${endTime}, title, status FROM subgoal_state WHERE sprint_id = ${sid}
+      SELECT ${endTime}, key, title, status FROM subgoal_state WHERE sprint_id = ${sid}
       ORDER BY time'' {
       transformations = [
         {
           id = "partitionByValues";
           options = {
-            fields = ["subgoal"];
+            # By key, so two subgoals with one title keep two rows.
+            fields = ["key" "subgoal"];
             keepFields = false;
             naming.asLabels = true;
           };
@@ -551,6 +552,7 @@ in {
     (panel 10 "Benchmarks over time" "timeseries" (pos 14 31 10 10) "time series" ["time"] ''
       SELECT at AS time,
              suite || ' ' || metric || ' (' || unit || ')'
+             || CASE WHEN '$subgoal' = '-' THEN ' · ' || COALESCE(subgoal, 'whole sprint') ELSE ''' END
              || CASE WHEN is_baseline = 1 THEN ' baseline' ELSE ''' END AS series,
              value
       FROM bench_results
