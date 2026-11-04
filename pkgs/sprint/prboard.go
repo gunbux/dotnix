@@ -347,7 +347,13 @@ func syncBoard(c *call, f fetchedPRs) {
 	}
 	board := buildBoard(statuses, s.openItems(f.sprintID))
 	s.recordReviews(f.sprintID, board, key)
-	s.exec("INSERT INTO pr_syncs (sprint_id, at) VALUES (?, ?)", f.sprintID, now())
+	// Only a complete sync makes the board's data fresh; after a failed read
+	// the dashboard keeps showing the last complete sync's age.
+	if f.failed == 0 {
+		s.exec("INSERT INTO pr_syncs (sprint_id, at) VALUES (?, ?)", f.sprintID, now())
+	} else {
+		c.printf("PR board: %d PRs could not be read; the data age stays at the last complete sync\n", f.failed)
+	}
 	counts := map[string]int{}
 	for _, p := range board {
 		counts[p.Group]++

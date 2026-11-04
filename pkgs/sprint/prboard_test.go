@@ -226,6 +226,8 @@ func TestPRSyncKeepsTheBoardWhenOneReviewStateFails(t *testing.T) {
 	eq(t, code, 0)
 	contains_(t, errOut, "could not read the review state of "+prURL(1)+": rate limited")
 	contains_(t, out, "PR board: 0 merge now")
+	contains_(t, out, "1 PRs could not be read")
+	eq(t, h.query("SELECT COUNT(*) FROM pr_syncs"), "(0)")
 }
 
 func TestPRNoteIsKeptAndCanBeRemoved(t *testing.T) {

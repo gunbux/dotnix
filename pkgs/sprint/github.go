@@ -75,6 +75,7 @@ type fetchedPRs struct {
 	prs      []fetchedPR
 	statuses map[string]prStatus // review state of the PRs still open, by log key
 	lastSync int64               // the newest pr_syncs id before the GitHub calls
+	failed   int                 // PRs GitHub could not tell about
 }
 
 // recordPR writes the events that GitHub shows and the log doesn't have yet.
@@ -156,6 +157,7 @@ func fetchPRSync(c *call) {
 		info, err := ghPR(u)
 		if err != nil {
 			fmt.Fprintf(c.errOut, "sprint: could not read %s: %v\n", u, err)
+			out.failed++
 			continue
 		}
 		out.prs = append(out.prs, fetchedPR{u, info, seen[u]})
@@ -167,6 +169,7 @@ func fetchPRSync(c *call) {
 		}
 	}
 	out.statuses = fetchStatuses(c, open)
+	out.failed += len(open) - len(out.statuses)
 	c.fetched = out
 }
 
