@@ -104,6 +104,8 @@
         };
         ## wakatime-cli release binary; nixpkgs lags behind (modules/home/wakatime.nix)
         wakatime-cli = prev.callPackage ./pkgs/wakatime-cli/default.nix {};
+        ## Agent-minute heartbeats that wakatime-cli's AI parsing misses (final: uses the wakatime-cli above)
+        wakatime-agent-activity = final.callPackage ./pkgs/wakatime-agent-activity/default.nix {};
         ## Pokémon sprite greeting for interactive shells
         pokego = prev.callPackage ./pkgs/pokego/default.nix {};
         ## Fun cursor

@@ -18,6 +18,11 @@
 # into AI heartbeats, but only when an editor runs it. A timer runs
 # `wakatime-cli --sync-ai-activity` every 5 minutes, so agent work is sent
 # while no editor is open. Neovim uses the same pinned CLI (pkgs/wakatime-cli).
+#
+# That parsing sends a heartbeat only for prompts and file reads and edits, so
+# an agent that runs commands or waits on tools looks idle. The same timer then
+# runs wakatime-agent-activity (pkgs/wakatime-agent-activity), which sends one
+# heartbeat per active agent minute. Backfill: wakatime-agent-activity --since <ISO time>.
 {
   lib,
   pkgs,
@@ -25,6 +30,7 @@
 }: let
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
   cli = lib.getExe pkgs.wakatime-cli;
+  agentActivity = lib.getExe pkgs.wakatime-agent-activity;
   syncInterval = 300; # seconds
 
   # Space-separated executable and arguments, no shell syntax (wakatime-cli).
@@ -69,7 +75,8 @@ in
         Unit.Description = "Send Claude Code and Codex activity to Wakapi";
         Service = {
           Type = "oneshot";
-          ExecStart = "${cli} --sync-ai-activity";
+          # "-": a failed sync must not skip the agent minutes.
+          ExecStart = ["-${cli} --sync-ai-activity" agentActivity];
         };
       };
       systemd.user.timers.wakatime-ai-sync = {
@@ -86,7 +93,7 @@ in
       launchd.agents.wakatime-ai-sync = {
         enable = true;
         config = {
-          ProgramArguments = [cli "--sync-ai-activity"];
+          ProgramArguments = ["/bin/sh" "-c" "${cli} --sync-ai-activity; exec ${agentActivity}"];
           StartInterval = syncInterval;
           RunAtLoad = true;
           ProcessType = "Background";
