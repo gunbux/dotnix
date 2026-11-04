@@ -138,7 +138,10 @@ func buildBoard(statuses []prStatus, items []Item) []*prReview {
 		if s.Mergeable == "CONFLICTING" {
 			fix = append(fix, "Has merge conflicts with its base")
 		}
-		if p.Threads > 0 {
+		switch {
+		case s.ReviewThreads.PageInfo.HasNextPage:
+			fix = append(fix, "Over 100 review threads; check them on GitHub")
+		case p.Threads > 0:
 			fix = append(fix, plural(p.Threads, "open review thread"))
 		}
 		for _, b := range p.Bots {

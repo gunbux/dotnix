@@ -7,12 +7,6 @@ import (
 	"testing"
 )
 
-func stubStatus(t *testing.T, fn func(string) (prStatus, error)) {
-	real := ghPRStatus
-	ghPRStatus = fn
-	t.Cleanup(func() { ghPRStatus = real })
-}
-
 func prURL(n int) string { return fmt.Sprintf("https://github.com/o/r/pull/%d", n) }
 
 // clean is an open PR that is ready to merge: greptile 5/5 on its head,
@@ -84,6 +78,9 @@ func TestBoardGroupsEachPRByWhatBlocksIt(t *testing.T) {
 	eq(t, got(6), "fix: 2 open review threads")
 	eq(t, got(7), "wait: No review bot has scored it yet")
 	eq(t, got(8), "wait: 1 check still running")
+	many := clean(9, "i")
+	many.ReviewThreads.PageInfo.HasNextPage = true
+	eq(t, strings.Join(boardOf([]prStatus{many})[9].Steps, "; "), "Over 100 review threads; check them on GitHub")
 	eq(t, b[4].Bots[0], botScore{Name: "greptile", Score: 4, OnHead: true})
 }
 
