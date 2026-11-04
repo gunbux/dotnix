@@ -117,8 +117,10 @@ func TestPollRunsDetachedUntilStopped(t *testing.T) {
 	eq(t, h.live("SELECT title, subgoal, stale_after, state FROM live_items"), "(Ticker, bench, 15, live)")
 	pid := pidOf(t, h, "tick")
 	// Its own session, so the shell that started it can end.
-	sid, _ := syscall.Getsid(pid)
-	eq(t, sid, pid)
+	// syscall has no Getsid on Linux; the raw call works on Linux and macOS.
+	sid, _, errno := syscall.RawSyscall(syscall.SYS_GETSID, uintptr(pid), 0, 0)
+	eq(t, errno, syscall.Errno(0))
+	eq(t, int(sid), pid)
 	contains_(t, h.ok("poll", "ls"), "tick\ts1\tPID "+strconv.Itoa(pid)+"\tevery 5s\tupdated ")
 
 	// Starting it again replaces the running poller.
