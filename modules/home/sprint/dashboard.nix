@@ -56,6 +56,20 @@ let
       background: rgba(128, 128, 128, .2); }
     .pill-active { background: rgba(87, 148, 242, .22); color: #5794F2; }
     .pill-done { background: rgba(115, 191, 105, .22); color: #73BF69; }
+    .pill-doing { background: rgba(87, 148, 242, .22); color: #5794F2; }
+    .pill-blocked { background: rgba(255, 152, 48, .22); color: #FF9830; }
+
+    .todo { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start;
+      padding: 9px 12px; margin: 0 0 8px; border-radius: 8px; border-left: 3px solid transparent;
+      background: rgba(128, 128, 128, .08); }
+    .todo.next { border-left-color: #5794F2; background: rgba(87, 148, 242, .10); }
+    .todo .num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+      font-size: 12px; font-weight: 600; background: rgba(128, 128, 128, .22); }
+    .todo.next .num { background: #5794F2; color: #fff; }
+    .todo .t { font-size: 14px; line-height: 1.4; font-weight: 500; }
+    .todo .meta { margin-top: 5px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .todo .meta .chip { margin: 0; }
+    .todo .note { font-size: 12px; line-height: 1.4; opacity: .7; margin-top: 4px; }
 
     .ctx { --accent: #B877D9; margin: 0 0 12px; padding: 10px 14px 4px;
       border: 1px solid rgba(128, 128, 128, .22); border-left: 3px solid var(--accent);
@@ -472,14 +486,27 @@ in {
       };
     })
 
-    (panel 4 "Do now (you)" "table" (pos 0 7 9 9) "table" [] ''
-      SELECT ROW_NUMBER() OVER (ORDER BY position) AS "#", title AS "Step", status AS "Status",
-             ${subgoalTitle "subgoal"} AS "Subgoal"
-      FROM item_state
-      WHERE sprint_id = ${sid} AND owner = 'user' AND status NOT IN ('done', 'dropped')
-        AND ${inScope "subgoal"}
-      ORDER BY position''
-    (table [(colorText "Status") (width "#" 36) (width "Status" 80) (width "Subgoal" 130) (wrapText "Step")]))
+    # The user's open steps as numbered cards; the first is the next one.
+    (panel 4 "Do now (you)" "marcusolsson-dynamictext-panel" (pos 0 7 9 9) "table" [] ''
+        SELECT ROW_NUMBER() OVER (ORDER BY position) AS n, title, status,
+               ${subgoalTitle "subgoal"} AS stage, COALESCE(note, ''') AS note,
+               CASE WHEN ROW_NUMBER() OVER (ORDER BY position) = 1 THEN 'next' ELSE ''' END AS cls
+        FROM item_state
+        WHERE sprint_id = ${sid} AND owner = 'user' AND status NOT IN ('done', 'dropped')
+          AND ${inScope "subgoal"}
+        ORDER BY position''
+      (text "allRows" ''
+        {{#each data}}
+        <div class="todo {{cls}}">
+          <div class="num">{{n}}</div>
+          <div>
+            <div class="t">{{title}}</div>
+            <div class="meta"><span class="pill pill-{{status}}">{{status}}</span>{{#if stage}}<span class="chip">{{stage}}</span>{{/if}}</div>
+            {{#if note}}<div class="note">{{note}}</div>{{/if}}
+          </div>
+        </div>
+        {{/each}}
+      '' "Nothing for you to do now."))
 
     (panel 5 "Burn-up: done vs. in scope" "timeseries" (pos 9 7 15 9) "time series" ["time"] ''
       SELECT time, in_scope AS "In scope", done AS "Done"

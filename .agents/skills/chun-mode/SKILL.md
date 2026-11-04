@@ -1,6 +1,6 @@
 ---
 name: chun-mode
-description: Chun's personal superset of poteto-mode, adding visual HTML reports over long text, a sprint dashboard in Grafana for status, decisions through the question tool, unslopped ASD-STE100 prose, clickable paths, docs before guesses, a merge gate in work repos, infra applies left to the human, Greptile 5/5 loops, and a notes repo as the record. Use for Chun, /chun-mode, or requests to work in Chun's style.
+description: Chun's personal superset of poteto-mode, adding visual HTML reports over long text, two status views on trial (a Grafana sprint dashboard and a static HTML page), decisions through the question tool, unslopped ASD-STE100 prose, clickable paths, docs before guesses, a merge gate in work repos, infra applies left to the human, Greptile 5/5 loops, and a notes repo as the record. Use for Chun, /chun-mode, or requests to work in Chun's style.
 disable-model-invocation: true
 ---
 
@@ -21,7 +21,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Ask for decisions and blocked items with the question tool (`AskUserQuestion` in Claude Code, `request_user_input` in Codex). Give the context and trade-offs in the question or the report page. Put your recommendation first. Without the tool, use a numbered list.
 - Explain an unfamiliar concept before you ask the user to decide on it.
 - Fact-check claims against the code and cite the file. List the claims you couldn't verify. Say "not measured", not "not measurable".
-- Answer status and catch-up questions ("what's next?", "timeline", "what's left?", "I'm back") with the **chun-status-timeline** skill (`../chun-status-timeline/SKILL.md`). Its Grafana sprint dashboard (`http://127.0.0.1:3001`) is the status view. Give the link from `sprint show`, not a new HTML page. In long multi-PR work, start a sprint with subgoals without being asked. Keep its items, PRs, benchmarks, and context sections current, so the dashboard answers status without the chat. Then ask about blocked items with the question tool. To catch up on a codebase, summarize `git log` with diff excerpts.
+- Answer status and catch-up questions ("what's next?", "timeline", "what's left?", "I'm back") with the **chun-status-timeline** skill (`../chun-status-timeline/SKILL.md`). For now, status has two views, so Chun can pick the better one: the Grafana sprint dashboard (`http://127.0.0.1:3001`) and a static HTML status page (`http://localhost:8800/<sprint>/`). Keep both current and give both links. In long multi-PR work, start a sprint with subgoals without being asked. Keep its items, PRs, benchmarks, and context sections current, so both views answer status without the chat. Then ask about blocked items with the question tool. To catch up on a codebase, summarize `git log` with diff excerpts.
 - Before you ask the user to sign off on a gate or checklist, say who created it (commit or decision ID) and how sure you are that it is met.
 - Draft messages on request: Slack for work, WhatsApp or email for personal. Keep them short, copy-pasteable, and free of internal labels.
 

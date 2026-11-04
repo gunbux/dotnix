@@ -648,3 +648,14 @@ func TestBenchRmHidesEarlierResults(t *testing.T) {
 	eq(t, h.query("SELECT text FROM activity WHERE kind = 'bench' AND text LIKE 'Benchmark removed%'"),
 		"(Benchmark removed: boot p50 (split by backend))")
 }
+
+func TestItemSetMovesAnItem(t *testing.T) {
+	h := viewHarness(t)
+	h.ok("item", "add", "later")
+	h.ok("item", "add", "latest")
+	// The harness has items 1 and 2; "later" is 3 and "latest" is 4.
+	h.ok("item", "set", "4", "--first")
+	h.ok("item", "set", "3", "--after", "4")
+	eq(t, h.query("SELECT item FROM item_state ORDER BY position"), "(4) (3) (1) (2)")
+	h.fails("item", "set", "1", "--first", "--after", "2")
+}

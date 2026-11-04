@@ -64,7 +64,9 @@ func init() {
 				"owner":   {choices: owners},
 				"title":   {help: "new title"},
 				"note":    {help: "why"},
-				"subgoal": {help: "move the item to this subgoal; - for the whole sprint"}}},
+				"subgoal": {help: "move the item to this subgoal; - for the whole sprint"},
+				"after":   {help: "move the item after this item number"},
+				"first":   {isBool: true, help: "move the item before every other item"}}},
 		{path: "pr add", help: "track PRs; records their GitHub history", run: cmdPRAdd, prefetch: fetchPRAdd,
 			args:  []argDef{{name: "url", many: true}},
 			flags: map[string]flagDef{"subgoal": {help: subgoalHelp + " (new PRs only)"}}},
@@ -246,9 +248,19 @@ func cmdItemSet(c *call) {
 	if c.has("subgoal") {
 		subgoal = s.pickSubgoal(sp.ID, c.flag("subgoal"), true, false)
 	}
+	position := cur.Position
+	switch {
+	case c.has("first") && c.has("after"):
+		fail("pass --first or --after, not both")
+	case c.has("first"):
+		position, _ = s.float("SELECT MIN(position) - 1 FROM item_state WHERE sprint_id = ?", sp.ID)
+	case c.has("after"):
+		p := s.latestItem(sp.ID, itemNumber(c.flag("after"))).Position
+		position = s.positionAfter("item_state", sp.ID, &p)
+	}
 	s.exec("INSERT INTO item_events (sprint_id, item, at, title, status, owner, position, note, subgoal) "+
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		sp.ID, cur.Item, now(), title, status, owner, cur.Position, null(c.flag("note")), null(subgoal))
+		sp.ID, cur.Item, now(), title, status, owner, position, null(c.flag("note")), null(subgoal))
 	c.printf("item %d: %s\n", cur.Item, status)
 }
 

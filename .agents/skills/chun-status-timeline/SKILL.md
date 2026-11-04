@@ -1,6 +1,6 @@
 ---
 name: chun-status-timeline
-description: Track long multi-PR work as a sprint (one goal) split into subgoals (stages with their own goal and exit check), in an append-only log (the `sprint` CLI) shown on a local Grafana dashboard. The dashboard holds the goal and every change to it, progress over time, the user's next steps, PRs, benchmarks, and agent-written context such as architecture, findings, and caveats. Use for /chun-status-timeline, or when Chun asks for the timeline, overview, "what's next", "what's left", "how far along", or status during multi-PR work.
+description: Track long multi-PR work as a sprint (one goal) split into subgoals (stages with their own goal and exit check), in an append-only log (the `sprint` CLI) shown on a local Grafana dashboard and, on trial, a static HTML status page. The dashboard holds the goal and every change to it, progress over time, the user's next steps, PRs, benchmarks, and agent-written context such as architecture, findings, and caveats. Use for /chun-status-timeline, or when Chun asks for the timeline, overview, "what's next", "what's left", "how far along", or status during multi-PR work.
 ---
 
 # Chun status timeline
@@ -81,12 +81,23 @@ The charts show the numbers. Context sections show what the numbers mean. Keep t
 
 Replace a section with `sprint context set <same key>`. The old version stays in the log. Use `--first` to put a section at the top of its view. Remove a section that no longer applies with `sprint context rm <key>`. Update a section when its facts change, not on every step. Keep secrets, customer names, and customer data out: the log stays on this machine, but the user shares screenshots.
 
+## Static status page (trial)
+
+Chun is comparing two status views. Keep a static HTML page beside the dashboard until Chun picks one.
+
+- Write one generator script per sprint, `/tmp/status/<slug>/gen.py`. It reads `sprint show --json` and the log (read-only). It also reads live sources that the log doesn't hold, such as a runner's log or the review scores of open PRs. It writes `/tmp/status/<slug>/index.html`.
+- Show the dashboard's facts from the same log, so the two views never disagree: the goal, each subgoal with a progress bar and its "done when" check, "Do now", the open steps in order, benchmarks (latest run against baseline, and how many are within 5%), open PRs with their review verdict, and the context sections. Add live run progress, which the dashboard can't show.
+- Follow the **dataviz** skill. Support light and dark mode. Put "Do now" at the top.
+- Run the generator every 60 s in a detached loop, `/tmp/status/<slug>/loop.sh`. Record its PID. The page reloads itself every 30 s.
+- Serve `/tmp/status` on `http://localhost:8800`. If nothing listens there, start `python3 -m http.server 8800 --bind 127.0.0.1 --directory /tmp/status` detached, and record its PID.
+- After Chun has used both views for a few status answers, ask with the question tool which one to keep.
+
 ## Answer status questions
 
 Run `sprint pr sync`, then `sprint show`. Reply with:
 
 1. The active subgoals with their progress (`3 of 5 done`) and "done when" checks.
 2. The "Do now" steps for the user.
-3. The dashboard link from `sprint show`: the whole-sprint link, or the subgoal link when the question is about one stage.
+3. Both links: the dashboard link from `sprint show` (the whole-sprint link, or the subgoal link when the question is about one stage) and the static page.
 
-Don't repeat what the dashboard shows. List running agents with their task and status in the reply, because the dashboard doesn't show them.
+Don't repeat what the dashboard shows. List running agents with their task and status in the reply, because the views don't show them.
