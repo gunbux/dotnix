@@ -18,4 +18,6 @@
     # GNOME specific settings
     ../../modules/home/dconf.nix
   ];
+
+  services.t3-ask-map-funnel.enable = true;
 }
