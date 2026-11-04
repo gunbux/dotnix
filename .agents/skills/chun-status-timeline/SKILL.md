@@ -85,10 +85,10 @@ Replace a section with `sprint context set <same key>`. The old version stays in
 
 Chun is comparing two status views. Keep a static HTML page beside the dashboard until Chun picks one.
 
-- Write one generator script per sprint, `/tmp/status/<slug>/gen.py`. It reads `sprint show --json` and the log (read-only). It also reads live sources that the log doesn't hold, such as a runner's log or the review scores of open PRs. It writes `/tmp/status/<slug>/index.html`.
+- Write one generator script per sprint, `/tmp/status/sprint-<slug>/gen.py`. It reads `sprint show --json` and the log (read-only). It also reads live sources that the log doesn't hold, such as a runner's log or the review scores of open PRs. It writes `/tmp/status/sprint-<slug>/index.html`.
 - Show the dashboard's facts from the same log, so the two views never disagree: the goal, each subgoal with a progress bar and its "done when" check, "Do now", the open steps in order, benchmarks (latest run against baseline, and how many are within 5%), open PRs with their review verdict, and the context sections. Add live run progress, which the dashboard can't show.
 - Follow the **dataviz** skill. Support light and dark mode. Put "Do now" at the top.
-- Run the generator every 60 s in a detached loop, `/tmp/status/<slug>/loop.sh`. Record its PID. The page reloads itself every 30 s.
+- Run the generator every 60 s in a detached loop, `/tmp/status/sprint-<slug>/loop.sh`. Record its PID. The page reloads itself every 30 s.
 - Serve `/tmp/status` on `http://localhost:8800`. If nothing listens there, start `python3 -m http.server 8800 --bind 127.0.0.1 --directory /tmp/status` detached, and record its PID.
 - After Chun has used both views for a few status answers, ask with the question tool which one to keep.
 
