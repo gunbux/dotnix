@@ -36,72 +36,33 @@ let
 
   pos = x: y: w: h: {inherit x y w h;};
 
-  # CSS for the text panels, scoped to the panel by the plugin. Grafana's
-  # theme colors are not CSS variables, so neutrals use translucent grey
-  # (fine on light and dark) and accents use Grafana's palette hues.
-  textStyles = ''
-    .dt-row { border-bottom: 0; padding: 2px 4px; }
+  # Active stages first, done ones last.
+  stageOrder = "CASE g.status WHEN 'active' THEN 0 WHEN 'done' THEN 2 ELSE 1 END";
 
-    .hero .eyebrow { display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
-      font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
-    .hero .goal { font-size: 19px; line-height: 1.35; font-weight: 500; margin-bottom: 12px; }
-    .callout { border-left: 3px solid #73BF69; background: rgba(115, 191, 105, .10);
-      border-radius: 0 6px 6px 0; padding: 7px 12px; margin-bottom: 10px; line-height: 1.45; }
-    .callout-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
-      color: #73BF69; margin-bottom: 2px; }
-    .chip { display: inline-block; font-size: 11px; padding: 2px 8px; margin: 0 6px 4px 0;
-      border-radius: 10px; background: rgba(128, 128, 128, .16); }
-    .note { font-size: 12px; line-height: 1.45; opacity: .75; margin-top: 4px; }
-    .pill { font-size: 10px; letter-spacing: .04em; padding: 1px 7px; border-radius: 9px;
-      background: rgba(128, 128, 128, .2); }
-    .pill-active { background: rgba(87, 148, 242, .22); color: #5794F2; }
-    .pill-done { background: rgba(115, 191, 105, .22); color: #73BF69; }
-    .pill-doing { background: rgba(87, 148, 242, .22); color: #5794F2; }
-    .pill-blocked { background: rgba(255, 152, 48, .22); color: #FF9830; }
-
-    .ctx { --accent: #B877D9; margin: 0 0 12px; padding: 10px 14px 4px;
-      border: 1px solid rgba(128, 128, 128, .22); border-left: 3px solid var(--accent);
-      border-radius: 6px; background: rgba(128, 128, 128, .04); }
-    .ctx-decision { --accent: #FF9830; background: rgba(255, 152, 48, .06); }
-    .ctx-finding { --accent: #5794F2; }
-    .ctx-risk { --accent: #F2495C; }
-    .ctx-h { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-      margin-bottom: 8px; color: var(--accent);
-      font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
-    .ctx-h .when { color: rgb(128, 128, 128); font-size: 11px; font-weight: 400;
-      letter-spacing: 0; text-transform: none; white-space: nowrap; }
-    .ctx p { margin: 0 0 8px; line-height: 1.55; }
-    .ctx ul, .ctx ol { margin: 0 0 8px; padding-left: 18px; }
-    .ctx li { margin: 0 0 6px; padding-left: 2px; line-height: 1.5; }
-    .ctx li::marker { color: var(--accent); }
-    .ctx strong { font-weight: 600; }
-    .ctx h1, .ctx h2, .ctx h3, .ctx h4 { margin: 12px 0 6px; font-size: 13px; font-weight: 600; }
-    .ctx table { border-collapse: separate; border-spacing: 0; margin: 4px 0 10px; font-size: 12.5px;
-      border: 1px solid rgba(128, 128, 128, .25); border-radius: 6px; overflow: hidden; }
-    .ctx th, .ctx td { border: 0; border-bottom: 1px solid rgba(128, 128, 128, .18);
-      padding: 5px 10px; text-align: left; vertical-align: top; }
-    .ctx tr:last-child td { border-bottom: 0; }
-    .ctx th { background: rgba(128, 128, 128, .12); font-weight: 600; }
-    .ctx tbody tr:nth-child(even) td { background: rgba(128, 128, 128, .05); }
-    .ctx code { font-size: .88em; padding: 1px 5px; border-radius: 4px; background: rgba(128, 128, 128, .16); }
-    .ctx pre { padding: 8px 10px; border-radius: 6px; overflow: auto; background: rgba(128, 128, 128, .12); }
-    .ctx pre code { padding: 0; background: none; }
-    .ctx blockquote { margin: 4px 0 10px; padding: 6px 12px; border-left: 3px solid var(--accent);
-      border-radius: 0 6px 6px 0; background: rgba(128, 128, 128, .08); }
-    .ctx blockquote p { margin: 0; color: inherit; }
-    .ctx a { text-decoration: none; border-bottom: 1px dotted; }
-  '';
-
-  text = renderMode: content: defaultContent: {
+  # One section of the static status page as a Business Text panel. Its
+  # queries get refIds A, B, ...; ./page/prelude.js and ./page/<name>.js
+  # build the HTML from them, and ./page/page.css styles it.
+  pagePanel = id: name: gridPos: sqls: {
+    inherit id gridPos;
+    title = "";
+    type = "marcusolsson-dynamictext-panel";
+    transparent = true;
+    datasource = ds;
+    targets =
+      builtins.genList
+      (i: target "table" (builtins.elemAt sqls i) [] // {refId = builtins.elemAt ["A" "B" "C" "D"] i;})
+      (builtins.length sqls);
     options = {
-      inherit renderMode content defaultContent;
+      renderMode = "data";
+      content = "{{{html}}}";
+      defaultContent = "{{{html}}}";
       wrap = true;
       editors = [];
-      helpers = "";
+      helpers = builtins.readFile ./page/prelude.js + "\n" + builtins.readFile (./page + "/${name}.js");
       afterRender = "";
       externalStyles = [];
       contentPartials = [];
-      styles = textStyles;
+      styles = builtins.readFile ./page/page.css;
     };
   };
 
@@ -122,21 +83,6 @@ let
         value = 25;
       }
     ];
-  };
-
-  # "you" stands out; the agent's steps stay plain.
-  ownerColors = {
-    type = "value";
-    options = {
-      user = {
-        text = "you";
-        color = "orange";
-      };
-      agent = {
-        text = "agent";
-        color = "transparent";
-      };
-    };
   };
 
   statusColors = {
@@ -363,455 +309,328 @@ in {
   ];
 
   panels = [
-    (panel 1 "Goal" "marcusolsson-dynamictext-panel" (pos 0 0 11 7) "table" [] ''
-        SELECT 'Sprint goal · ' || s.title AS eyebrow, NULL AS status, g.text AS goal, NULL AS done_when,
-               'Goal v' || g.versions AS version,
-               'changed ' || strftime('%Y-%m-%d %H:%M', g.at, 'unixepoch', 'localtime') AS changed,
-               CASE WHEN g.reason = 'sprint start' THEN NULL ELSE 'Why: ' || g.reason END AS note
-        FROM sprints s JOIN goal_current g ON g.sprint_id = s.id
-        WHERE s.id = ${sid} AND '$subgoal' = '-'
+    # The static status page, section by section. Each panel runs its SQL
+    # (refId A, B, ...) and a builder from ./page, which writes the HTML.
+    (pagePanel 31 "header" (pos 0 0 17 5) [
+      "SELECT s.title, g.text AS goal, g.versions, g.at FROM sprints s JOIN goal_current g ON g.sprint_id = s.id WHERE s.id = ${sid}"
+      "SELECT title, status, goal, done_when FROM subgoal_state WHERE sprint_id = ${sid} AND key = '$subgoal'"
+    ])
+    (pagePanel 32 "progress" (pos 17 0 7 5) [
+      ''
+        SELECT percent, done, in_scope FROM progress WHERE sprint_id = ${sid} AND '$subgoal' = '-'
         UNION ALL
-        SELECT 'Subgoal · ' || g.title, g.status, g.goal, g.done_when,
-               (SELECT p.done || ' of ' || p.in_scope || ' items done' FROM subgoal_progress p
-                WHERE p.sprint_id = g.sprint_id AND p.key = g.key),
-               'changed ' || strftime('%Y-%m-%d %H:%M', g.at, 'unixepoch', 'localtime'),
-               'Part of: ' || (SELECT text FROM goal_current WHERE sprint_id = ${sid})
-        FROM subgoal_state g WHERE g.sprint_id = ${sid} AND g.key = '$subgoal' ''
-      # One HTML block (no blank lines), so Markdown leaves it alone.
-      (text "everyRow" ''
-        <div class="hero">
-        <div class="eyebrow">{{eyebrow}}{{#if status}}<span class="pill pill-{{status}}">{{status}}</span>{{/if}}</div>
-        <div class="goal">{{goal}}</div>
-        {{#if done_when}}
-        <div class="callout"><div class="callout-label">Done when</div>{{done_when}}</div>
-        {{/if}}
-        <div><span class="chip">{{version}}</span><span class="chip">{{changed}}</span></div>
-        {{#if note}}
-        <div class="note">{{note}}</div>
-        {{/if}}
-        </div>
-      '' "No sprint is selected."))
+        SELECT percent, done, in_scope FROM subgoal_progress WHERE sprint_id = ${sid} AND key = '$subgoal' ''
+    ])
+    (pagePanel 33 "donow" (pos 0 5 10 10) [
+      ''
+        SELECT i.item, i.title, i.status, i.note, COALESCE(g.title, ''') AS stage
+        FROM item_state i LEFT JOIN subgoal_state g ON g.sprint_id = i.sprint_id AND g.key = i.subgoal
+        WHERE i.sprint_id = ${sid} AND i.owner = 'user' AND i.status NOT IN ('done', 'dropped')
+          AND ${inScope "i.subgoal"}
+        ORDER BY i.position''
+    ])
+    (pagePanel 34 "stages" (pos 10 5 14 10) [
+      ''
+        SELECT g.key, g.title, g.status, g.done_when, p.done, p.in_scope, p.percent
+        FROM subgoal_state g JOIN subgoal_progress p ON p.sprint_id = g.sprint_id AND p.key = g.key
+        WHERE g.sprint_id = ${sid} AND g.status != 'dropped'
+        ORDER BY ${stageOrder}, g.position''
+    ])
+    (pagePanel 35 "context" (pos 0 15 24 9) [
+      "SELECT title, body, at FROM context_state WHERE sprint_id = ${sid} AND subgoal IS NULL AND body != '' ORDER BY position, id"
+    ])
+    (pagePanel 36 "left" (pos 0 24 24 14) [
+      ''
+        SELECT g.key, g.title, g.status, g.goal
+        FROM subgoal_state g
+        WHERE g.sprint_id = ${sid} AND g.status != 'dropped' AND ${inScope "g.key"}
+        ORDER BY ${stageOrder}, g.position''
+      ''
+        SELECT item, title, owner, status, note, subgoal FROM item_state
+        WHERE sprint_id = ${sid} AND status NOT IN ('done', 'dropped') AND ${inScope "subgoal"}
+        ORDER BY position''
+      ''
+        SELECT subgoal, title, body, at FROM context_state
+        WHERE sprint_id = ${sid} AND subgoal IS NOT NULL AND body != ''' AND ${inScope "subgoal"}
+        ORDER BY position, id''
+    ])
+    (pagePanel 37 "bench" (pos 0 38 24 9) [
+      ''
+        SELECT suite, metric, unit, latest, baseline, change, ${subgoalTitle "subgoal"} AS stage
+        FROM bench_summary
+        WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
+        ORDER BY suite, COALESCE(change, -1e9) DESC''
+    ])
+    (pagePanel 38 "prs" (pos 0 47 24 6) [
+      ''
+        SELECT url, title, state, ${subgoalTitle "subgoal"} AS stage FROM pr_state
+        WHERE sprint_id = ${sid} AND state IN ('opened', 'ready') AND ${inScope "subgoal"}
+        ORDER BY at DESC''
+      "SELECT COUNT(*) AS n FROM pr_state WHERE sprint_id = ${sid} AND state = 'merged' AND ${inScope "subgoal"}"
+    ])
 
-    (panel 2 "Progress" "stat" (pos 11 0 5 7) "table" [] ''
-      SELECT percent AS "Done", done || ' of ' || in_scope AS "Items"
-      FROM progress WHERE sprint_id = ${sid} AND '$subgoal' = '-'
-      UNION ALL
-      SELECT percent, done || ' of ' || in_scope
-      FROM subgoal_progress WHERE sprint_id = ${sid} AND key = '$subgoal' '' {
-      fieldConfig = {
-        defaults = {
-          color.mode = "fixed";
-          color.fixedColor = "text";
+    (row 39 "Charts: burn-up, stage status over time, activity" 54 [
+      (panel 5 "Burn-up: done vs. in scope" "timeseries" (pos 0 55 14 9) "time series" ["time"] ''
+        SELECT time, in_scope AS "In scope", done AS "Done"
+        FROM scoped_burnup WHERE sprint_id = ${sid} AND scope = '$subgoal'
+        UNION ALL
+        SELECT ${endTime}, in_scope, done FROM (
+          SELECT in_scope, done FROM scoped_burnup
+          WHERE sprint_id = ${sid} AND scope = '$subgoal' ORDER BY time DESC LIMIT 1)
+        ORDER BY time'' {
+        fieldConfig = {
+          defaults =
+            line
+            // {
+              custom =
+                line.custom
+                // {
+                  lineInterpolation = "stepAfter";
+                  showPoints = "never";
+                };
+              decimals = 0;
+              min = 0;
+            };
+          overrides = [
+            (override "In scope" [
+              {
+                id = "color";
+                value = {
+                  mode = "fixed";
+                  fixedColor = "text";
+                };
+              }
+            ])
+            (override "Done" [
+              {
+                id = "color";
+                value = {
+                  mode = "fixed";
+                  fixedColor = "blue";
+                };
+              }
+              {
+                id = "custom.fillOpacity";
+                value = 15;
+              }
+            ])
+          ];
         };
-        overrides = [
-          (override "Done" [
-            {
-              id = "unit";
-              value = "percent";
-            }
-            {
-              id = "color";
-              value = {
-                mode = "thresholds";
-              };
-            }
-            {
-              id = "thresholds";
-              value = {
-                mode = "absolute";
-                steps = [
-                  {
-                    color = "text";
-                    value = null;
-                  }
-                  {
-                    color = "green";
-                    value = 100;
-                  }
-                ];
-              };
-            }
-          ])
-        ];
-      };
-      options = {
-        reduceOptions = {
-          values = false;
-          calcs = ["lastNotNull"];
-          fields = "/.*/";
+        options.legend = {
+          displayMode = "list";
+          placement = "bottom";
         };
-        textMode = "value_and_name";
-        colorMode = "value";
-        graphMode = "none";
-        justifyMode = "center";
-        orientation = "horizontal";
-      };
-    })
-
-    (panel 3 "Subgoals (click one to open it)" "bargauge" (pos 16 0 8 7) "table" [] ''
-      SELECT g.title || ' · ' || g.status || ' · ' || p.done || '/' || p.in_scope AS label,
-             p.percent AS "Done", g.key AS key
-      FROM subgoal_state g
-      JOIN subgoal_progress p ON p.sprint_id = g.sprint_id AND p.key = g.key
-      WHERE g.sprint_id = ${sid} AND g.status != 'dropped'
-      ORDER BY g.position'' {
-      fieldConfig.defaults = {
-        unit = "percent";
-        min = 0;
-        max = 100;
-        displayName = "\${__data.fields.label}";
-        color = {
-          mode = "fixed";
-          fixedColor = "blue";
-        };
-        links = [
+      })
+      # A table of (time, key, title, status), split into one row per subgoal by
+      # the partitionByValues transformation. Each status lasts until the next.
+      (panel 7 "Subgoal status over time" "state-timeline" (pos 14 55 10 9) "table" ["time"] ''
+        SELECT e.at AS time, e.key AS key, g.title AS subgoal, e.status AS status
+        FROM subgoal_events e JOIN subgoal_state g ON g.sprint_id = e.sprint_id AND g.key = e.key
+        WHERE e.sprint_id = ${sid}
+        UNION ALL
+        SELECT ${endTime}, key, title, status FROM subgoal_state WHERE sprint_id = ${sid}
+        ORDER BY time'' {
+        transformations = [
           {
-            title = "Open this subgoal";
-            url = subgoalLink "\${__data.fields.key}";
+            id = "partitionByValues";
+            options = {
+              # By key, so two subgoals with one title keep two rows.
+              fields = ["key" "subgoal"];
+              keepFields = false;
+              naming.asLabels = true;
+            };
           }
         ];
-        noValue = "No subgoals";
-      };
-      options = {
-        reduceOptions = {
-          values = true;
-          calcs = [];
-          # Numeric fields only: the percent. (A name filter would see
-          # each row's display name, not "Done".)
-          fields = "";
+        fieldConfig.defaults = {
+          displayName = "\${__field.labels.subgoal}";
+          color.mode = "fixed";
+          mappings = [statusColors];
+          custom = {
+            fillOpacity = 70;
+            lineWidth = 0;
+          };
         };
-        displayMode = "basic";
-        orientation = "horizontal";
-        showUnfilled = true;
-        valueMode = "color";
-        namePlacement = "top";
-        sizing = "auto";
-      };
-    })
+        options = {
+          showValue = "auto";
+          mergeValues = true;
+          rowHeight = 0.8;
+          legend.showLegend = false;
+        };
+      })
+      (panel 8 "Activity" "table" (pos 0 64 24 10) "table" ["When"] ''
+          SELECT at AS "When", kind AS "Kind", text AS "What", link AS "Link"
+          FROM activity WHERE sprint_id = ${sid} AND ${inScope "subgoal"}
+          ORDER BY at DESC, id DESC LIMIT 300''
+        (table [
+          (when "When")
+          (width "When" 105)
+          (width "Kind" 70)
+          (wrapText "What")
+          (linkTo "What" "\${__data.fields.Link}")
+          (hide "Link")
+        ]))
+    ])
 
-    # Every open step. The user's steps come first, then the active stages,
-    # each in plan order. The full list, done items too, is in "Plan: every item".
-    (panel 23 "What's left (your steps first)" "table" (pos 0 7 14 9) "table" [] ''
-        SELECT i.item AS "#", i.title AS "Step", i.owner AS "Owner", i.status AS "Status",
-               COALESCE(g.title, 'Whole sprint') AS "Stage", i.note AS "Note"
-        FROM item_state i
-        LEFT JOIN subgoal_state g ON g.sprint_id = i.sprint_id AND g.key = i.subgoal
-        WHERE i.sprint_id = ${sid} AND ${inScope "i.subgoal"} AND i.status NOT IN ('done', 'dropped')
-        ORDER BY i.owner = 'user' DESC,
-                 CASE g.status WHEN 'active' THEN 0 WHEN 'planned' THEN 1 ELSE 2 END,
-                 g.position, i.position''
-      (table [
-          (colorText "Status")
-          (override "Owner" [
+    (row 22 "Benchmark charts" 55 [
+      # One bar chart per suite: each metric's latest run beside its baseline.
+      (panel 19 "\${suite}: latest run against baseline" "barchart" (pos 0 57 12 12) "table" [] ''
+          SELECT metric || ' (' || unit || ')' AS "Metric", latest AS "Latest", baseline AS "Baseline"
+          FROM bench_summary
+          WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
+          ORDER BY COALESCE(latest, 0) - COALESCE(baseline, 0) DESC, metric'' {
+        description = "Lower is better for times. The table below colours the change: green within 5% of the baseline or better, orange up to 25% worse, red more.";
+        repeat = "suite";
+        repeatDirection = "h";
+        maxPerRow = 2;
+        fieldConfig = {
+          defaults = {
+            color.mode = "fixed";
+            custom = {
+              fillOpacity = 85;
+              lineWidth = 0;
+              gradientMode = "none";
+              axisSoftMin = 0;
+              axisPlacement = "auto";
+            };
+          };
+          overrides = [
+            (override "Latest" [
+              {
+                id = "color";
+                value = {
+                  mode = "fixed";
+                  fixedColor = "#5794F2";
+                };
+              }
+            ])
+            (override "Baseline" [
+              {
+                id = "color";
+                value = {
+                  mode = "fixed";
+                  fixedColor = "#FF9830";
+                };
+              }
+            ])
+          ];
+        };
+        options = {
+          orientation = "horizontal";
+          xField = "Metric";
+          showValue = "always";
+          stacking = "none";
+          groupWidth = 0.8;
+          barWidth = 0.9;
+          barRadius = 0.1;
+          xTickLabelMaxLength = 40;
+          legend = {
+            showLegend = true;
+            displayMode = "list";
+            placement = "bottom";
+          };
+          tooltip.mode = "multi";
+        };
+      })
+      (panel 9 "Benchmarks: latest run vs baseline" "table" (pos 0 69 14 14) "table" [] ''
+          SELECT suite AS "Suite", metric AS "Metric", ${subgoalTitle "subgoal"} AS "Subgoal",
+                 latest AS "Latest", baseline AS "Baseline", unit AS "Unit", change AS "Change %",
+                 runs AS "Runs"
+          FROM bench_summary
+          WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
+          ORDER BY subgoal, suite, metric''
+        (table [
+          (width "Suite" 170)
+          (width "Subgoal" 110)
+          (width "Latest" 65)
+          (width "Baseline" 70)
+          (width "Unit" 45)
+          (width "Change %" 75)
+          (width "Runs" 45)
+          (width "Metric" 110)
+          (wrapText "Metric")
+          (override "Change %" [
             {
-              id = "mappings";
-              value = [ownerColors];
+              id = "decimals";
+              value = 1;
             }
             {
               id = "custom.cellOptions";
               value = {type = "color-background";};
             }
-          ])
-          (width "#" 40)
-          (width "Owner" 60)
-          (width "Status" 75)
-          (width "Stage" 140)
-          (wrapText "Step")
-          (wrapText "Note")
-        ]))
-
-    (panel 5 "Burn-up: done vs. in scope" "timeseries" (pos 14 7 10 9) "time series" ["time"] ''
-      SELECT time, in_scope AS "In scope", done AS "Done"
-      FROM scoped_burnup WHERE sprint_id = ${sid} AND scope = '$subgoal'
-      UNION ALL
-      SELECT ${endTime}, in_scope, done FROM (
-        SELECT in_scope, done FROM scoped_burnup
-        WHERE sprint_id = ${sid} AND scope = '$subgoal' ORDER BY time DESC LIMIT 1)
-      ORDER BY time'' {
-      fieldConfig = {
-        defaults =
-          line
-          // {
-            custom =
-              line.custom
-              // {
-                lineInterpolation = "stepAfter";
-                showPoints = "never";
-              };
-            decimals = 0;
-            min = 0;
-          };
-        overrides = [
-          (override "In scope" [
+            {
+              id = "thresholds";
+              value = changeSteps;
+            }
             {
               id = "color";
-              value = {
-                mode = "fixed";
-                fixedColor = "text";
-              };
-            }
-          ])
-          (override "Done" [
-            {
-              id = "color";
-              value = {
-                mode = "fixed";
-                fixedColor = "blue";
-              };
+              value.mode = "thresholds";
             }
             {
-              id = "custom.fillOpacity";
-              value = 15;
-            }
-          ])
-        ];
-      };
-      options.legend = {
-        displayMode = "list";
-        placement = "bottom";
-      };
-    })
-
-    (panel 6 "Context" "marcusolsson-dynamictext-panel" (pos 0 16 14 15) "table" [] ''
-        SELECT title, body,
-               strftime('%Y-%m-%d %H:%M', at, 'unixepoch', 'localtime') AS updated,
-               CASE WHEN lower(title) LIKE '%decision%' THEN 'decision'
-                    WHEN lower(title) LIKE '%finding%' THEN 'finding'
-                    WHEN lower(title) LIKE '%risk%' OR lower(title) LIKE '%caveat%'
-                      OR lower(title) LIKE '%not measured%' OR lower(title) LIKE '%open question%' THEN 'risk'
-                    ELSE 'info' END AS kind
-        FROM context_state
-        WHERE sprint_id = ${sid}
-          AND subgoal IS (CASE WHEN '$subgoal' = '-' THEN NULL ELSE '$subgoal' END)
-        ORDER BY position, id''
-      # Each section is a card: the <section> and header lines are HTML, and
-      # the blank lines around the body let Markdown render it.
-      (text "allRows" ''
-        {{#each data}}
-        <section class="ctx ctx-{{kind}}">
-        <div class="ctx-h"><span>{{title}}</span><span class="when">updated {{updated}}</span></div>
-
-        {{{body}}}
-
-        </section>
-
-        {{/each}}
-      '' "No context sections yet. Agents add them with `sprint context set`."))
-
-    # A table of (time, key, title, status), split into one row per subgoal by
-    # the partitionByValues transformation. Each status lasts until the next.
-    (panel 7 "Subgoal status over time" "state-timeline" (pos 14 16 10 5) "table" ["time"] ''
-      SELECT e.at AS time, e.key AS key, g.title AS subgoal, e.status AS status
-      FROM subgoal_events e JOIN subgoal_state g ON g.sprint_id = e.sprint_id AND g.key = e.key
-      WHERE e.sprint_id = ${sid}
-      UNION ALL
-      SELECT ${endTime}, key, title, status FROM subgoal_state WHERE sprint_id = ${sid}
-      ORDER BY time'' {
-      transformations = [
-        {
-          id = "partitionByValues";
-          options = {
-            # By key, so two subgoals with one title keep two rows.
-            fields = ["key" "subgoal"];
-            keepFields = false;
-            naming.asLabels = true;
-          };
-        }
-      ];
-      fieldConfig.defaults = {
-        displayName = "\${__field.labels.subgoal}";
-        color.mode = "fixed";
-        mappings = [statusColors];
-        custom = {
-          fillOpacity = 70;
-          lineWidth = 0;
-        };
-      };
-      options = {
-        showValue = "auto";
-        mergeValues = true;
-        rowHeight = 0.8;
-        legend.showLegend = false;
-      };
-    })
-
-    (panel 8 "Activity" "table" (pos 14 21 10 10) "table" ["When"] ''
-        SELECT at AS "When", kind AS "Kind", text AS "What", link AS "Link"
-        FROM activity WHERE sprint_id = ${sid} AND ${inScope "subgoal"}
-        ORDER BY at DESC, id DESC LIMIT 300''
-      (table [
-        (when "When")
-        (width "When" 105)
-        (width "Kind" 70)
-        (wrapText "What")
-        (linkTo "What" "\${__data.fields.Link}")
-        (hide "Link")
-      ]))
-
-    # One bar chart per suite: each metric's latest run beside its baseline.
-    (panel 19 "\${suite}: latest run against baseline" "barchart" (pos 0 31 12 12) "table" [] ''
-        SELECT metric || ' (' || unit || ')' AS "Metric", latest AS "Latest", baseline AS "Baseline"
-        FROM bench_summary
-        WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
-        ORDER BY COALESCE(latest, 0) - COALESCE(baseline, 0) DESC, metric'' {
-      description = "Lower is better for times. The table below colours the change: green within 5% of the baseline or better, orange up to 25% worse, red more.";
-      repeat = "suite";
-      repeatDirection = "h";
-      maxPerRow = 2;
-      fieldConfig = {
-        defaults = {
-          color.mode = "fixed";
-          custom = {
-            fillOpacity = 85;
-            lineWidth = 0;
-            gradientMode = "none";
-            axisSoftMin = 0;
-            axisPlacement = "auto";
-          };
-        };
-        overrides = [
-          (override "Latest" [
-            {
-              id = "color";
-              value = {
-                mode = "fixed";
-                fixedColor = "#5794F2";
-              };
-            }
-          ])
-          (override "Baseline" [
-            {
-              id = "color";
-              value = {
-                mode = "fixed";
-                fixedColor = "#FF9830";
-              };
-            }
-          ])
-        ];
-      };
-      options = {
-        orientation = "horizontal";
-        xField = "Metric";
-        showValue = "always";
-        stacking = "none";
-        groupWidth = 0.8;
-        barWidth = 0.9;
-        barRadius = 0.1;
-        xTickLabelMaxLength = 40;
-        legend = {
-          showLegend = true;
-          displayMode = "list";
-          placement = "bottom";
-        };
-        tooltip.mode = "multi";
-      };
-    })
-
-    (panel 9 "Benchmarks: latest run vs baseline" "table" (pos 0 43 14 14) "table" [] ''
-        SELECT suite AS "Suite", metric AS "Metric", ${subgoalTitle "subgoal"} AS "Subgoal",
-               latest AS "Latest", baseline AS "Baseline", unit AS "Unit", change AS "Change %",
-               runs AS "Runs"
-        FROM bench_summary
-        WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
-        ORDER BY subgoal, suite, metric''
-      (table [
-        (width "Suite" 170)
-        (width "Subgoal" 110)
-        (width "Latest" 65)
-        (width "Baseline" 70)
-        (width "Unit" 45)
-        (width "Change %" 75)
-        (width "Runs" 45)
-        (width "Metric" 110)
-        (wrapText "Metric")
-        (override "Change %" [
-          {
-            id = "decimals";
-            value = 1;
-          }
-          {
-            id = "custom.cellOptions";
-            value = {type = "color-background";};
-          }
-          {
-            id = "thresholds";
-            value = changeSteps;
-          }
-          {
-            id = "color";
-            value.mode = "thresholds";
-          }
-          {
-            id = "mappings";
-            value = [
-              {
-                type = "special";
-                options = {
-                  match = "null";
-                  result = {
-                    text = "no baseline";
-                    color = "transparent";
+              id = "mappings";
+              value = [
+                {
+                  type = "special";
+                  options = {
+                    match = "null";
+                    result = {
+                      text = "no baseline";
+                      color = "transparent";
+                    };
                   };
-                };
-              }
-            ];
-          }
-        ])
-      ]))
-
-    (panel 20 "Benchmarks at most 5% worse than baseline" "stat" (pos 14 43 10 3) "table" [] ''
-        SELECT SUM(change <= 5) || ' of ' || COUNT(*) AS "Within 5%"
-        FROM bench_summary
-        WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
-          AND change IS NOT NULL'' {
-      description = "Benchmarks with both a latest run and a baseline. Lower is better.";
-      options = {
-        textMode = "value";
-        colorMode = "none";
-        graphMode = "none";
-        reduceOptions = {
-          values = true;
-          calcs = [];
-          fields = "/.*/";
+                }
+              ];
+            }
+          ])
+        ]))
+      (panel 20 "Benchmarks at most 5% worse than baseline" "stat" (pos 14 69 10 3) "table" [] ''
+          SELECT SUM(change <= 5) || ' of ' || COUNT(*) AS "Within 5%"
+          FROM bench_summary
+          WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
+            AND change IS NOT NULL'' {
+        description = "Benchmarks with both a latest run and a baseline. Lower is better.";
+        options = {
+          textMode = "value";
+          colorMode = "none";
+          graphMode = "none";
+          reduceOptions = {
+            values = true;
+            calcs = [];
+            fields = "/.*/";
+          };
         };
-      };
-    })
-
-    (panel 21 "Change against baseline, worst first (%)" "bargauge" (pos 14 46 10 11) "table" [] ''
-        SELECT suite || ' · ' || metric AS "Metric", change AS "Change"
-        FROM bench_summary
-        WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
-          AND change IS NOT NULL
-        ORDER BY change DESC'' {
-      fieldConfig.defaults = {
-        unit = "percent";
-        decimals = 0;
-        # Clipped, so one outlier doesn't flatten the other bars.
-        min = -50;
-        max = 200;
-        displayName = "\${__data.fields.Metric}";
-        color.mode = "thresholds";
-        thresholds = changeSteps;
-      };
-      options = {
-        orientation = "horizontal";
-        displayMode = "basic";
-        valueMode = "color";
-        showUnfilled = true;
-        namePlacement = "left";
-        minVizHeight = 14;
-        maxVizHeight = 22;
-        reduceOptions = {
-          values = true;
-          calcs = [];
-          fields = "";
+      })
+      (panel 21 "Change against baseline, worst first (%)" "bargauge" (pos 14 72 10 11) "table" [] ''
+          SELECT suite || ' · ' || metric AS "Metric", change AS "Change"
+          FROM bench_summary
+          WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
+            AND change IS NOT NULL
+          ORDER BY change DESC'' {
+        fieldConfig.defaults = {
+          unit = "percent";
+          decimals = 0;
+          # Clipped, so one outlier doesn't flatten the other bars.
+          min = -50;
+          max = 200;
+          displayName = "\${__data.fields.Metric}";
+          color.mode = "thresholds";
+          thresholds = changeSteps;
         };
-      };
-    })
-
-    (row 22 "Benchmarks over time" 57 [
-      (panel 10 "Benchmarks over time" "timeseries" (pos 0 58 24 10) "time series" ["time"] ''
+        options = {
+          orientation = "horizontal";
+          displayMode = "basic";
+          valueMode = "color";
+          showUnfilled = true;
+          namePlacement = "left";
+          minVizHeight = 14;
+          maxVizHeight = 22;
+          reduceOptions = {
+            values = true;
+            calcs = [];
+            fields = "";
+          };
+        };
+      })
+      (panel 10 "Benchmarks over time" "timeseries" (pos 0 83 24 10) "time series" ["time"] ''
         SELECT at AS time,
                suite || ' ' || metric || ' (' || unit || ')'
                || CASE WHEN '$subgoal' = '-' THEN ' · ' || COALESCE(subgoal, 'whole sprint') ELSE ''' END
@@ -854,10 +673,9 @@ in {
           tooltip.mode = "multi";
         };
       })
-
     ])
 
-    (row 11 "Plan: every item" 65 [
+    (row 11 "Plan: every item" 56 [
       (panel 12 "Items" "table" (pos 0 66 24 14) "table" ["Updated"] ''
           SELECT item AS "#", title AS "Item", status AS "Status", owner AS "Owner",
                  ${subgoalTitle "subgoal"} AS "Subgoal", at AS "Updated", note AS "Note"
@@ -875,7 +693,7 @@ in {
         ]))
     ])
 
-    (row 13 "Pull requests" 66 [
+    (row 13 "Pull requests" 57 [
       (panel 14 "Pull requests" "table" (pos 0 67 24 12) "table" ["Since"] ''
           SELECT title AS "PR", state AS "State", ${subgoalTitle "subgoal"} AS "Subgoal",
                  at AS "Since", url AS "Link"
@@ -891,7 +709,7 @@ in {
         ]))
     ])
 
-    (row 15 "History: goal, subgoals, context sections" 67 [
+    (row 15 "History: goal, subgoals, context sections" 58 [
       (panel 16 "Goal versions" "table" (pos 0 68 12 9) "table" ["When"] ''
         SELECT at AS "When", text AS "Goal", reason AS "Why", source AS "By"
         FROM goal_versions WHERE sprint_id = ${sid} ORDER BY at DESC, id DESC''
