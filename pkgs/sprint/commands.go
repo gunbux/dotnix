@@ -8,7 +8,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
+
+// sgt is Singapore time, which the user reads every time in.
+var sgt = time.FixedZone("SGT", 8*3600)
 
 var (
 	sources     = []string{"user", "agent"}
@@ -22,7 +26,10 @@ var commands []command
 
 func init() {
 	commands = []command{
-		{path: "init", help: "create the log and its schema", run: func(*call) {}},
+		{path: "init", help: "create the log, the live file, and their schemas", run: func(c *call) {
+			_, closeLive := openLive(livePath(c.dbPath))
+			closeLive()
+		}},
 		{path: "list", help: "list sprints", run: cmdList},
 		{path: "start", help: "start a sprint", run: cmdStart,
 			args:     []argDef{{name: "slug"}, {name: "title"}},
@@ -91,14 +98,34 @@ func init() {
 			run: cmdContextSet, prefetch: readBody,
 			args: []argDef{{name: "key"}},
 			flags: map[string]flagDef{
-				"title":   {help: "required for a new section"},
-				"first":   {isBool: true, help: "show this section first"},
-				"file":    {help: "Markdown file, or - for stdin"},
-				"subgoal": {help: "show it in this subgoal's view (default: the whole sprint)"}},
+				"title":      {help: "required for a new section"},
+				"first":      {isBool: true, help: "show this section first"},
+				"file":       {help: "Markdown file, or - for stdin"},
+				"if-missing": {isBool: true, help: "leave the section alone if it already exists in this scope"},
+				"subgoal":    {help: "show it in this subgoal's view (default: the whole sprint)"}},
 			required: []string{"file"}},
+		{path: "context ls", help: "list context sections: scope, key, title, last change", run: cmdContextLs,
+			flags: map[string]flagDef{"subgoal": {help: "only this subgoal's sections; - for the whole sprint's"}}},
 		{path: "context rm", help: "remove a context section", run: cmdContextRm,
 			args:  []argDef{{name: "key"}},
 			flags: map[string]flagDef{"subgoal": {help: "the subgoal the section is on"}}},
+		{path: "live set", help: "add or update a live item: a card in the dashboard's Live section",
+			run: cmdLiveSet, prefetch: readLiveBody,
+			args: []argDef{{name: "key"}},
+			flags: map[string]flagDef{
+				"title":       {help: "required for a new item"},
+				"subgoal":     {help: "show it in this subgoal's view (default: the whole sprint; - moves it there)"},
+				"progress":    {help: "n/m, such as 7/12; - clears it"},
+				"ends-at":     {help: "expected end: 2026-11-04T18:30+08:00, unix seconds, or +45m; - clears it"},
+				"stale-after": {help: "mark it stale when no update comes for this long, such as 3m; - clears it"},
+				"link":        {help: "link for the title; - clears it"},
+				"file":        {help: "Markdown body file, or - for stdin"}}},
+		{path: "live done", help: "mark a live item done; the dashboard shows it for 1 h more",
+			run: cmdLiveDone, prefetch: readLiveBody,
+			args:  []argDef{{name: "key"}},
+			flags: map[string]flagDef{"file": {help: "final Markdown body file, or - for stdin"}}},
+		{path: "live rm", help: "remove a live item", run: cmdLiveRm, args: []argDef{{name: "key"}}},
+		{path: "live ls", help: "list live items: key, state, subgoal, last update, progress, title", run: cmdLiveLs},
 		{path: "end", help: "end the sprint", run: cmdEnd, flags: map[string]flagDef{"note": {help: "how it ended"}}},
 		{path: "dash dev", help: "show a checkout's dashboard on the local Grafana, with no switch", run: cmdDashDev,
 			noLog: true,
@@ -345,6 +372,10 @@ func cmdContextSet(c *call) {
 	s := c.store
 	sp, subgoal, cur := contextScope(c)
 	live := cur != nil && cur.Body != ""
+	if live && c.has("if-missing") {
+		c.printf("section %s: exists, left alone\n", c.pos["key"])
+		return
+	}
 	title := c.flag("title")
 	if title == "" && cur != nil {
 		title = cur.Title
@@ -373,6 +404,28 @@ func cmdContextSet(c *call) {
 		verb = "updated"
 	}
 	c.printf("section %s: %s\n", c.pos["key"], verb)
+}
+
+func cmdContextLs(c *call) {
+	s := c.store
+	sp := s.resolve(c.flag("sprint"))
+	q := "SELECT " + contextCols + " FROM context_state WHERE sprint_id = ?"
+	args := []any{sp.ID}
+	switch v := c.flag("subgoal"); {
+	case v == wholeSprint:
+		q += " AND subgoal IS NULL"
+	case v != "":
+		q += " AND subgoal = ?"
+		args = append(args, s.latestSubgoal(sp.ID, v).Key)
+	}
+	s.each(q+" ORDER BY subgoal IS NOT NULL, subgoal, position, id", args, func(r *sql.Rows) {
+		x := scanContext(r)
+		scope := x.Subgoal
+		if scope == "" {
+			scope = wholeSprint
+		}
+		c.printf("%s\t%s\t%s\t%s\n", scope, x.Key, x.Title, time.Unix(x.At, 0).In(sgt).Format("2006-01-02 15:04"))
+	})
 }
 
 func cmdContextRm(c *call) {
