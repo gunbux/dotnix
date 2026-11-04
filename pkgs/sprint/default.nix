@@ -3,10 +3,11 @@
   buildGoModule,
   makeWrapper,
   gh,
+  git,
 }:
 buildGoModule {
   pname = "sprint";
-  version = "0.3.0";
+  version = "0.4.0";
 
   src = lib.fileset.toSource {
     root = ./.;
@@ -24,10 +25,13 @@ buildGoModule {
   ldflags = ["-s" "-w"];
 
   nativeBuildInputs = [makeWrapper];
+  # The `dash dev` tests make a git checkout.
+  nativeCheckInputs = [git];
 
-  # `sprint pr add` and `pr sync` ask GitHub through gh.
+  # `sprint pr add` and `pr sync` ask GitHub through gh. `dash dev` reads the
+  # checkout's branch with git, and runs the user's own nix.
   postInstall = ''
-    wrapProgram $out/bin/sprint --suffix PATH : ${lib.makeBinPath [gh]}
+    wrapProgram $out/bin/sprint --suffix PATH : ${lib.makeBinPath [gh git]}
   '';
 
   meta = {

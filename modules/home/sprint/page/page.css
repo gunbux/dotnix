@@ -45,6 +45,7 @@
 .sp .p-active, .sp .p-doing, .sp .p-open { background: color-mix(in srgb, var(--k) 18%, transparent); color: var(--k); }
 .sp .p-done { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
 .sp .p-blocked { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.sp .p-dev { background: color-mix(in srgb, var(--b) 22%, transparent); color: var(--b); font-weight: 600; }
 .sp .p-ready { background: color-mix(in srgb, var(--you) 18%, transparent); color: var(--you); }
 .sp .chip { font-size: 11px; padding: 1px 8px; border-radius: 9px; border: 1px solid var(--bd); color: var(--mut); white-space: nowrap; }
 .sp .chip.you { border-color: var(--you); color: var(--you); }

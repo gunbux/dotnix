@@ -1,10 +1,12 @@
 // A: the sprint and its goal. B: the subgoal in view, if any.
 const s = rows('A')[0];
 const g = rows('B')[0];
+const dev = rv('${dev}');
+const devTag = dev ? `<span class="pill p-dev">dev: ${esc(dev)}</span> ` : '';
 if (!s) {
-  render('<p class="mut">No sprint is selected.</p>');
+  render(`${devTag}<p class="mut">No sprint is selected.</p>`);
 } else {
-  let h = `<div class="mut sm">Sprint · goal v${esc(s.versions)} · goal changed ${when(s.at)}`
+  let h = `<div class="mut sm">${devTag}Sprint · goal v${esc(s.versions)} · goal changed ${when(s.at)}`
     + (g ? ` · <a href="${viewLink('-')}">back to the whole sprint</a>` : '') + '</div>'
     + `<h1>${esc(s.title)}</h1><p class="goal">${inl(s.goal)}</p>`;
   if (g) {

@@ -100,6 +100,12 @@ func init() {
 			args:  []argDef{{name: "key"}},
 			flags: map[string]flagDef{"subgoal": {help: "the subgoal the section is on"}}},
 		{path: "end", help: "end the sprint", run: cmdEnd, flags: map[string]flagDef{"note": {help: "how it ended"}}},
+		{path: "dash dev", help: "show a checkout's dashboard on the local Grafana, with no switch", run: cmdDashDev,
+			noLog: true,
+			flags: map[string]flagDef{
+				"checkout": {help: "dotnix checkout (default: the git checkout around this folder)"},
+				"watch":    {isBool: true, help: "write it again on each save"}}},
+		{path: "dash reset", help: "put the dashboard from the last switch back", run: cmdDashReset, noLog: true},
 		{path: "show", help: "goal, subgoals, progress, do-now list, PRs, dashboard link", run: cmdShow,
 			flags: map[string]flagDef{"json": {isBool: true}}},
 	}

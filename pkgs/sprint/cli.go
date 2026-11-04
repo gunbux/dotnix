@@ -34,6 +34,7 @@ type command struct {
 	required []string
 	run      func(*call)
 	prefetch func(*call) // runs before the write lock
+	noLog    bool        // the command never opens the sprint log
 }
 
 // call is one parsed command line.
@@ -267,6 +268,10 @@ func run(args []string, stdout, stderr io.Writer) (code int) {
 	}
 	c.cmd = cmd
 	parse(cmd, rest, c)
+	if cmd.noLog {
+		cmd.run(c)
+		return 0
+	}
 	c.dbPath = c.vals["db"]
 	if c.dbPath == "" {
 		c.dbPath = defaultDB()
