@@ -49,7 +49,10 @@ var toolingRE = regexp.MustCompile(`^(docs|tests?|chore|ci)(\(|:)`)
 // priority is the review order for a PR: one that an open blocker item names,
 // then one any open item names, then code, then tooling. why says which.
 func priority(p *prReview, title string, items []Item) ([2]int, string) {
-	mention := regexp.MustCompile(fmt.Sprintf(`(#|/pull/)%d(\D|$)`, p.Number))
+	// A full URL names this PR only in its own repository; a bare #N names
+	// it in any.
+	mention := regexp.MustCompile(fmt.Sprintf(`(?i)(^|[^\w/])#%d(\D|$)|github\.com/%s/pull/%d(\D|$)`,
+		p.Number, regexp.QuoteMeta(repoOf(p.URL)), p.Number))
 	tooling := 0
 	if toolingRE.MatchString(title) {
 		tooling = 1
@@ -101,11 +104,22 @@ func buildBoard(statuses []prStatus, items []Item) []*prReview {
 			p.Bots = []botScore{}
 		}
 		p.prio, p.Why = priority(p, s.Title, items)
-		byHead[repoOf(s.URL)+" "+s.HeadRefName] = p
+		// Only a branch in the PR's own repository can be another PR's base.
+		if s.HeadRepository != nil && strings.EqualFold(s.HeadRepository.NameWithOwner, repoOf(s.URL)) {
+			byHead[repoOf(s.URL)+" "+s.HeadRefName] = p
+		}
 		prs = append(prs, p)
 	}
 	for _, p := range prs {
-		if parent := byHead[repoOf(p.URL)+" "+p.Base]; parent != nil && parent != p {
+		parent := byHead[repoOf(p.URL)+" "+p.Base]
+		// Skip a parent that would close a loop: two PRs based on each other.
+		for q := parent; q != nil; q = q.parent {
+			if q == p {
+				parent = nil
+				break
+			}
+		}
+		if parent != nil {
 			p.parent = parent
 			parent.children = append(parent.children, p)
 		}
@@ -311,6 +325,12 @@ func (s Store) openItems(sprintID int64) []Item {
 // still open after this sync, and logs what changed.
 func syncBoard(c *call, f fetchedPRs) {
 	s := c.store
+	// Another sync that finished during this one's GitHub calls may have
+	// newer data, so this board is dropped.
+	if s.int("SELECT MAX(id) FROM pr_syncs WHERE sprint_id = ?", f.sprintID) != f.lastSync {
+		c.printf("PR board: another sync finished during the GitHub calls; kept its board\n")
+		return
+	}
 	var statuses []prStatus
 	key := map[string]string{}
 	for _, p := range f.prs {
@@ -324,6 +344,7 @@ func syncBoard(c *call, f fetchedPRs) {
 	}
 	board := buildBoard(statuses, s.openItems(f.sprintID))
 	s.recordReviews(f.sprintID, board, key)
+	s.exec("INSERT INTO pr_syncs (sprint_id, at) VALUES (?, ?)", f.sprintID, now())
 	counts := map[string]int{}
 	for _, p := range board {
 		counts[p.Group]++

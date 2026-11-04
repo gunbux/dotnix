@@ -1,6 +1,6 @@
 // The PR board, from the sprint log. A: the view's open PRs with their last
 // board row from `sprint pr sync` (grp, steps, rank: see pkgs/sprint/prboard.go),
-// the user's note, and PRs merged in the last 3 days. B: the last sync.
+// the user's note, and PRs merged in the last 3 days. B: the last finished sync.
 // Clock times are SGT.
 const prs = rows('A');
 const synced = rows('B')[0];

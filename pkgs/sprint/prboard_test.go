@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 )
@@ -19,7 +20,9 @@ func prURL(n int) string { return fmt.Sprintf("https://github.com/o/r/pull/%d", 
 func clean(n int, title string) prStatus {
 	p := prStatus{Number: n, URL: prURL(n), Title: title, State: "OPEN", BaseRefName: "main",
 		HeadRefName: fmt.Sprintf("b%d", n), HeadRefOid: fmt.Sprintf("%07d%s", n, strings.Repeat("a", 33)),
-		Mergeable: "MERGEABLE"}
+		Mergeable: "MERGEABLE", HeadRepository: &struct {
+			NameWithOwner string `json:"nameWithOwner"`
+		}{"o/r"}}
 	p.Comments.Nodes = []botPost{greptile(5, p.HeadRefOid, "2026-11-04T01:00:00Z")}
 	return p
 }
@@ -110,8 +113,44 @@ func TestStackedPRWaitsForThePRBelowIt(t *testing.T) {
 	eq(t, strings.Join(boardOf([]prStatus{lone})[12].Steps, "; "), "Based on `feature`, not main")
 }
 
+func TestTwoPRsBasedOnEachOtherDoNotLoop(t *testing.T) {
+	a, b := clean(30, "a"), clean(31, "b")
+	a.BaseRefName, b.BaseRefName = b.HeadRefName, a.HeadRefName
+	board := boardOf([]prStatus{a, b})
+	eq(t, len(board), 2)
+	eq(t, (board[30].parent == nil) != (board[31].parent == nil), true)
+}
+
+func TestAForkBranchIsNeverAStackBase(t *testing.T) {
+	fork := clean(40, "fork")
+	fork.HeadRefName = "feature"
+	fork.HeadRepository.NameWithOwner = "someone/r"
+	upstream := clean(41, "upstream")
+	upstream.BaseRefName = "feature"
+	b := boardOf([]prStatus{fork, upstream})
+	eq(t, b[41].parent == nil, true)
+	eq(t, strings.Join(b[41].Steps, "; "), "Based on `feature`, not main")
+}
+
+func TestAnItemURLNamesOnlyThatRepositorysPR(t *testing.T) {
+	other := clean(12, "other repo")
+	other.URL = "https://github.com/o/other/pull/12"
+	mine := clean(12, "mine")
+	items := []Item{{Item: 5, Title: "Land https://github.com/o/r/pull/12"}}
+	b := buildBoard([]prStatus{other, mine}, items)
+	whys := map[string]string{}
+	for _, p := range b {
+		whys[p.URL] = p.Why
+	}
+	eq(t, whys[prURL(12)], "On your sprint list (item 5)")
+	eq(t, whys["https://github.com/o/other/pull/12"], "Code or infra change")
+	// A bare #12 names both.
+	b = buildBoard([]prStatus{other, mine}, []Item{{Item: 6, Title: "Land #12"}})
+	eq(t, b[0].Why+" | "+b[1].Why, "On your sprint list (item 6) | On your sprint list (item 6)")
+}
+
 func TestReviewOrderPutsBlockersFirstAndToolingLast(t *testing.T) {
-	items := []Item{{Item: 7, Title: "Blocker: rollout needs #22"}, {Item: 9, Title: "Ship it", Note: "after /pull/23 lands"}}
+	items := []Item{{Item: 7, Title: "Blocker: rollout needs #22"}, {Item: 9, Title: "Ship it", Note: "after https://github.com/o/r/pull/23 lands"}}
 	b := buildBoard([]prStatus{clean(21, "docs: notes"), clean(20, "feat: x"), clean(23, "fix: y"), clean(22, "fix: z")}, items)
 	var order []string
 	for _, p := range b {
@@ -136,6 +175,8 @@ func TestPRSyncLogsTheBoardWhenItChanges(t *testing.T) {
 	eq(t, h.query("SELECT number, grp, rank FROM pr_review_state ORDER BY rank"), "(1, merge, 1) (2, merge, 2)")
 	h.ok("pr", "sync")
 	eq(t, h.query("SELECT COUNT(*) FROM pr_reviews"), "(2)")
+	// An unchanged board writes no rows, but the sync itself is logged.
+	eq(t, h.query("SELECT COUNT(*) FROM pr_syncs"), "(2)")
 
 	h.clock(2000)
 	draft := statuses[prURL(2)]
@@ -154,6 +195,28 @@ func TestPRSyncLogsTheBoardWhenItChanges(t *testing.T) {
 	// #2 moved up to first, so it gets a new row.
 	eq(t, h.query("SELECT rank FROM pr_review_state WHERE number = 2"), "(1)")
 	eq(t, h.query("SELECT COUNT(*) FROM pr_reviews"), "(4)")
+}
+
+func TestAnOverlappingSyncKeepsTheNewerBoard(t *testing.T) {
+	h := newHarness(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	fakeGH(t, "OPEN", "", "", prURL(1))
+	h.ok("pr", "add", prURL(1))
+	fresh := clean(1, "a")
+	old := clean(1, "a")
+	old.IsDraft = true
+	first := true
+	stubStatus(t, func(url string) (prStatus, error) {
+		if first {
+			// While this sync waits on GitHub, another one finishes.
+			first = false
+			stubStatus(t, func(string) (prStatus, error) { return fresh, nil })
+			run([]string{"--db", h.db, "pr", "sync"}, io.Discard, io.Discard)
+		}
+		return old, nil
+	})
+	contains_(t, h.ok("pr", "sync"), "another sync finished during the GitHub calls")
+	eq(t, h.query("SELECT grp FROM pr_review_state"), "(merge)")
 }
 
 func TestPRSyncKeepsTheBoardWhenOneReviewStateFails(t *testing.T) {

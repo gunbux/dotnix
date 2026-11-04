@@ -74,6 +74,7 @@ type fetchedPRs struct {
 	sprintID int64
 	prs      []fetchedPR
 	statuses map[string]prStatus // review state of the PRs still open, by log key
+	lastSync int64               // the newest pr_syncs id before the GitHub calls
 }
 
 // recordPR writes the events that GitHub shows and the log doesn't have yet.
@@ -149,6 +150,7 @@ func fetchPRSync(c *call) {
 	for _, u := range urls {
 		seen[u] = s.lastPREvent(sp.ID, u)
 	}
+	out.lastSync = s.int("SELECT MAX(id) FROM pr_syncs WHERE sprint_id = ?", sp.ID)
 	for _, u := range urls {
 		// One deleted or private repo must not stop the other PRs updating.
 		info, err := ghPR(u)
@@ -221,13 +223,17 @@ func cmdPRReady(c *call) {
 // prStatus is what a review gate needs to know about a PR: its head, the
 // review bots' scores, open threads, and checks.
 type prStatus struct {
-	Number         int    `json:"number"`
-	URL            string `json:"url"`
-	Title          string `json:"title"`
-	State          string `json:"state"`
-	IsDraft        bool   `json:"isDraft"`
-	BaseRefName    string `json:"baseRefName"`
-	HeadRefName    string `json:"headRefName"`
+	Number      int    `json:"number"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	State       string `json:"state"`
+	IsDraft     bool   `json:"isDraft"`
+	BaseRefName string `json:"baseRefName"`
+	HeadRefName string `json:"headRefName"`
+	// The repository that owns the head branch: a fork's for a fork PR.
+	HeadRepository *struct {
+		NameWithOwner string `json:"nameWithOwner"`
+	} `json:"headRepository"`
 	HeadRefOid     string `json:"headRefOid"`
 	Mergeable      string `json:"mergeable"`
 	ReviewDecision string `json:"reviewDecision"`
@@ -274,7 +280,7 @@ type botPost struct {
 }
 
 const prStatusQuery = `query($u: URI!) { resource(url: $u) { ... on PullRequest {
-  number url title state isDraft baseRefName headRefName headRefOid mergeable reviewDecision mergedAt
+  number url title state isDraft baseRefName headRefName headRepository { nameWithOwner } headRefOid mergeable reviewDecision mergedAt
   commits(last: 1) { nodes { commit { statusCheckRollup { contexts(first: 100) { nodes {
     __typename
     ... on CheckRun { name status conclusion startedAt }

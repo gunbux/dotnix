@@ -142,6 +142,13 @@ CREATE TABLE IF NOT EXISTS pr_notes (
   url TEXT NOT NULL,
   text TEXT NOT NULL
 );
+-- One row per finished PR board sync, so the dashboard can tell fresh data
+-- from a sync that stopped.
+CREATE TABLE IF NOT EXISTS pr_syncs (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  at INTEGER NOT NULL
+);
 CREATE INDEX IF NOT EXISTS pr_reviews_latest ON pr_reviews (sprint_id, url, id);
 CREATE INDEX IF NOT EXISTS pr_notes_latest ON pr_notes (sprint_id, url, id);
 CREATE INDEX IF NOT EXISTS item_events_latest ON item_events (sprint_id, item, at, id);
@@ -158,7 +165,8 @@ var addedColumns = [][2]string{
 }
 
 var tables = []string{"sprints", "goal_versions", "item_events", "pr_events", "bench_results", "log",
-	"subgoal_events", "context_versions", "bench_removals", "pr_reviews", "pr_notes"}
+	"subgoal_events", "context_versions", "bench_removals", "pr_reviews", "pr_notes",
+	"pr_syncs"}
 
 // Views hold no data, so a schema bump drops and recreates them.
 var views = []string{"item_state", "pr_state", "goal_current", "progress", "burnup",
