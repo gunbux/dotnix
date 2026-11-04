@@ -254,7 +254,7 @@ function main() {
   const watchToken = readSecret(config.watchTokenFile);
   const allow = rateLimiter(config.perMinute);
   if (existsSync(config.t3McpTokenFile)) {
-    peerMcp = mcpClient({ url: new URL("/mcp", config.t3Url).href, token: readSecret(config.t3McpTokenFile) });
+    peerMcp = mcpClient({ url: new URL("/mcp", config.t3Url).href, token: () => readSecret(config.t3McpTokenFile) });
   }
 
   const bikes = bikeRoute({ sessionFile: process.env.HELLORIDE_SESSION_FILE, tokenFile: process.env.HELLORIDE_WATCH_TOKEN_FILE });

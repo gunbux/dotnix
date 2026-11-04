@@ -130,3 +130,27 @@ test("mcpClient opens a session, reads SSE, and reopens an expired one", async (
   assert.deepEqual(seen.map(([m]) => m), ["initialize", "notifications/initialized", "tools/call", "initialize", "notifications/initialized", "tools/call"]);
   assert.equal(seen[5][1], "s4");
 });
+
+test("MCP client adopts rotated credentials and opens a new session", async () => {
+  let token = "old-token";
+  let sessions = 0;
+  const authorizations = [];
+  const fetch = async (_url, {headers, body}) => {
+    authorizations.push(headers.authorization);
+    const message = JSON.parse(body);
+    if (message.method === "initialize") sessions++;
+    return {
+      ok: true, status: 200,
+      headers: {get: () => `session-${sessions}`},
+      text: async () => message.method === "notifications/initialized" ? "" : JSON.stringify({
+        result: message.method === "initialize" ? {} : {structuredContent: {ok: true}},
+      }),
+    };
+  };
+  const client = mcpClient({url: "http://t3/mcp", token: () => token, fetch});
+  assert.deepEqual(await client.call("read", {}), {ok: true});
+  token = "renewed-token";
+  assert.deepEqual(await client.call("read", {}), {ok: true});
+  assert.equal(sessions, 2);
+  assert.deepEqual(authorizations, [...Array(3).fill("Bearer old-token"), ...Array(3).fill("Bearer renewed-token")]);
+});

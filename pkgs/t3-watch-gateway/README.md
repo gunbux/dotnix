@@ -20,7 +20,7 @@ This deployment supports one exact T3 Connect URL per linked machine. Alternate 
 
 T3 currently requires full-access links to answer questions in pre-existing target threads. The operator must approve that broad grant separately for each machine. Target machines must remain awake with T3 servers running. Use a background T3 service on targets when desktop windows should close independently.
 
-Generated local bridge tokens last 365 days. There is no automatic renewal. Rotate them through the T3 auth CLI, revoke old grants, replace the private files, and restart the pod before expiry. Readiness fails when the RPC credential stops working. Keep credential backups private and preserve numeric owners and file modes.
+The local RPC token lasts 365 days and requires operator rotation before expiry. The local MCP client uses T3 OAuth approval with full-access mode, because answering full-access target threads requires that mode. Its 30-day token renews automatically with one day remaining. The bridge reopens its MCP session when that private token changes. Readiness fails when the RPC credential stops working. Keep credential backups private and preserve numeric owners and file modes.
 
 Unit tests:
 
@@ -34,4 +34,4 @@ A Docker smoke test uses fresh disposable volumes and three containers to model 
 python3 pkgs/t3-watch-gateway/docker_smoke.py /path/to/pinfra/k8s/apps/t3-watch-gateway/image-lock.json
 ```
 
-The archives in the image lock must exist locally. The test loads them into the local Docker daemon and removes only its own containers and volume afterward. It never uses workstation account state or publishes an image.
+The archives in the image lock must exist locally, or the exact locked images must already be loaded in Docker. The test loads them into the local Docker daemon and removes only its own containers and volume afterward. It never uses workstation account state or publishes an image.

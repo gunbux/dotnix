@@ -1,4 +1,4 @@
-import subprocess,json,time,secrets,urllib.request,urllib.error
+import subprocess,json,time,secrets,base64,urllib.request,urllib.error
 import argparse
 from pathlib import Path
 parser = argparse.ArgumentParser(description="Exercise disposable gateway images. Does not publish or deploy.")
@@ -9,7 +9,9 @@ bridge = lock['images']['bridge']['ref']
 gateway = lock['images']['gateway']['ref']
 archives = [lock['images'][kind]['archive'] for kind in ('bridge', 'gateway')]
 def run(args,**kwargs):return subprocess.run(args,capture_output=True,text=True,check=True,**kwargs)
-for archive in archives:run(['docker','load','-i',archive])
+for archive, ref in zip(archives, (bridge, gateway)):
+ if subprocess.run(['docker','image','inspect',ref],capture_output=True).returncode!=0:
+  run(['docker','load','-i',archive])
 suffix=secrets.token_hex(4);gn='t3-gateway-smoke-'+suffix;bn='t3-bridge-smoke-'+suffix;volume='t3-gateway-smoke-'+suffix;pn='t3-pod-smoke-'+suffix
 run(['docker','volume','create',volume]);created=[]
 try:
@@ -19,7 +21,13 @@ try:
   r=subprocess.run(['docker','exec',gn,'/bin/t3-watch-gateway','--healthcheck'],capture_output=True)
   if r.returncode==0:break
   time.sleep(.25)
- else:raise RuntimeError('Real OCI gateway readiness deadline')
+ else:
+  print(run(['docker','logs',gn]).stdout,flush=True)
+  raise RuntimeError('Real OCI gateway readiness deadline')
+ mcp_token=run(['docker','exec',gn,'/bin/sh','-c','cat /data/bridge-secrets/t3-mcp-token']).stdout.strip()
+ payload=mcp_token.split('.')[0]
+ claims=json.loads(base64.urlsafe_b64decode(payload+'='*(-len(payload)%4)))
+ assert claims.get('rtc')=='full-access', 'Bridge MCP client must answer full-access target threads'
  token=secrets.token_hex(32)
  run(['docker','exec','-i',gn,'/bin/sh','-c','umask 077; cat > /data/bridge-secrets/watch-token'],input=token+'\n')
  before=run(['docker','exec',gn,'/bin/sh','-c','sha256sum /data/bridge-secrets/t3-token /data/bridge-secrets/t3-mcp-token']).stdout
@@ -39,6 +47,16 @@ try:
   assert info['Config']['User']=='65532:65532' and info['HostConfig']['ReadonlyRootfs']
   logs=run(['docker','logs',n]).stdout
   assert token not in logs
+ run(['docker','exec',gn,'/proc/1/exe','-c',"import json;from pathlib import Path;p=Path('/data/bridge-secrets/t3-mcp-session.json');v=json.loads(p.read_text());v['expiresAt']=1;p.write_text(json.dumps(v))"])
+ for _ in range(120):
+  renewed=run(['docker','exec',gn,'/bin/sh','-c','sha256sum /data/bridge-secrets/t3-token /data/bridge-secrets/t3-mcp-token']).stdout
+  if renewed!=before:break
+  time.sleep(.25)
+ else:raise RuntimeError('Local MCP session renewal deadline')
+ with urllib.request.urlopen(urllib.request.Request(url,headers={'Authorization':'Bearer '+token}),timeout=10) as response:
+  assert response.status==200 and json.load(response)=={'items':[]}
+ before=renewed
+ print('PASS approved MCP token renews and the running bridge adopts it without restart',flush=True)
  run(['docker','restart',gn])
  for _ in range(160):
   if subprocess.run(['docker','exec',gn,'/bin/t3-watch-gateway','--healthcheck'],capture_output=True).returncode==0:break

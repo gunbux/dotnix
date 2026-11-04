@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+import json
 
 spec = importlib.util.spec_from_file_location('gateway', Path(__file__).with_name('gateway.py'))
 gateway = importlib.util.module_from_spec(spec)
@@ -32,7 +34,7 @@ class GatewayTests(unittest.TestCase):
             secrets.mkdir(mode=0o700)
             gateway.provision_tokens(str(binary), root / 'state', secrets)
             before = {p.name: p.read_bytes() for p in secrets.iterdir()}
-            self.assertEqual(set(before), {'t3-token', 't3-mcp-token'})
+            self.assertEqual(set(before), {'t3-token'})
             self.assertTrue(all(p.stat().st_mode & 0o777 == 0o600 for p in secrets.iterdir()))
             binary.write_text('#!/bin/sh\nexit 1\n')
             gateway.provision_tokens(str(binary), root / 'state', secrets)
@@ -40,6 +42,28 @@ class GatewayTests(unittest.TestCase):
             for p in secrets.iterdir(): p.unlink()
             with self.assertRaises(RuntimeError): gateway.provision_tokens(str(binary), root / 'state', secrets)
             self.assertEqual(list(secrets.iterdir()), [])
+
+    def test_approved_mcp_session_is_private_reused_and_renewed(self):
+        with tempfile.TemporaryDirectory() as work:
+            root = Path(work)
+            settings = gateway.Config('unused', root / 'state', root, 3773)
+            with patch.object(gateway, 'issue_mcp_client', return_value=('dummy-approved-token-' * 3, 30 * 86400)) as issue:
+                gateway.ensure_mcp_access(settings)
+                before = (root / 't3-mcp-token').read_bytes()
+                gateway.ensure_mcp_access(settings)
+                self.assertEqual(issue.call_count, 1)
+                self.assertEqual((root / 't3-mcp-token').read_bytes(), before)
+                metadata = root / 't3-mcp-session.json'
+                data = json.loads(metadata.read_text())
+                data['expiresAt'] = 1
+                metadata.write_text(json.dumps(data))
+                gateway.ensure_mcp_access(settings)
+                self.assertEqual(issue.call_count, 2)
+                self.assertTrue(all(p.stat().st_mode & 0o777 == 0o600 for p in root.iterdir()))
+                metadata.unlink()
+                with patch.object(gateway, 'issue_mcp_client', side_effect=RuntimeError('unavailable')):
+                    with self.assertRaises(RuntimeError): gateway.ensure_mcp_access(settings)
+                self.assertEqual((root / 't3-mcp-token').read_bytes(), before)
 
     def test_gateway_enables_peer_links_without_replacing_other_settings(self):
         with tempfile.TemporaryDirectory() as work:

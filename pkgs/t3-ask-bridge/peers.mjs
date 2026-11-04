@@ -17,10 +17,11 @@ export class PeerError extends Error {}
 export function mcpClient({ url, token, fetch: doFetch = fetch }) {
   let session = null;
   let nextId = 1;
+  let currentToken;
 
   async function post(body, sessionId) {
     const headers = {
-      authorization: `Bearer ${token}`,
+      authorization: `Bearer ${currentToken}`,
       "content-type": "application/json",
       accept: "application/json, text/event-stream",
     };
@@ -59,6 +60,11 @@ export function mcpClient({ url, token, fetch: doFetch = fetch }) {
   }
 
   async function callOnce(name, args) {
+    const latestToken = typeof token === "function" ? token() : token;
+    if (latestToken !== currentToken) {
+      currentToken = latestToken;
+      session = null;
+    }
     if (session === null) await open();
     const { message } = await post(
       { jsonrpc: "2.0", id: nextId++, method: "tools/call", params: { name, arguments: args } },

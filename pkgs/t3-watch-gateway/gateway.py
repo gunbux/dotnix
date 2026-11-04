@@ -1,5 +1,8 @@
 """Run a private T3 backend and provision scoped credentials for its watch bridge."""
 import argparse
+import base64
+import hashlib
+import secrets as randomness
 import json
 import os
 from pathlib import Path
@@ -10,6 +13,7 @@ import tempfile
 import time
 from typing import NamedTuple
 import urllib.error
+import urllib.parse
 import urllib.request
 
 
@@ -72,7 +76,7 @@ def private_write(path, value):
 
 def provision_tokens(binary, base, secrets):
     generated = {}
-    for name, subject in [('t3-token', None), ('t3-mcp-token', 'mcp-client')]:
+    for name, subject in [('t3-token', None)]:
         path = secrets / name
         if os.path.lexists(path):
             private_secret(path)
@@ -91,6 +95,73 @@ def provision_tokens(binary, base, secrets):
         private_write(path, value)
 
 
+def oauth_post(settings, path, payload, form=False):
+    data = urllib.parse.urlencode(payload).encode() if form else json.dumps(payload).encode()
+    request = urllib.request.Request(settings.origin + path, data=data, headers={
+        'Content-Type': 'application/x-www-form-urlencoded' if form else 'application/json'})
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as error:
+        raise RuntimeError(f'Local MCP approval {path} returned HTTP {error.code}') from None
+
+
+def issue_mcp_client(settings):
+    result = subprocess.run([settings.binary, 'auth', 'pairing', 'create', '--base-dir', str(settings.base),
+                             '--ttl', '5m', '--label', 'watch-bridge-local-approval', '--json'],
+                            capture_output=True, text=True, timeout=30)
+    if result.returncode != 0:
+        raise RuntimeError('Cannot approve the local watch MCP client')
+    pairing = json.loads(result.stdout)['credential']
+    redirect = 'http://127.0.0.1/t3-watch-bridge'
+    client = oauth_post(settings, '/oauth/mcp/register', {
+        'client_name': 'T3 Watch Bridge', 'redirect_uris': [redirect]})
+    verifier = randomness.token_urlsafe(32)
+    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
+    state = randomness.token_urlsafe(24)
+    resource = settings.origin + '/mcp'
+    decision = oauth_post(settings, '/oauth/mcp/decision', {
+        'authorization': {'response_type': 'code', 'client_id': client['client_id'],
+                          'redirect_uri': redirect, 'code_challenge': challenge,
+                          'code_challenge_method': 'S256', 'state': state, 'resource': resource},
+        'decision': {'_tag': 'pairing-code', 'access': 'full-access', 'code': pairing}})
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(decision['redirectTo']).query)
+    if query.get('state') != [state] or len(query.get('code', [])) != 1:
+        raise RuntimeError('Local MCP approval did not return the expected state')
+    issued = oauth_post(settings, '/oauth/mcp/token', {
+        'grant_type': 'authorization_code', 'code': query['code'][0], 'redirect_uri': redirect,
+        'client_id': client['client_id'], 'code_verifier': verifier, 'resource': resource}, form=True)
+    token, lifetime = issued['access_token'], issued['expires_in']
+    payload = token.split('.')[0]
+    claims = json.loads(base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4)))
+    if claims.get('rtc') != 'full-access' or not isinstance(lifetime, int) or lifetime <= 86400:
+        raise RuntimeError('Local MCP client approval has insufficient access or lifetime')
+    return token, lifetime
+
+
+def ensure_mcp_access(settings):
+    path = settings.secrets / 't3-mcp-token'
+    metadata_path = settings.secrets / 't3-mcp-session.json'
+    token = private_secret(path) if os.path.lexists(path) else None
+    if token and os.path.lexists(metadata_path):
+        try:
+            metadata = json.loads(read_private(metadata_path))
+        except ValueError:
+            metadata = None
+        if (isinstance(metadata, dict) and metadata.get('access') == 'full-access'
+                and metadata.get('tokenSha256') == hashlib.sha256(token.encode()).hexdigest()
+                and isinstance(metadata.get('expiresAt'), (float, int))
+                and metadata['expiresAt'] > time.time() + 86400):
+            return
+    try:
+        token, lifetime = issue_mcp_client(settings)
+    except (ValueError, KeyError, TypeError, OSError):
+        raise RuntimeError('Cannot provision an approved local MCP client') from None
+    private_write(path, token)
+    private_write(metadata_path, json.dumps({'access': 'full-access',
+        'tokenSha256': hashlib.sha256(token.encode()).hexdigest(), 'expiresAt': time.time() + lifetime}))
+
+
 def rpc_healthy(settings, require_marker=True):
     try:
         if require_marker:
@@ -101,7 +172,8 @@ def rpc_healthy(settings, require_marker=True):
             if not isinstance(catalog.get('links'), list) or not 0 <= age <= 60000:
                 return False
         token = private_secret(settings.secrets / 't3-token')
-        private_secret(settings.secrets / 't3-mcp-token')
+        if require_marker:
+            private_secret(settings.secrets / 't3-mcp-token')
         request = urllib.request.Request(settings.origin + '/api/auth/websocket-ticket/rpc', data=b'',
                                          headers={'Authorization': 'Bearer ' + token}, method='POST')
         with urllib.request.urlopen(request, timeout=2) as response:
@@ -194,6 +266,7 @@ def supervise(settings):
             if time.monotonic() >= deadline:
                 raise RuntimeError('T3 startup or credential verification deadline exceeded')
             time.sleep(.25)
+        ensure_mcp_access(settings)
         if not mcp_healthy(settings):
             raise RuntimeError('Gateway MCP credentials cannot list threads')
         refresh_catalog(settings)
@@ -207,6 +280,7 @@ def supervise(settings):
                 pass
             if time.monotonic() - refreshed >= 15:
                 try:
+                    ensure_mcp_access(settings)
                     refresh_catalog(settings)
                 except (RuntimeError, subprocess.TimeoutExpired):
                     print('Linked-environment discovery failed; retrying', flush=True)
