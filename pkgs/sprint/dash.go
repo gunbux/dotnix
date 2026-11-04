@@ -164,13 +164,14 @@ func cmdDashDev(c *call) {
 		filepath.Join(checkout, filepath.Dir(dashboardSource)))
 	last := ""
 	for {
-		if stamp := sourceStamp(checkout); stamp != last {
+		// The label is part of the state: a commit changes it but no file.
+		if stamp := sourceStamp(checkout) + devLabel(checkout); stamp != last {
 			last = stamp
 			if err := write(); err != nil {
 				fmt.Fprintf(c.errOut, "sprint: %v\n", err)
 			}
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(time.Second)
 	}
 }
 
