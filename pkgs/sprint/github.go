@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -72,6 +73,9 @@ type fetchedPR struct {
 type fetchedPRs struct {
 	sprintID int64
 	prs      []fetchedPR
+	statuses map[string]prStatus // review state of the PRs still open, by log key
+	lastSync int64               // the newest pr_syncs id before the GitHub calls
+	failed   int                 // PRs GitHub could not tell about
 }
 
 // recordPR writes the events that GitHub shows and the log doesn't have yet.
@@ -147,15 +151,25 @@ func fetchPRSync(c *call) {
 	for _, u := range urls {
 		seen[u] = s.lastPREvent(sp.ID, u)
 	}
+	out.lastSync = s.int("SELECT MAX(id) FROM pr_syncs WHERE sprint_id = ?", sp.ID)
 	for _, u := range urls {
 		// One deleted or private repo must not stop the other PRs updating.
 		info, err := ghPR(u)
 		if err != nil {
 			fmt.Fprintf(c.errOut, "sprint: could not read %s: %v\n", u, err)
+			out.failed++
 			continue
 		}
 		out.prs = append(out.prs, fetchedPR{u, info, seen[u]})
 	}
+	var open []string
+	for _, p := range out.prs {
+		if p.info.State == "OPEN" {
+			open = append(open, p.key)
+		}
+	}
+	out.statuses = fetchStatuses(c, open)
+	out.failed += len(open) - len(out.statuses)
 	c.fetched = out
 }
 
@@ -188,7 +202,10 @@ func cmdPRAdd(c *call) {
 	savePRs(c, false, subgoal)
 }
 
-func cmdPRSync(c *call) { savePRs(c, true, "") }
+func cmdPRSync(c *call) {
+	savePRs(c, true, "")
+	syncBoard(c, c.fetched.(fetchedPRs))
+}
 
 func cmdPRReady(c *call) {
 	s := c.store
@@ -204,4 +221,210 @@ func cmdPRReady(c *call) {
 	s.exec("INSERT INTO pr_events (sprint_id, at, url, title, state, subgoal) VALUES (?, ?, ?, ?, 'ready', ?)",
 		sp.ID, now(), url, cur.Title, null(cur.Subgoal))
 	c.printf("%s: ready\n", url)
+}
+
+// prStatus is what a review gate needs to know about a PR: its head, the
+// review bots' scores, open threads, and checks.
+type prStatus struct {
+	Number      int    `json:"number"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	State       string `json:"state"`
+	IsDraft     bool   `json:"isDraft"`
+	BaseRefName string `json:"baseRefName"`
+	HeadRefName string `json:"headRefName"`
+	// The repository that owns the head branch: a fork's for a fork PR.
+	HeadRepository *struct {
+		NameWithOwner string `json:"nameWithOwner"`
+	} `json:"headRepository"`
+	HeadRefOid     string `json:"headRefOid"`
+	Mergeable      string `json:"mergeable"`
+	ReviewDecision string `json:"reviewDecision"`
+	MergedAt       string `json:"mergedAt"`
+	Commits        struct {
+		Nodes []struct {
+			Commit struct {
+				StatusCheckRollup *struct {
+					Contexts struct {
+						Nodes []checkNode `json:"nodes"`
+						// More than the 100 checks read.
+						PageInfo struct {
+							HasNextPage bool `json:"hasNextPage"`
+						} `json:"pageInfo"`
+					} `json:"contexts"`
+				} `json:"statusCheckRollup"`
+			} `json:"commit"`
+		} `json:"nodes"`
+	} `json:"commits"`
+	ReviewThreads struct {
+		Nodes []struct {
+			IsResolved bool `json:"isResolved"`
+		} `json:"nodes"`
+		// More than the 100 threads read: the count is a floor.
+		PageInfo struct {
+			HasNextPage bool `json:"hasNextPage"`
+		} `json:"pageInfo"`
+	} `json:"reviewThreads"`
+	Comments struct{ Nodes []botPost } `json:"comments"`
+	Reviews  struct{ Nodes []botPost } `json:"reviews"`
+}
+
+type checkNode struct {
+	Typename   string `json:"__typename"`
+	Name       string `json:"name"`
+	Status     string `json:"status"`
+	Conclusion string `json:"conclusion"`
+	StartedAt  string `json:"startedAt"`
+	Context    string `json:"context"`
+	State      string `json:"state"`
+}
+
+type botPost struct {
+	Author      *struct{ Login string } `json:"author"`
+	Body        string                  `json:"body"`
+	UpdatedAt   string                  `json:"updatedAt"`
+	SubmittedAt string                  `json:"submittedAt"`
+}
+
+const prStatusQuery = `query($u: URI!) { resource(url: $u) { ... on PullRequest {
+  number url title state isDraft baseRefName headRefName headRepository { nameWithOwner } headRefOid mergeable reviewDecision mergedAt
+  commits(last: 1) { nodes { commit { statusCheckRollup { contexts(first: 100) { nodes {
+    __typename
+    ... on CheckRun { name status conclusion startedAt }
+    ... on StatusContext { context state }
+  } pageInfo { hasNextPage } } } } } }
+  reviewThreads(first: 100) { nodes { isResolved } pageInfo { hasNextPage } }
+  comments(last: 40) { nodes { author { login } body updatedAt } }
+  reviews(last: 40) { nodes { author { login } body submittedAt } }
+} } }`
+
+// ghPRStatus reads one PR's review state. Tests replace it.
+var ghPRStatus = func(url string) (prStatus, error) {
+	out, err := exec.Command("gh", "api", "graphql", "-f", "query="+prStatusQuery, "-f", "u="+url).Output()
+	if err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) {
+			return prStatus{}, fmt.Errorf("%s", strings.TrimSpace(string(ee.Stderr)))
+		}
+		return prStatus{}, err
+	}
+	var resp struct {
+		Data struct {
+			Resource *prStatus `json:"resource"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(out, &resp); err != nil {
+		return prStatus{}, err
+	}
+	if resp.Data.Resource == nil || resp.Data.Resource.Number == 0 {
+		return prStatus{}, fmt.Errorf("%s is not a pull request", url)
+	}
+	return *resp.Data.Resource, nil
+}
+
+// reviewBots are the review bots whose score gates a merge, by GitHub login.
+var reviewBots = []struct{ login, name string }{
+	{"greptile-apps", "greptile"},
+	{"greptile-apps-staging", "greptile-staging"},
+}
+
+var (
+	confidenceRE = regexp.MustCompile(`Confidence Score: ([0-5])/5`)
+	anyScoreRE   = regexp.MustCompile(`(?:^|[^\d])([0-5])/5`)
+)
+
+type botScore struct {
+	Name   string `json:"name"`
+	Score  int    `json:"score"` // -1: no score yet
+	OnHead bool   `json:"on_head"`
+}
+
+// scores reads each bot's newest score, and whether that review names the
+// head commit. A bot that never posted is left out.
+func (p prStatus) scores() []botScore {
+	var out []botScore
+	for _, bot := range reviewBots {
+		var newest botPost
+		newestAt, posted := "", false
+		for _, post := range append(append([]botPost{}, p.Comments.Nodes...), p.Reviews.Nodes...) {
+			if post.Author == nil || post.Author.Login != bot.login {
+				continue
+			}
+			posted = true
+			at := post.UpdatedAt + post.SubmittedAt
+			if anyScoreRE.MatchString(post.Body) && at >= newestAt {
+				newest, newestAt = post, at
+			}
+		}
+		if !posted {
+			continue
+		}
+		s := botScore{Name: bot.name, Score: -1}
+		if m := confidenceRE.FindStringSubmatch(newest.Body); m != nil {
+			s.Score = int(m[1][0] - '0')
+		} else if all := anyScoreRE.FindAllStringSubmatch(newest.Body, -1); all != nil {
+			s.Score = int(all[len(all)-1][1][0] - '0')
+		}
+		s.OnHead = s.Score >= 0 && len(p.HeadRefOid) >= 7 && strings.Contains(newest.Body, p.HeadRefOid[:7])
+		out = append(out, s)
+	}
+	return out
+}
+
+func (p prStatus) openThreads() int {
+	n := 0
+	for _, t := range p.ReviewThreads.Nodes {
+		if !t.IsResolved {
+			n++
+		}
+	}
+	return n
+}
+
+var failedChecks = map[string]bool{"FAILURE": true, "TIMED_OUT": true, "CANCELLED": true,
+	"ACTION_REQUIRED": true, "STARTUP_FAILURE": true, "ERROR": true}
+
+// allChecksRead is false when the PR has more checks than one page holds.
+func (p prStatus) allChecksRead() bool {
+	return len(p.Commits.Nodes) == 0 || p.Commits.Nodes[0].Commit.StatusCheckRollup == nil ||
+		!p.Commits.Nodes[0].Commit.StatusCheckRollup.Contexts.PageInfo.HasNextPage
+}
+
+// checks names the failing checks and counts the running ones. A push can
+// start a check twice and GitHub cancels the older run, so only the newest
+// run of each name counts.
+func (p prStatus) checks() (failing []string, running int) {
+	if len(p.Commits.Nodes) == 0 || p.Commits.Nodes[0].Commit.StatusCheckRollup == nil {
+		return nil, 0
+	}
+	newest := map[string]checkNode{}
+	var names []string
+	for _, c := range p.Commits.Nodes[0].Commit.StatusCheckRollup.Contexts.Nodes {
+		if c.Typename != "CheckRun" {
+			switch {
+			case c.State == "PENDING" || c.State == "EXPECTED":
+				running++
+			case failedChecks[c.State]:
+				failing = append(failing, c.Context)
+			}
+			continue
+		}
+		old, seen := newest[c.Name]
+		if !seen {
+			names = append(names, c.Name)
+		}
+		if !seen || c.StartedAt > old.StartedAt {
+			newest[c.Name] = c
+		}
+	}
+	for _, n := range names {
+		c := newest[n]
+		switch {
+		case c.Status != "COMPLETED":
+			running++
+		case failedChecks[c.Conclusion]:
+			failing = append(failing, c.Name)
+		}
+	}
+	return failing, running
 }

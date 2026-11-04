@@ -119,15 +119,24 @@ func liveSet(s Store, sprint, key string, ch liveChange) (created bool) {
 	return true
 }
 
-func liveUpdate(s Store, sprint, key string, ch liveChange) {
+func liveUpdate(s Store, sprint, key string, ch liveChange) { liveUpdateWhere(s, sprint, key, ch, "") }
+
+// liveUpdateWhere updates the item if cond (SQL) also holds, and returns how
+// many rows changed.
+func liveUpdateWhere(s Store, sprint, key string, ch liveChange, cond string) int64 {
 	cols := make([]string, 0, len(ch))
 	args := make([]any, 0, len(ch)+2)
 	for col, v := range ch {
 		cols = append(cols, col+" = ?")
 		args = append(args, v)
 	}
-	s.exec("UPDATE live_items SET "+strings.Join(cols, ", ")+" WHERE sprint = ? AND key = ?",
-		append(args, sprint, key)...)
+	where := "sprint = ? AND key = ?"
+	if cond != "" {
+		where += " AND " + cond
+	}
+	n, err := s.exec("UPDATE live_items SET "+strings.Join(cols, ", ")+" WHERE "+where, append(args, sprint, key)...).RowsAffected()
+	check(err)
+	return n
 }
 
 // clearable reads a flag whose value "-" means "clear it".

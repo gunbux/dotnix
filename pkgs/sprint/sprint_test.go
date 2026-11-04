@@ -26,6 +26,10 @@ func newHarness(t *testing.T) *harness {
 	t.Setenv("SPRINT", "")
 	t.Setenv("SPRINT_SUBGOAL", "")
 	h.clock(1000)
+	// No test reaches GitHub: a PR's review state defaults to a bare open PR.
+	stubStatus(t, func(url string) (prStatus, error) {
+		return prStatus{URL: url, Number: 3, Title: "T", State: "OPEN", BaseRefName: "main", HeadRefOid: "0000000000"}, nil
+	})
 	return h
 }
 
