@@ -634,3 +634,17 @@ func TestNewRecordsMustNameOneOfSeveralActiveSubgoals(t *testing.T) {
 	eq(t, h.query("SELECT DISTINCT subgoal FROM pr_events"), "(a)")
 	eq(t, h.query("SELECT subgoal FROM log"), "(<nil>)")
 }
+
+func TestBenchRmHidesEarlierResults(t *testing.T) {
+	h := viewHarness(t)
+	h.clock(2500)
+	h.ok("bench", "rm", "boot", "p50", "--subgoal", "parity", "--reason", "split by backend")
+	eq(t, h.query("SELECT COUNT(*) FROM bench_summary WHERE suite = 'boot'"), "(0)")
+	eq(t, h.query("SELECT COUNT(*) FROM bench_results WHERE suite = 'boot'"), "(2)")
+	h.fails("bench", "rm", "boot", "p50", "--subgoal", "parity")
+	// A result in the same second as the removal still shows.
+	h.ok("bench", "boot", "p50", "700", "ms", "--subgoal", "parity")
+	eq(t, h.query("SELECT latest, baseline, runs FROM bench_summary WHERE suite = 'boot'"), "(700, <nil>, 1)")
+	eq(t, h.query("SELECT text FROM activity WHERE kind = 'bench' AND text LIKE 'Benchmark removed%'"),
+		"(Benchmark removed: boot p50 (split by backend))")
+}

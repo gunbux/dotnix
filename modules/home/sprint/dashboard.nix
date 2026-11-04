@@ -103,6 +103,25 @@ let
     };
   };
 
+  # Change against the baseline, in percent; lower is better.
+  changeSteps = {
+    mode = "absolute";
+    steps = [
+      {
+        color = "green";
+        value = null;
+      }
+      {
+        color = "orange";
+        value = 5;
+      }
+      {
+        color = "red";
+        value = 25;
+      }
+    ];
+  };
+
   statusColors = {
     type = "value";
     options = {
@@ -303,7 +322,7 @@ in {
       label = "Benchmark suites";
       type = "query";
       datasource = ds;
-      query = "SELECT DISTINCT suite FROM bench_results WHERE sprint_id = ${sid} AND ${inScope "subgoal"} ORDER BY suite";
+      query = "SELECT DISTINCT suite FROM bench_live WHERE sprint_id = ${sid} AND ${inScope "subgoal"} ORDER BY suite";
       refresh = 1;
       sort = 0;
       multi = true;
@@ -590,7 +609,67 @@ in {
         (hide "Link")
       ]))
 
-    (panel 9 "Benchmarks: latest run vs baseline" "table" (pos 0 31 14 10) "table" [] ''
+    # One bar chart per suite: each metric's latest run beside its baseline.
+    (panel 19 "\${suite}: latest run against baseline" "barchart" (pos 0 31 12 12) "table" [] ''
+        SELECT metric || ' (' || unit || ')' AS "Metric", latest AS "Latest", baseline AS "Baseline"
+        FROM bench_summary
+        WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
+        ORDER BY COALESCE(latest, 0) - COALESCE(baseline, 0) DESC, metric'' {
+      description = "Lower is better for times. The table below colours the change: green within 5% of the baseline or better, orange up to 25% worse, red more.";
+      repeat = "suite";
+      repeatDirection = "h";
+      maxPerRow = 2;
+      fieldConfig = {
+        defaults = {
+          color.mode = "fixed";
+          custom = {
+            fillOpacity = 85;
+            lineWidth = 0;
+            gradientMode = "none";
+            axisSoftMin = 0;
+            axisPlacement = "auto";
+          };
+        };
+        overrides = [
+          (override "Latest" [
+            {
+              id = "color";
+              value = {
+                mode = "fixed";
+                fixedColor = "#5794F2";
+              };
+            }
+          ])
+          (override "Baseline" [
+            {
+              id = "color";
+              value = {
+                mode = "fixed";
+                fixedColor = "#FF9830";
+              };
+            }
+          ])
+        ];
+      };
+      options = {
+        orientation = "horizontal";
+        xField = "Metric";
+        showValue = "always";
+        stacking = "none";
+        groupWidth = 0.8;
+        barWidth = 0.9;
+        barRadius = 0.1;
+        xTickLabelMaxLength = 40;
+        legend = {
+          showLegend = true;
+          displayMode = "list";
+          placement = "bottom";
+        };
+        tooltip.mode = "multi";
+      };
+    })
+
+    (panel 9 "Benchmarks: latest run vs baseline" "table" (pos 0 43 14 14) "table" [] ''
         SELECT suite AS "Suite", metric AS "Metric", ${subgoalTitle "subgoal"} AS "Subgoal",
                latest AS "Latest", baseline AS "Baseline", unit AS "Unit", change AS "Change %",
                runs AS "Runs"
@@ -598,7 +677,7 @@ in {
         WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
         ORDER BY subgoal, suite, metric''
       (table [
-        (width "Suite" 100)
+        (width "Suite" 170)
         (width "Subgoal" 110)
         (width "Latest" 65)
         (width "Baseline" 70)
@@ -612,55 +691,135 @@ in {
             id = "decimals";
             value = 1;
           }
-        ])
-      ]))
-
-    (panel 10 "Benchmarks over time" "timeseries" (pos 14 31 10 10) "time series" ["time"] ''
-      SELECT at AS time,
-             suite || ' ' || metric || ' (' || unit || ')'
-             || CASE WHEN '$subgoal' = '-' THEN ' · ' || COALESCE(subgoal, 'whole sprint') ELSE ''' END
-             || CASE WHEN is_baseline = 1 THEN ' baseline' ELSE ''' END AS series,
-             value
-      FROM bench_results
-      WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
-      ORDER BY at'' {
-      # The plugin splits rows into one series per value of the text
-      # column, as a `series` label.
-      fieldConfig = {
-        defaults =
-          line
-          // {
-            displayName = "\${__field.labels.series}";
-          };
-        overrides = [
           {
-            matcher = {
-              id = "byRegexp";
-              options = ".*baseline.*";
-            };
-            properties = [
+            id = "custom.cellOptions";
+            value = {type = "color-background";};
+          }
+          {
+            id = "thresholds";
+            value = changeSteps;
+          }
+          {
+            id = "color";
+            value.mode = "thresholds";
+          }
+          {
+            id = "mappings";
+            value = [
               {
-                id = "custom.lineStyle";
-                value = {
-                  fill = "dash";
-                  dash = [6 4];
+                type = "special";
+                options = {
+                  match = "null";
+                  result = {
+                    text = "no baseline";
+                    color = "transparent";
+                  };
                 };
               }
             ];
           }
-        ];
-      };
+        ])
+      ]))
+
+    (panel 20 "Benchmarks at most 5% worse than baseline" "stat" (pos 14 43 10 3) "table" [] ''
+        SELECT SUM(change <= 5) || ' of ' || COUNT(*) AS "Within 5%"
+        FROM bench_summary
+        WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
+          AND change IS NOT NULL'' {
+      description = "Benchmarks with both a latest run and a baseline. Lower is better.";
       options = {
-        legend = {
-          displayMode = "list";
-          placement = "bottom";
+        textMode = "value";
+        colorMode = "none";
+        graphMode = "none";
+        reduceOptions = {
+          values = true;
+          calcs = [];
+          fields = "/.*/";
         };
-        tooltip.mode = "multi";
       };
     })
 
-    (row 11 "Plan: every item" 41 [
-      (panel 12 "Items" "table" (pos 0 42 24 14) "table" ["Updated"] ''
+    (panel 21 "Change against baseline, worst first (%)" "bargauge" (pos 14 46 10 11) "table" [] ''
+        SELECT suite || ' · ' || metric AS "Metric", change AS "Change"
+        FROM bench_summary
+        WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
+          AND change IS NOT NULL
+        ORDER BY change DESC'' {
+      fieldConfig.defaults = {
+        unit = "percent";
+        decimals = 0;
+        # Clipped, so one outlier doesn't flatten the other bars.
+        min = -50;
+        max = 200;
+        displayName = "\${__data.fields.Metric}";
+        color.mode = "thresholds";
+        thresholds = changeSteps;
+      };
+      options = {
+        orientation = "horizontal";
+        displayMode = "basic";
+        valueMode = "color";
+        showUnfilled = true;
+        namePlacement = "left";
+        minVizHeight = 14;
+        maxVizHeight = 22;
+        reduceOptions = {
+          values = true;
+          calcs = [];
+          fields = "";
+        };
+      };
+    })
+
+    (row 22 "Benchmarks over time" 57 [
+      (panel 10 "Benchmarks over time" "timeseries" (pos 0 58 24 10) "time series" ["time"] ''
+        SELECT at AS time,
+               suite || ' ' || metric || ' (' || unit || ')'
+               || CASE WHEN '$subgoal' = '-' THEN ' · ' || COALESCE(subgoal, 'whole sprint') ELSE ''' END
+               || CASE WHEN is_baseline = 1 THEN ' baseline' ELSE ''' END AS series,
+               value
+        FROM bench_live
+        WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
+        ORDER BY at'' {
+        # The plugin splits rows into one series per value of the text
+        # column, as a `series` label.
+        fieldConfig = {
+          defaults =
+            line
+            // {
+              displayName = "\${__field.labels.series}";
+            };
+          overrides = [
+            {
+              matcher = {
+                id = "byRegexp";
+                options = ".*baseline.*";
+              };
+              properties = [
+                {
+                  id = "custom.lineStyle";
+                  value = {
+                    fill = "dash";
+                    dash = [6 4];
+                  };
+                }
+              ];
+            }
+          ];
+        };
+        options = {
+          legend = {
+            displayMode = "list";
+            placement = "bottom";
+          };
+          tooltip.mode = "multi";
+        };
+      })
+
+    ])
+
+    (row 11 "Plan: every item" 65 [
+      (panel 12 "Items" "table" (pos 0 66 24 14) "table" ["Updated"] ''
           SELECT item AS "#", title AS "Item", status AS "Status", owner AS "Owner",
                  ${subgoalTitle "subgoal"} AS "Subgoal", at AS "Updated", note AS "Note"
           FROM item_state WHERE sprint_id = ${sid} AND ${inScope "subgoal"} ORDER BY position''
@@ -677,8 +836,8 @@ in {
         ]))
     ])
 
-    (row 13 "Pull requests" 42 [
-      (panel 14 "Pull requests" "table" (pos 0 43 24 12) "table" ["Since"] ''
+    (row 13 "Pull requests" 66 [
+      (panel 14 "Pull requests" "table" (pos 0 67 24 12) "table" ["Since"] ''
           SELECT title AS "PR", state AS "State", ${subgoalTitle "subgoal"} AS "Subgoal",
                  at AS "Since", url AS "Link"
           FROM pr_state WHERE sprint_id = ${sid} AND ${inScope "subgoal"} ORDER BY at DESC''
@@ -693,17 +852,17 @@ in {
         ]))
     ])
 
-    (row 15 "History: goal, subgoals, context sections" 43 [
-      (panel 16 "Goal versions" "table" (pos 0 44 12 9) "table" ["When"] ''
+    (row 15 "History: goal, subgoals, context sections" 67 [
+      (panel 16 "Goal versions" "table" (pos 0 68 12 9) "table" ["When"] ''
         SELECT at AS "When", text AS "Goal", reason AS "Why", source AS "By"
         FROM goal_versions WHERE sprint_id = ${sid} ORDER BY at DESC, id DESC''
       (table [(when "When") (width "When" 105) (width "By" 55) (wrapText "Goal") (wrapText "Why")]))
-      (panel 17 "Subgoal changes" "table" (pos 12 44 12 9) "table" ["When"] ''
+      (panel 17 "Subgoal changes" "table" (pos 12 68 12 9) "table" ["When"] ''
         SELECT at AS "When", title AS "Subgoal", status AS "Status", goal AS "Goal",
                done_when AS "Done when", reason AS "Why"
         FROM subgoal_events WHERE sprint_id = ${sid} AND ${inScope "key"} ORDER BY at DESC, id DESC''
       (table [(when "When") (colorText "Status") (width "When" 105) (width "Status" 70) (wrapText "Goal") (wrapText "Done when") (wrapText "Why")]))
-      (panel 18 "Context section versions (open a cell to read it)" "table" (pos 0 53 24 10) "table" ["When"] ''
+      (panel 18 "Context section versions (open a cell to read it)" "table" (pos 0 77 24 10) "table" ["When"] ''
         SELECT at AS "When", ${subgoalTitle "subgoal"} AS "Subgoal", title AS "Section",
                CASE WHEN body = ''' THEN '(removed)' ELSE body END AS "Text"
         FROM context_versions

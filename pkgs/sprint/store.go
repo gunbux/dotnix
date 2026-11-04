@@ -13,7 +13,7 @@ import (
 )
 
 // SchemaVersion is stored in PRAGMA user_version. A bump recreates the views.
-const SchemaVersion = 4
+const SchemaVersion = 5
 
 const tablesSQL = `
 CREATE TABLE IF NOT EXISTS sprints (
@@ -63,6 +63,18 @@ CREATE TABLE IF NOT EXISTS bench_results (
   commit_sha TEXT,
   link TEXT,
   subgoal TEXT
+);
+-- A removal hides a benchmark's results up to bench_results.id = last_id from
+-- the views. The rows stay.
+CREATE TABLE IF NOT EXISTS bench_removals (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  at INTEGER NOT NULL,
+  last_id INTEGER NOT NULL,
+  suite TEXT NOT NULL,
+  metric TEXT NOT NULL,
+  subgoal TEXT,
+  reason TEXT
 );
 CREATE TABLE IF NOT EXISTS log (
   id INTEGER PRIMARY KEY,
@@ -114,11 +126,11 @@ var addedColumns = [][2]string{
 }
 
 var tables = []string{"sprints", "goal_versions", "item_events", "pr_events", "bench_results", "log",
-	"subgoal_events", "context_versions"}
+	"subgoal_events", "context_versions", "bench_removals"}
 
 // Views hold no data, so a schema bump drops and recreates them.
 var views = []string{"item_state", "pr_state", "goal_current", "progress", "burnup",
-	"subgoal_state", "subgoal_progress", "context_state", "scoped_burnup", "bench_summary", "activity"}
+	"subgoal_state", "subgoal_progress", "context_state", "scoped_burnup", "bench_live", "bench_summary", "activity"}
 
 var viewsSQL = []string{`
 CREATE VIEW item_state AS
@@ -217,6 +229,12 @@ CREATE VIEW scoped_burnup AS
          SUM(d_scope) OVER (PARTITION BY sprint_id, scope ORDER BY at) AS in_scope,
          SUM(d_done) OVER (PARTITION BY sprint_id, scope ORDER BY at) AS done
   FROM per_time`, `
+-- Benchmark results that no later removal hides.
+CREATE VIEW bench_live AS
+  SELECT b.* FROM bench_results b
+  WHERE NOT EXISTS (SELECT 1 FROM bench_removals r
+                    WHERE r.sprint_id = b.sprint_id AND r.suite = b.suite AND r.metric = b.metric
+                      AND r.subgoal IS b.subgoal AND r.last_id >= b.id)`, `
 -- The latest run and the latest baseline of each benchmark, per subgoal: a
 -- baseline in one stage is never compared with a run in another.
 CREATE VIEW bench_summary AS
@@ -224,7 +242,7 @@ CREATE VIEW bench_summary AS
     SELECT b.*, ROW_NUMBER() OVER (
              PARTITION BY sprint_id, subgoal, suite, metric, unit, is_baseline
              ORDER BY at DESC, id DESC) AS rn
-    FROM bench_results b
+    FROM bench_live b
   ),
   grouped AS (
     SELECT sprint_id, subgoal, suite, metric, unit,
@@ -283,6 +301,10 @@ CREATE VIEW activity AS
            || CASE WHEN is_baseline = 1 THEN ' (baseline)' ELSE '' END,
          link
   FROM bench_results
+  UNION ALL
+  SELECT sprint_id, subgoal, at, id, 'bench',
+         'Benchmark removed: ' || suite || ' ' || metric || COALESCE(' (' || reason || ')', ''), NULL
+  FROM bench_removals
   UNION ALL
   SELECT sprint_id, subgoal, at, id, 'context',
          'Section ' || CASE WHEN body = '' THEN 'removed'

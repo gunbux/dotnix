@@ -79,6 +79,9 @@ func init() {
 				"commit":   {help: "commit measured"},
 				"link":     {help: "link to the run"},
 				"subgoal":  {help: subgoalHelp}}},
+		{path: "bench rm", help: "hide a benchmark's results so far from the views; the rows stay", run: cmdBenchRm,
+			args:  []argDef{{name: "suite"}, {name: "metric"}},
+			flags: map[string]flagDef{"reason": {help: "why"}, "subgoal": {help: "the subgoal the benchmark is on"}}},
 		{path: "log", help: "record a decision, steer, deploy, or note", run: cmdLog,
 			args:  []argDef{{name: "kind", choices: []string{"decision", "steer", "deploy", "note"}}, {name: "text"}},
 			flags: map[string]flagDef{"link": {help: "link"}, "subgoal": {help: subgoalHelp}}},
@@ -261,6 +264,20 @@ func cmdBench(c *call) {
 		sp.ID, now(), c.pos["suite"], c.pos["metric"], v, c.pos["unit"], c.has("baseline"),
 		null(c.flag("commit")), null(c.flag("link")), null(s.pickSubgoal(sp.ID, c.flag("subgoal"), c.has("subgoal"), true)))
 	c.printf("%s %s = %s %s\n", c.pos["suite"], c.pos["metric"], fmtNum(v), c.pos["unit"])
+}
+
+func cmdBenchRm(c *call) {
+	s := c.store
+	sp := s.resolve(c.flag("sprint"))
+	subgoal := s.pickSubgoal(sp.ID, c.flag("subgoal"), c.has("subgoal"), true)
+	if s.int("SELECT COUNT(*) FROM bench_live WHERE sprint_id = ? AND suite = ? AND metric = ? AND subgoal IS ?",
+		sp.ID, c.pos["suite"], c.pos["metric"], null(subgoal)) == 0 {
+		fail("no benchmark %s %s here", c.pos["suite"], c.pos["metric"])
+	}
+	s.exec("INSERT INTO bench_removals (sprint_id, at, last_id, suite, metric, subgoal, reason) "+
+		"VALUES (?, ?, (SELECT MAX(id) FROM bench_results), ?, ?, ?, ?)",
+		sp.ID, now(), c.pos["suite"], c.pos["metric"], null(subgoal), null(c.flag("reason")))
+	c.printf("%s %s: removed\n", c.pos["suite"], c.pos["metric"])
 }
 
 func cmdLog(c *call) {
