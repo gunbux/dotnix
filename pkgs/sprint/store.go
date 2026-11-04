@@ -13,7 +13,7 @@ import (
 )
 
 // SchemaVersion is stored in PRAGMA user_version. A bump recreates the views.
-const SchemaVersion = 6
+const SchemaVersion = 7
 
 const tablesSQL = `
 CREATE TABLE IF NOT EXISTS sprints (
@@ -112,6 +112,45 @@ CREATE TABLE IF NOT EXISTS context_versions (
   body TEXT NOT NULL,
   position REAL NOT NULL
 );
+-- A PR's row on the PR board, logged by "sprint pr sync" when it changes:
+-- what GitHub says (head, checks, threads, review bot scores as JSON) and
+-- where the board puts it (grp, steps as JSON, rank in review order).
+CREATE TABLE IF NOT EXISTS pr_reviews (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  at INTEGER NOT NULL,
+  url TEXT NOT NULL,
+  number INTEGER NOT NULL,
+  head TEXT NOT NULL,
+  base TEXT NOT NULL,
+  draft INTEGER NOT NULL,
+  failing TEXT NOT NULL,
+  running INTEGER NOT NULL,
+  threads INTEGER NOT NULL,
+  bots TEXT NOT NULL,
+  grp TEXT NOT NULL CHECK (grp IN ('merge', 'fix', 'wait')),
+  steps TEXT NOT NULL,
+  rank INTEGER NOT NULL,
+  why TEXT NOT NULL,
+  stack TEXT NOT NULL
+);
+-- The user's own next step for a PR. An empty text removes it.
+CREATE TABLE IF NOT EXISTS pr_notes (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  at INTEGER NOT NULL,
+  url TEXT NOT NULL,
+  text TEXT NOT NULL
+);
+-- One row per finished PR board sync, so the dashboard can tell fresh data
+-- from a sync that stopped.
+CREATE TABLE IF NOT EXISTS pr_syncs (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS pr_reviews_latest ON pr_reviews (sprint_id, url, id);
+CREATE INDEX IF NOT EXISTS pr_notes_latest ON pr_notes (sprint_id, url, id);
 CREATE INDEX IF NOT EXISTS item_events_latest ON item_events (sprint_id, item, at, id);
 CREATE INDEX IF NOT EXISTS pr_events_latest ON pr_events (sprint_id, url, id);
 CREATE INDEX IF NOT EXISTS goal_versions_latest ON goal_versions (sprint_id, at, id);
@@ -126,11 +165,13 @@ var addedColumns = [][2]string{
 }
 
 var tables = []string{"sprints", "goal_versions", "item_events", "pr_events", "bench_results", "log",
-	"subgoal_events", "context_versions", "bench_removals"}
+	"subgoal_events", "context_versions", "bench_removals", "pr_reviews", "pr_notes",
+	"pr_syncs"}
 
 // Views hold no data, so a schema bump drops and recreates them.
 var views = []string{"item_state", "pr_state", "goal_current", "progress", "burnup",
-	"subgoal_state", "subgoal_progress", "do_now", "context_state", "scoped_burnup", "bench_live", "bench_summary", "activity"}
+	"subgoal_state", "subgoal_progress", "do_now", "context_state", "scoped_burnup", "bench_live", "bench_summary", "activity",
+	"pr_review_state", "pr_note_state"}
 
 var viewsSQL = []string{`
 CREATE VIEW item_state AS
@@ -144,6 +185,15 @@ CREATE VIEW pr_state AS
   SELECT p.* FROM pr_events p
   WHERE p.id = (SELECT MAX(p2.id) FROM pr_events p2
                 WHERE p2.sprint_id = p.sprint_id AND p2.url = p.url)`, `
+CREATE VIEW pr_review_state AS
+  SELECT r.* FROM pr_reviews r
+  WHERE r.id = (SELECT MAX(r2.id) FROM pr_reviews r2
+                WHERE r2.sprint_id = r.sprint_id AND r2.url = r.url)`, `
+CREATE VIEW pr_note_state AS
+  SELECT n.* FROM pr_notes n
+  WHERE n.id = (SELECT MAX(n2.id) FROM pr_notes n2
+                WHERE n2.sprint_id = n.sprint_id AND n2.url = n.url)
+    AND n.text != ''`, `
 CREATE VIEW goal_current AS
   SELECT g.sprint_id, g.at, g.text, g.reason, g.source,
          (SELECT COUNT(*) FROM goal_versions g2 WHERE g2.sprint_id = g.sprint_id) AS versions

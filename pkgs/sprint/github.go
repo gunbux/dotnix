@@ -73,6 +73,9 @@ type fetchedPR struct {
 type fetchedPRs struct {
 	sprintID int64
 	prs      []fetchedPR
+	statuses map[string]prStatus // review state of the PRs still open, by log key
+	lastSync int64               // the newest pr_syncs id before the GitHub calls
+	failed   int                 // PRs GitHub could not tell about
 }
 
 // recordPR writes the events that GitHub shows and the log doesn't have yet.
@@ -148,15 +151,25 @@ func fetchPRSync(c *call) {
 	for _, u := range urls {
 		seen[u] = s.lastPREvent(sp.ID, u)
 	}
+	out.lastSync = s.int("SELECT MAX(id) FROM pr_syncs WHERE sprint_id = ?", sp.ID)
 	for _, u := range urls {
 		// One deleted or private repo must not stop the other PRs updating.
 		info, err := ghPR(u)
 		if err != nil {
 			fmt.Fprintf(c.errOut, "sprint: could not read %s: %v\n", u, err)
+			out.failed++
 			continue
 		}
 		out.prs = append(out.prs, fetchedPR{u, info, seen[u]})
 	}
+	var open []string
+	for _, p := range out.prs {
+		if p.info.State == "OPEN" {
+			open = append(open, p.key)
+		}
+	}
+	out.statuses = fetchStatuses(c, open)
+	out.failed += len(open) - len(out.statuses)
 	c.fetched = out
 }
 
@@ -189,7 +202,10 @@ func cmdPRAdd(c *call) {
 	savePRs(c, false, subgoal)
 }
 
-func cmdPRSync(c *call) { savePRs(c, true, "") }
+func cmdPRSync(c *call) {
+	savePRs(c, true, "")
+	syncBoard(c, c.fetched.(fetchedPRs))
+}
 
 func cmdPRReady(c *call) {
 	s := c.store
@@ -210,13 +226,17 @@ func cmdPRReady(c *call) {
 // prStatus is what a review gate needs to know about a PR: its head, the
 // review bots' scores, open threads, and checks.
 type prStatus struct {
-	Number         int    `json:"number"`
-	URL            string `json:"url"`
-	Title          string `json:"title"`
-	State          string `json:"state"`
-	IsDraft        bool   `json:"isDraft"`
-	BaseRefName    string `json:"baseRefName"`
-	HeadRefName    string `json:"headRefName"`
+	Number      int    `json:"number"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	State       string `json:"state"`
+	IsDraft     bool   `json:"isDraft"`
+	BaseRefName string `json:"baseRefName"`
+	HeadRefName string `json:"headRefName"`
+	// The repository that owns the head branch: a fork's for a fork PR.
+	HeadRepository *struct {
+		NameWithOwner string `json:"nameWithOwner"`
+	} `json:"headRepository"`
 	HeadRefOid     string `json:"headRefOid"`
 	Mergeable      string `json:"mergeable"`
 	ReviewDecision string `json:"reviewDecision"`
@@ -227,6 +247,10 @@ type prStatus struct {
 				StatusCheckRollup *struct {
 					Contexts struct {
 						Nodes []checkNode `json:"nodes"`
+						// More than the 100 checks read.
+						PageInfo struct {
+							HasNextPage bool `json:"hasNextPage"`
+						} `json:"pageInfo"`
 					} `json:"contexts"`
 				} `json:"statusCheckRollup"`
 			} `json:"commit"`
@@ -263,12 +287,12 @@ type botPost struct {
 }
 
 const prStatusQuery = `query($u: URI!) { resource(url: $u) { ... on PullRequest {
-  number url title state isDraft baseRefName headRefName headRefOid mergeable reviewDecision mergedAt
+  number url title state isDraft baseRefName headRefName headRepository { nameWithOwner } headRefOid mergeable reviewDecision mergedAt
   commits(last: 1) { nodes { commit { statusCheckRollup { contexts(first: 100) { nodes {
     __typename
     ... on CheckRun { name status conclusion startedAt }
     ... on StatusContext { context state }
-  } } } } } }
+  } pageInfo { hasNextPage } } } } } }
   reviewThreads(first: 100) { nodes { isResolved } pageInfo { hasNextPage } }
   comments(last: 40) { nodes { author { login } body updatedAt } }
   reviews(last: 40) { nodes { author { login } body submittedAt } }
@@ -359,6 +383,12 @@ func (p prStatus) openThreads() int {
 
 var failedChecks = map[string]bool{"FAILURE": true, "TIMED_OUT": true, "CANCELLED": true,
 	"ACTION_REQUIRED": true, "STARTUP_FAILURE": true, "ERROR": true}
+
+// allChecksRead is false when the PR has more checks than one page holds.
+func (p prStatus) allChecksRead() bool {
+	return len(p.Commits.Nodes) == 0 || p.Commits.Nodes[0].Commit.StatusCheckRollup == nil ||
+		!p.Commits.Nodes[0].Commit.StatusCheckRollup.Contexts.PageInfo.HasNextPage
+}
 
 // checks names the failing checks and counts the running ones. A push can
 // start a check twice and GitHub cancels the older run, so only the newest

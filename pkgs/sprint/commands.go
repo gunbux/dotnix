@@ -79,8 +79,10 @@ func init() {
 			flags: map[string]flagDef{"subgoal": {help: subgoalHelp + " (new PRs only)"}}},
 		{path: "pr ready", help: "mark a PR ready to merge (review gate passed)", run: cmdPRReady,
 			args: []argDef{{name: "url"}}},
-		{path: "pr sync", help: "record merges, closes, and reopens from GitHub", run: cmdPRSync,
-			prefetch: fetchPRSync},
+		{path: "pr sync", help: "record merges, closes, reopens, and the PR board's review state from GitHub",
+			run: cmdPRSync, prefetch: fetchPRSync},
+		{path: "pr note", help: "set your next step for a PR, shown on the PR board; - removes it", run: cmdPRNote,
+			args: []argDef{{name: "url"}, {name: "text"}}},
 		{path: "bench", help: "record a benchmark result", run: cmdBench,
 			args: []argDef{{name: "suite"}, {name: "metric"}, {name: "value"}, {name: "unit"}},
 			flags: map[string]flagDef{
