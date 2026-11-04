@@ -201,10 +201,10 @@ window-rule {
     open-maximized true
 }
 
-// Open T3 Code fullscreen at startup
+// Open T3 Code maximized at startup; fullscreen would hide the bar
 window-rule {
     match app-id=r#"^(com\.t3tools\.T3Code|t3code)$"# at-startup=true
-    open-fullscreen true
+    open-maximized true
 }
 
 // Open Libby (Waydroid) fullscreen

@@ -41,7 +41,7 @@ through the host's Homebrew casks; PaperWM's source is pinned in `flake.lock`.
 ## Scrolling windows
 
 PaperWM opens windows as columns on a horizontal strip. New windows start at
-half the display width. Hold Option while scrolling to slide between columns.
+the full display width. Hold Option while scrolling to slide between columns.
 Animation duration is set to zero and scroll gain to four for this trial.
 Native macOS Spaces gestures remain available.
 
