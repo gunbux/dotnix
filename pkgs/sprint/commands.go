@@ -466,10 +466,15 @@ func makeSummary(s Store, sp Sprint) summary {
 		i := scanItem(r)
 		si := summaryItem{i.Item, i.Title, i.Status, i.Owner, orNil(i.Subgoal)}
 		out.Items = append(out.Items, si)
-		if i.Owner == "user" && i.Status != "done" && i.Status != "dropped" {
-			out.DoNow = append(out.DoNow, si)
-		}
 	})
+	s.each("SELECT item, title, status, owner, COALESCE(subgoal, '') FROM do_now WHERE sprint_id = ? ORDER BY rank",
+		[]any{sp.ID}, func(r *sql.Rows) {
+			var si summaryItem
+			var subgoal string
+			check(r.Scan(&si.Item, &si.Title, &si.Status, &si.Owner, &subgoal))
+			si.Subgoal = orNil(subgoal)
+			out.DoNow = append(out.DoNow, si)
+		})
 	s.each("SELECT "+prCols+" FROM pr_state WHERE sprint_id = ? ORDER BY at", []any{sp.ID}, func(r *sql.Rows) {
 		p := scanPR(r)
 		out.PRs = append(out.PRs, summaryPR{p.URL, p.Title, p.State, orNil(p.Subgoal)})

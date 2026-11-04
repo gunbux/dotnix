@@ -659,3 +659,20 @@ func TestItemSetMovesAnItem(t *testing.T) {
 	eq(t, h.query("SELECT item FROM item_state ORDER BY position"), "(4) (3) (1) (2)")
 	h.fails("item", "set", "1", "--first", "--after", "2")
 }
+
+func TestDoNowOrdersByStageThenStep(t *testing.T) {
+	h := viewHarness(t)
+	// Item 2 is the user's step in hot-snap (planned). Add one in parity
+	// (active) and one for the whole sprint, then put the hot-snap step first
+	// by position: the stage still decides the order.
+	h.ok("item", "add", "approve the bench", "--owner", "user", "--subgoal", "parity")
+	h.ok("item", "add", "switch dotnix", "--owner", "user", "--subgoal", "-")
+	h.ok("item", "set", "2", "--first")
+	eq(t, h.query("SELECT rank, item, COALESCE(subgoal, '-'), total FROM do_now ORDER BY rank"),
+		"(1, 4, -, 3) (2, 3, parity, 3) (3, 2, hot-snap, 3)")
+	h.ok("item", "set", "3", "done")
+	eq(t, h.query("SELECT rank, item FROM do_now ORDER BY rank"), "(1, 4) (2, 2)")
+	var d summary
+	check(json.Unmarshal([]byte(h.ok("show", "--json")), &d))
+	eq(t, fmt.Sprint(d.DoNow[0].Item, d.DoNow[1].Item), "4 2")
+}

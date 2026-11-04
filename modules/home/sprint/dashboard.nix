@@ -458,13 +458,14 @@ in {
       SELECT created AS "Created", pr AS "PR", status AS "Status", backend AS "Backend",
              CASE with_trex WHEN 1 THEN 'yes' ELSE 'no' END AS "T-Rex run"
       FROM staging_recent WHERE sprint = '$sprint' ORDER BY created DESC'' {})
+    # The sprint's do_now list, filtered: a subgoal's view keeps the sprint's
+    # step numbers and shows the steps without a subgoal too.
     (pagePanel 33 "donow" (pos 0 22 10 15) [
       ''
-        SELECT i.item, i.title, i.status, i.note, COALESCE(g.title, ''') AS stage
-        FROM item_state i LEFT JOIN subgoal_state g ON g.sprint_id = i.sprint_id AND g.key = i.subgoal
-        WHERE i.sprint_id = ${sid} AND i.owner = 'user' AND i.status NOT IN ('done', 'dropped')
-          AND ${inScope "i.subgoal"}
-        ORDER BY i.position''
+        SELECT item, title, status, note, stage, rank, total, '$subgoal' != '-' AS filtered
+        FROM do_now
+        WHERE sprint_id = ${sid} AND (subgoal IS NULL OR ${inScope "subgoal"})
+        ORDER BY rank''
     ])
     (pagePanel 34 "stages" (pos 10 22 14 15) [
       ''

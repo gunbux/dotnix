@@ -13,7 +13,7 @@ import (
 )
 
 // SchemaVersion is stored in PRAGMA user_version. A bump recreates the views.
-const SchemaVersion = 5
+const SchemaVersion = 6
 
 const tablesSQL = `
 CREATE TABLE IF NOT EXISTS sprints (
@@ -130,7 +130,7 @@ var tables = []string{"sprints", "goal_versions", "item_events", "pr_events", "b
 
 // Views hold no data, so a schema bump drops and recreates them.
 var views = []string{"item_state", "pr_state", "goal_current", "progress", "burnup",
-	"subgoal_state", "subgoal_progress", "context_state", "scoped_burnup", "bench_live", "bench_summary", "activity"}
+	"subgoal_state", "subgoal_progress", "do_now", "context_state", "scoped_burnup", "bench_live", "bench_summary", "activity"}
 
 var viewsSQL = []string{`
 CREATE VIEW item_state AS
@@ -194,6 +194,22 @@ CREATE VIEW subgoal_progress AS
   FROM subgoal_state g
   LEFT JOIN item_state i ON i.sprint_id = g.sprint_id AND i.subgoal = g.key
   GROUP BY g.sprint_id, g.key`, `
+-- The user's open steps, in one order for the whole sprint: steps without a
+-- subgoal first, then each subgoal's steps in the order the stages list shows
+-- them (active, then planned, then done, then by position), then by item
+-- position. A subgoal's view filters this list and keeps rank, so a step has
+-- the same number in every view.
+CREATE VIEW do_now AS
+  SELECT i.sprint_id, i.item, i.title, i.status, i.owner, i.note, i.subgoal,
+         COALESCE(g.title, '') AS stage,
+         ROW_NUMBER() OVER (PARTITION BY i.sprint_id ORDER BY
+           g.key IS NOT NULL,
+           CASE g.status WHEN 'active' THEN 0 WHEN 'done' THEN 2 ELSE 1 END,
+           g.position, i.position, i.item) AS rank,
+         COUNT(*) OVER (PARTITION BY i.sprint_id) AS total
+  FROM item_state i
+  LEFT JOIN subgoal_state g ON g.sprint_id = i.sprint_id AND g.key = i.subgoal
+  WHERE i.owner = 'user' AND i.status NOT IN ('done', 'dropped')`, `
 CREATE VIEW context_state AS
   SELECT c.* FROM context_versions c
   WHERE c.id = (SELECT MAX(c2.id) FROM context_versions c2
