@@ -247,6 +247,10 @@ type prStatus struct {
 				StatusCheckRollup *struct {
 					Contexts struct {
 						Nodes []checkNode `json:"nodes"`
+						// More than the 100 checks read.
+						PageInfo struct {
+							HasNextPage bool `json:"hasNextPage"`
+						} `json:"pageInfo"`
 					} `json:"contexts"`
 				} `json:"statusCheckRollup"`
 			} `json:"commit"`
@@ -288,7 +292,7 @@ const prStatusQuery = `query($u: URI!) { resource(url: $u) { ... on PullRequest 
     __typename
     ... on CheckRun { name status conclusion startedAt }
     ... on StatusContext { context state }
-  } } } } } }
+  } pageInfo { hasNextPage } } } } } }
   reviewThreads(first: 100) { nodes { isResolved } pageInfo { hasNextPage } }
   comments(last: 40) { nodes { author { login } body updatedAt } }
   reviews(last: 40) { nodes { author { login } body submittedAt } }
@@ -379,6 +383,12 @@ func (p prStatus) openThreads() int {
 
 var failedChecks = map[string]bool{"FAILURE": true, "TIMED_OUT": true, "CANCELLED": true,
 	"ACTION_REQUIRED": true, "STARTUP_FAILURE": true, "ERROR": true}
+
+// allChecksRead is false when the PR has more checks than one page holds.
+func (p prStatus) allChecksRead() bool {
+	return len(p.Commits.Nodes) == 0 || p.Commits.Nodes[0].Commit.StatusCheckRollup == nil ||
+		!p.Commits.Nodes[0].Commit.StatusCheckRollup.Contexts.PageInfo.HasNextPage
+}
 
 // checks names the failing checks and counts the running ones. A push can
 // start a check twice and GitHub cancels the older run, so only the newest

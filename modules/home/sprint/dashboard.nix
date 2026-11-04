@@ -512,7 +512,7 @@ in {
         WHERE p.sprint_id = ${sid} AND ${inScope "p.subgoal"}
           AND (p.state IN ('opened', 'ready')
                OR (p.state = 'merged' AND p.at > CAST(strftime('%s', 'now') AS INTEGER) - 3 * 86400))
-        ORDER BY p.state = 'merged', COALESCE(r.rank, 1e9), p.at DESC''
+        ORDER BY p.state = 'merged', CASE WHEN p.state != 'merged' THEN COALESCE(r.rank, 1e9) END, p.at DESC''
       "SELECT MAX(at) AS at FROM pr_syncs WHERE sprint_id = ${sid}"
     ])
     # The k8s generator's board, until that sprint moves to `sprint pr sync`.

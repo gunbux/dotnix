@@ -166,6 +166,9 @@ func buildBoard(statuses []prStatus, items []Item) []*prReview {
 				wait = append(wait, b.Name+" has not reviewed the newest commit")
 			}
 		}
+		if !s.allChecksRead() {
+			wait = append(wait, "Over 100 checks; check the rest on GitHub")
+		}
 		if p.Running > 0 && len(p.Failing) == 0 {
 			wait = append(wait, plural(p.Running, "check")+" still running")
 		}

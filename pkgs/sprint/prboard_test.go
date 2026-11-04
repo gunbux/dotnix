@@ -31,14 +31,20 @@ func withChecks(p prStatus, nodes ...checkNode) prStatus {
 		Commit struct {
 			StatusCheckRollup *struct {
 				Contexts struct {
-					Nodes []checkNode `json:"nodes"`
+					Nodes    []checkNode `json:"nodes"`
+					PageInfo struct {
+						HasNextPage bool `json:"hasNextPage"`
+					} `json:"pageInfo"`
 				} `json:"contexts"`
 			} `json:"statusCheckRollup"`
 		} `json:"commit"`
 	}, 1)
 	p.Commits.Nodes[0].Commit.StatusCheckRollup = &struct {
 		Contexts struct {
-			Nodes []checkNode `json:"nodes"`
+			Nodes    []checkNode `json:"nodes"`
+			PageInfo struct {
+				HasNextPage bool `json:"hasNextPage"`
+			} `json:"pageInfo"`
 		} `json:"contexts"`
 	}{}
 	p.Commits.Nodes[0].Commit.StatusCheckRollup.Contexts.Nodes = nodes
@@ -78,6 +84,10 @@ func TestBoardGroupsEachPRByWhatBlocksIt(t *testing.T) {
 	eq(t, got(6), "fix: 2 open review threads")
 	eq(t, got(7), "wait: No review bot has scored it yet")
 	eq(t, got(8), "wait: 1 check still running")
+	manyChecks := withChecks(clean(10, "j"), checkNode{Typename: "CheckRun", Name: "a", Status: "COMPLETED", Conclusion: "SUCCESS"})
+	manyChecks.Commits.Nodes[0].Commit.StatusCheckRollup.Contexts.PageInfo.HasNextPage = true
+	eq(t, boardOf([]prStatus{manyChecks})[10].Group+": "+strings.Join(boardOf([]prStatus{manyChecks})[10].Steps, "; "),
+		"wait: Over 100 checks; check the rest on GitHub")
 	many := clean(9, "i")
 	many.ReviewThreads.PageInfo.HasNextPage = true
 	eq(t, strings.Join(boardOf([]prStatus{many})[9].Steps, "; "), "Over 100 review threads; check them on GitHub")
