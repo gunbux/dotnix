@@ -12,6 +12,9 @@
 }: let
   port = 3001;
   db = "${config.xdg.stateHome}/sprint/sprint.db";
+  # Live benchmark progress, apart from the sprint log. A status page
+  # generator rewrites this file (temp file, then rename) every minute.
+  benchDb = "${config.xdg.stateHome}/sprint/bench-live.db";
   dataDir = "${config.xdg.stateHome}/sprint-grafana";
 
   plugins = pkgs.linkFarm "sprint-grafana-plugins" [
@@ -34,8 +37,9 @@
     }
   ];
 
-  # Grafana expands $SPRINT_DB from the service environment, so a second
-  # instance can point the same provisioning at a demo database.
+  # Grafana expands $SPRINT_DB and $SPRINT_BENCH_DB from the service
+  # environment, so a second instance can point the same provisioning at
+  # demo databases.
   datasource = yaml.generate "sprint-datasource.yaml" {
     apiVersion = 1;
     datasources = [
@@ -52,6 +56,21 @@
           # A dashboard runs its panel queries at once. Without a busy
           # timeout some of them fail with SQLITE_BUSY.
           pathOptions = "_pragma=query_only(1)&_pragma=busy_timeout(5000)";
+          attachLimit = 0;
+        };
+      }
+      {
+        name = "Benchmark live";
+        type = "frser-sqlite-datasource";
+        uid = "sprint-bench-live";
+        access = "proxy";
+        editable = false;
+        jsonData = {
+          path = "$SPRINT_BENCH_DB";
+          pathPrefix = "file:";
+          # Read-only, so Grafana never creates the file before the
+          # generator first writes it.
+          pathOptions = "mode=ro&_pragma=query_only(1)&_pragma=busy_timeout(5000)";
           attachLimit = 0;
         };
       }
@@ -110,6 +129,7 @@
   start = pkgs.writeShellScript "sprint-grafana-start" ''
     set -eu
     export SPRINT_DB=${db}
+    export SPRINT_BENCH_DB=${benchDb}
     ${pkgs.coreutils}/bin/mkdir -p ${dataDir}/log
     ${lib.getExe pkgs.sprint} --db ${db} init
     exec ${lib.getExe' pkgs.grafana "grafana"} server --homepath ${pkgs.grafana}/share/grafana --config ${ini}

@@ -10,6 +10,12 @@ let
     type = "frser-sqlite-datasource";
     uid = "sprint-sqlite";
   };
+  # Live benchmark progress: a separate SQLite file that a status page
+  # generator rewrites every minute (tables bench_meta and bench_sessions).
+  liveDs = {
+    type = "frser-sqlite-datasource";
+    uid = "sprint-bench-live";
+  };
   sid = "(SELECT id FROM sprints WHERE slug = '$sprint')";
   # Rows of the chosen scope: all rows for the whole sprint, else one subgoal's.
   inScope = col: "('$subgoal' = '-' OR ${col} = '$subgoal')";
@@ -41,16 +47,22 @@ let
 
   # One section of the static status page as a Business Text panel. Its
   # queries get refIds A, B, ...; ./page/prelude.js and ./page/<name>.js
-  # build the HTML from them, and ./page/page.css styles it.
-  pagePanel = id: name: gridPos: sqls: {
+  # build the HTML from them, and ./page/page.css styles it. pagePanelFrom
+  # reads another datasource.
+  pagePanelFrom = source: id: name: gridPos: sqls: {
     inherit id gridPos;
     title = "";
     type = "marcusolsson-dynamictext-panel";
     transparent = true;
-    datasource = ds;
+    datasource = source;
     targets =
       builtins.genList
-      (i: target "table" (builtins.elemAt sqls i) [] // {refId = builtins.elemAt ["A" "B" "C" "D"] i;})
+      (i:
+        target "table" (builtins.elemAt sqls i) []
+        // {
+          refId = builtins.elemAt ["A" "B" "C" "D"] i;
+          datasource = source;
+        })
       (builtins.length sqls);
     options = {
       renderMode = "data";
@@ -65,6 +77,7 @@ let
       styles = builtins.readFile ./page/page.css;
     };
   };
+  pagePanel = pagePanelFrom ds;
 
   # Change against the baseline, in percent; lower is better.
   changeSteps = {
@@ -321,7 +334,15 @@ in {
         UNION ALL
         SELECT percent, done, in_scope FROM subgoal_progress WHERE sprint_id = ${sid} AND key = '$subgoal' ''
     ])
-    (pagePanel 33 "donow" (pos 0 5 10 10) [
+    # Benchmark sessions from the last 3 hours, and how old that data is.
+    (pagePanelFrom liveDs 40 "live" (pos 0 5 24 8) [
+      "SELECT updated_at, runner_log FROM bench_meta WHERE sprint = '$sprint'"
+      ''
+        SELECT session_id, scenario, started_at, state, runs_finished, runs_ok,
+               inflight_run, inflight_started_at, last_runs
+        FROM bench_sessions WHERE sprint = '$sprint' ORDER BY position''
+    ])
+    (pagePanel 33 "donow" (pos 0 13 10 10) [
       ''
         SELECT i.item, i.title, i.status, i.note, COALESCE(g.title, ''') AS stage
         FROM item_state i LEFT JOIN subgoal_state g ON g.sprint_id = i.sprint_id AND g.key = i.subgoal
@@ -329,17 +350,17 @@ in {
           AND ${inScope "i.subgoal"}
         ORDER BY i.position''
     ])
-    (pagePanel 34 "stages" (pos 10 5 14 10) [
+    (pagePanel 34 "stages" (pos 10 13 14 10) [
       ''
         SELECT g.key, g.title, g.status, g.done_when, p.done, p.in_scope, p.percent
         FROM subgoal_state g JOIN subgoal_progress p ON p.sprint_id = g.sprint_id AND p.key = g.key
         WHERE g.sprint_id = ${sid} AND g.status != 'dropped'
         ORDER BY ${stageOrder}, g.position''
     ])
-    (pagePanel 35 "context" (pos 0 15 24 9) [
+    (pagePanel 35 "context" (pos 0 23 24 9) [
       "SELECT title, body, at FROM context_state WHERE sprint_id = ${sid} AND subgoal IS NULL AND body != '' ORDER BY position, id"
     ])
-    (pagePanel 36 "left" (pos 0 24 24 14) [
+    (pagePanel 36 "left" (pos 0 32 24 14) [
       ''
         SELECT g.key, g.title, g.status, g.goal
         FROM subgoal_state g
@@ -354,14 +375,14 @@ in {
         WHERE sprint_id = ${sid} AND subgoal IS NOT NULL AND body != ''' AND ${inScope "subgoal"}
         ORDER BY position, id''
     ])
-    (pagePanel 37 "bench" (pos 0 38 24 9) [
+    (pagePanel 37 "bench" (pos 0 46 24 9) [
       ''
         SELECT suite, metric, unit, latest, baseline, change, ${subgoalTitle "subgoal"} AS stage
         FROM bench_summary
         WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
         ORDER BY suite, COALESCE(change, -1e9) DESC''
     ])
-    (pagePanel 38 "prs" (pos 0 47 24 6) [
+    (pagePanel 38 "prs" (pos 0 55 24 6) [
       ''
         SELECT url, title, state, ${subgoalTitle "subgoal"} AS stage FROM pr_state
         WHERE sprint_id = ${sid} AND state IN ('opened', 'ready') AND ${inScope "subgoal"}
@@ -369,8 +390,8 @@ in {
       "SELECT COUNT(*) AS n FROM pr_state WHERE sprint_id = ${sid} AND state = 'merged' AND ${inScope "subgoal"}"
     ])
 
-    (row 39 "Charts: burn-up, stage status over time, activity" 54 [
-      (panel 5 "Burn-up: done vs. in scope" "timeseries" (pos 0 55 14 9) "time series" ["time"] ''
+    (row 39 "Charts: burn-up, stage status over time, activity" 62 [
+      (panel 5 "Burn-up: done vs. in scope" "timeseries" (pos 0 63 14 9) "time series" ["time"] ''
         SELECT time, in_scope AS "In scope", done AS "Done"
         FROM scoped_burnup WHERE sprint_id = ${sid} AND scope = '$subgoal'
         UNION ALL
@@ -423,7 +444,7 @@ in {
       })
       # A table of (time, key, title, status), split into one row per subgoal by
       # the partitionByValues transformation. Each status lasts until the next.
-      (panel 7 "Subgoal status over time" "state-timeline" (pos 14 55 10 9) "table" ["time"] ''
+      (panel 7 "Subgoal status over time" "state-timeline" (pos 14 63 10 9) "table" ["time"] ''
         SELECT e.at AS time, e.key AS key, g.title AS subgoal, e.status AS status
         FROM subgoal_events e JOIN subgoal_state g ON g.sprint_id = e.sprint_id AND g.key = e.key
         WHERE e.sprint_id = ${sid}
@@ -457,7 +478,7 @@ in {
           legend.showLegend = false;
         };
       })
-      (panel 8 "Activity" "table" (pos 0 64 24 10) "table" ["When"] ''
+      (panel 8 "Activity" "table" (pos 0 72 24 10) "table" ["When"] ''
           SELECT at AS "When", kind AS "Kind", text AS "What", link AS "Link"
           FROM activity WHERE sprint_id = ${sid} AND ${inScope "subgoal"}
           ORDER BY at DESC, id DESC LIMIT 300''
@@ -471,9 +492,9 @@ in {
         ]))
     ])
 
-    (row 22 "Benchmark charts" 55 [
+    (row 22 "Benchmark charts" 63 [
       # One bar chart per suite: each metric's latest run beside its baseline.
-      (panel 19 "\${suite}: latest run against baseline" "barchart" (pos 0 57 12 12) "table" [] ''
+      (panel 19 "\${suite}: latest run against baseline" "barchart" (pos 0 65 12 12) "table" [] ''
           SELECT metric || ' (' || unit || ')' AS "Metric", latest AS "Latest", baseline AS "Baseline"
           FROM bench_summary
           WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
@@ -531,7 +552,7 @@ in {
           tooltip.mode = "multi";
         };
       })
-      (panel 9 "Benchmarks: latest run vs baseline" "table" (pos 0 69 14 14) "table" [] ''
+      (panel 9 "Benchmarks: latest run vs baseline" "table" (pos 0 77 14 14) "table" [] ''
           SELECT suite AS "Suite", metric AS "Metric", ${subgoalTitle "subgoal"} AS "Subgoal",
                  latest AS "Latest", baseline AS "Baseline", unit AS "Unit", change AS "Change %",
                  runs AS "Runs"
@@ -582,7 +603,7 @@ in {
             }
           ])
         ]))
-      (panel 20 "Benchmarks at most 5% worse than baseline" "stat" (pos 14 69 10 3) "table" [] ''
+      (panel 20 "Benchmarks at most 5% worse than baseline" "stat" (pos 14 77 10 3) "table" [] ''
           SELECT SUM(change <= 5) || ' of ' || COUNT(*) AS "Within 5%"
           FROM bench_summary
           WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
@@ -599,7 +620,7 @@ in {
           };
         };
       })
-      (panel 21 "Change against baseline, worst first (%)" "bargauge" (pos 14 72 10 11) "table" [] ''
+      (panel 21 "Change against baseline, worst first (%)" "bargauge" (pos 14 80 10 11) "table" [] ''
           SELECT suite || ' · ' || metric AS "Metric", change AS "Change"
           FROM bench_summary
           WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
@@ -630,7 +651,7 @@ in {
           };
         };
       })
-      (panel 10 "Benchmarks over time" "timeseries" (pos 0 83 24 10) "time series" ["time"] ''
+      (panel 10 "Benchmarks over time" "timeseries" (pos 0 91 24 10) "time series" ["time"] ''
         SELECT at AS time,
                suite || ' ' || metric || ' (' || unit || ')'
                || CASE WHEN '$subgoal' = '-' THEN ' · ' || COALESCE(subgoal, 'whole sprint') ELSE ''' END
@@ -675,8 +696,8 @@ in {
       })
     ])
 
-    (row 11 "Plan: every item" 56 [
-      (panel 12 "Items" "table" (pos 0 66 24 14) "table" ["Updated"] ''
+    (row 11 "Plan: every item" 64 [
+      (panel 12 "Items" "table" (pos 0 74 24 14) "table" ["Updated"] ''
           SELECT item AS "#", title AS "Item", status AS "Status", owner AS "Owner",
                  ${subgoalTitle "subgoal"} AS "Subgoal", at AS "Updated", note AS "Note"
           FROM item_state WHERE sprint_id = ${sid} AND ${inScope "subgoal"} ORDER BY position''
@@ -693,8 +714,8 @@ in {
         ]))
     ])
 
-    (row 13 "Pull requests" 57 [
-      (panel 14 "Pull requests" "table" (pos 0 67 24 12) "table" ["Since"] ''
+    (row 13 "Pull requests" 65 [
+      (panel 14 "Pull requests" "table" (pos 0 75 24 12) "table" ["Since"] ''
           SELECT title AS "PR", state AS "State", ${subgoalTitle "subgoal"} AS "Subgoal",
                  at AS "Since", url AS "Link"
           FROM pr_state WHERE sprint_id = ${sid} AND ${inScope "subgoal"} ORDER BY at DESC''
@@ -709,17 +730,17 @@ in {
         ]))
     ])
 
-    (row 15 "History: goal, subgoals, context sections" 58 [
-      (panel 16 "Goal versions" "table" (pos 0 68 12 9) "table" ["When"] ''
+    (row 15 "History: goal, subgoals, context sections" 66 [
+      (panel 16 "Goal versions" "table" (pos 0 76 12 9) "table" ["When"] ''
         SELECT at AS "When", text AS "Goal", reason AS "Why", source AS "By"
         FROM goal_versions WHERE sprint_id = ${sid} ORDER BY at DESC, id DESC''
       (table [(when "When") (width "When" 105) (width "By" 55) (wrapText "Goal") (wrapText "Why")]))
-      (panel 17 "Subgoal changes" "table" (pos 12 68 12 9) "table" ["When"] ''
+      (panel 17 "Subgoal changes" "table" (pos 12 76 12 9) "table" ["When"] ''
         SELECT at AS "When", title AS "Subgoal", status AS "Status", goal AS "Goal",
                done_when AS "Done when", reason AS "Why"
         FROM subgoal_events WHERE sprint_id = ${sid} AND ${inScope "key"} ORDER BY at DESC, id DESC''
       (table [(when "When") (colorText "Status") (width "When" 105) (width "Status" 70) (wrapText "Goal") (wrapText "Done when") (wrapText "Why")]))
-      (panel 18 "Context section versions (open a cell to read it)" "table" (pos 0 77 24 10) "table" ["When"] ''
+      (panel 18 "Context section versions (open a cell to read it)" "table" (pos 0 85 24 10) "table" ["When"] ''
         SELECT at AS "When", ${subgoalTitle "subgoal"} AS "Subgoal", title AS "Section",
                CASE WHEN body = ''' THEN '(removed)' ELSE body END AS "Text"
         FROM context_versions
