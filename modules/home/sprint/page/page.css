@@ -107,7 +107,9 @@
 .sp .prb table { border-left:4px solid var(--bd) }
 .sp .prb table.g-merge { border-left-color:var(--ok) }
 .sp .prb table.g-fix { border-left-color:var(--bad) }
-.sp .prb td.n { width:92px;white-space:nowrap }
+.sp .prb td.n { width:190px }
+.sp .prb .rk { display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--bd);font-size:11px;font-weight:600;margin-right:6px }
+.sp .prb table.g-merge .rk { background:var(--ok);color:var(--bg) }
 .sp .prb td.gate { width:330px }
 .sp .prb td.why { width:34% }
 .sp .prb .t { font-weight:550 }
