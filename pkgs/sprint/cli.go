@@ -35,6 +35,7 @@ type command struct {
 	run      func(*call)
 	prefetch func(*call) // runs before the write lock
 	noLog    bool        // the command never opens the sprint log
+	hidden   bool        // left out of the usage list
 }
 
 // call is one parsed command line.
@@ -196,6 +197,9 @@ func topUsage() string {
 	b.WriteString("sprint: append-only sprint log, shown on a local Grafana dashboard\n\n" +
 		"usage: sprint [--db <file>] [--sprint <slug>] <command> ...\n\ncommands:\n")
 	for _, c := range commands {
+		if c.hidden {
+			continue
+		}
 		fmt.Fprintf(&b, "  %-12s %s\n", c.path, c.help)
 	}
 	b.WriteString("\nRun `sprint <command> --help` for its flags.\n")
@@ -224,6 +228,10 @@ func run(args []string, stdout, stderr io.Writer) (code int) {
 		out: stdout, errOut: stderr}
 	defer func() {
 		if r := recover(); r != nil {
+			if _, ok := r.(probeDone); ok {
+				code = exitDone
+				return
+			}
 			if e, ok := r.(userError); ok {
 				fmt.Fprintf(stderr, "sprint: %s\n", e.msg)
 			} else if e, ok := r.(error); ok {
