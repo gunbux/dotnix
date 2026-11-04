@@ -161,8 +161,10 @@ in
       home.packages = [pkgs.sprint];
       # The last switch's dashboard, for `sprint dash reset`.
       xdg.dataFile."sprint/sprint.json".source = dashboard;
-      # Every switch puts the built dashboard back, over any dev copy.
+      # Every switch puts the built dashboard back, over any dev copy. Init
+      # first, so the files have every column the new dashboard reads.
       home.activation.sprintDashboard = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        run env SPRINT_LIVE_DB=${liveDb} ${lib.getExe pkgs.sprint} --db ${db} init
         run ${copyDashboard}
       '';
     }

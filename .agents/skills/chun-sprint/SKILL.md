@@ -121,7 +121,7 @@ Everything an agent waits on or polls goes in the dashboard's Live section, so t
 | A GitHub Actions run | `sprint poll ci --every 60s --title "CI" -- sprint probe gh-run <run url>` |
 | A PR's review bots | `sprint poll review --every 2m --title "Review" -- sprint probe greptile <pr url> --until five` |
 | A runner's log | `sprint poll bench --every 30s --title "Bench" -- sprint probe tail <file> --until '<done regex>'` |
-| Keep the PR board current | `sprint poll prs --every 3m --title "PR board sync" -- sprint pr sync` |
+| Keep the PR board current | `sprint poll prs --every 3m --background --title "PR board sync" -- sprint pr sync` |
 | One update by hand | `sprint live set <key> [--title ..] [--subgoal <key>\|-] [--progress 7/12] [--ends-at +45m] [--stale-after 3m] [--link <url>] --file -` |
 | Finish or remove an item | `sprint live done <key>` (it stays 1 h), `sprint live rm <key>` |
 | See pollers and items | `sprint poll ls`, `sprint live ls` |

@@ -164,3 +164,25 @@ func TestContextLsListsSectionsByScope(t *testing.T) {
 	eq(t, h.ok("context", "ls", "--subgoal", "-"), "-\tarch\tArchitecture\t1970-01-01 08:16\n")
 	contains_(t, h.fails("context", "ls", "--subgoal", "nope"), `no subgoal "nope"`)
 }
+
+// A live file made before the background column gets it on the next open,
+// with every old item in the foreground.
+func TestOpenLiveAddsTheBackgroundColumn(t *testing.T) {
+	h := liveSprint(t)
+	path := filepath.Join(filepath.Dir(h.db), "live.db")
+	old := strings.Replace(liveSQL, "background INTEGER NOT NULL DEFAULT 0,", "", 1)
+	db, err := sql.Open("sqlite", "file:"+path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, q := range []string{"DROP TABLE IF EXISTS live_items", old,
+		"INSERT INTO live_items (sprint, key, title, created_at, updated_at, seen_at) VALUES ('s1', 'a', 'A', 1, 1, 1)"} {
+		if _, err := db.Exec(q); err != nil {
+			t.Fatalf("%s: %v", q, err)
+		}
+	}
+	db.Close()
+	h.ok("init")
+	eq(t, h.live("SELECT key, background FROM live_items"), "(a, 0)")
+	h.ok("init") // twice is fine
+}

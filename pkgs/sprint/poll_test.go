@@ -146,7 +146,7 @@ func TestPollRunsDetachedUntilStopped(t *testing.T) {
 		"sh", "-c", "echo tick $$")
 	contains_(t, out, "poll tick: started, PID")
 	waitFor(t, "first tick", func() bool { return strings.Contains(h.live("SELECT body FROM live_items"), "tick") })
-	eq(t, h.live("SELECT title, subgoal, stale_after, state FROM live_items"), "(Ticker, bench, 15, live)")
+	eq(t, h.live("SELECT title, subgoal, stale_after, state, background FROM live_items"), "(Ticker, bench, 15, live, 0)")
 	pid := pidOf(t, h, "tick")
 	// Its own session, so the shell that started it can end.
 	// syscall has no Getsid on Linux; the raw call works on Linux and macOS.
@@ -155,8 +155,13 @@ func TestPollRunsDetachedUntilStopped(t *testing.T) {
 	eq(t, int(sid), pid)
 	contains_(t, h.ok("poll", "ls"), "tick\ts1\tPID "+strconv.Itoa(pid)+"\tevery 5s\tupdated ")
 
-	// Starting it again replaces the running poller.
+	// Starting it again replaces the running poller, and sets each flag
+	// again: --background on, then off.
+	contains_(t, h.ok("poll", "tick", "--every", "5s", "--background", "--", "sh", "-c", "echo tick"), "restarted")
+	eq(t, h.live("SELECT background FROM live_items"), "(1)")
+	contains_(t, h.ok("live", "ls"), "Ticker (background)")
 	contains_(t, h.ok("poll", "tick", "--every", "5s", "--", "sh", "-c", "echo tock"), "restarted")
+	eq(t, h.live("SELECT background FROM live_items"), "(0)")
 	waitFor(t, "old poller gone", func() bool { return syscall.Kill(pid, 0) != nil })
 	waitFor(t, "second command", func() bool { return h.live("SELECT body FROM live_items") == "(tock)" })
 

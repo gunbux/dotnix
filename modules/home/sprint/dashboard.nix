@@ -342,7 +342,8 @@ in {
         SELECT percent, done, in_scope FROM subgoal_progress WHERE sprint_id = ${sid} AND key = '$subgoal' ''
     ])
     # Live items for this view: a subgoal's view shows its own items and the
-    # whole sprint's. A done item stays for an hour. Anything a sprint polls
+    # whole sprint's. A done item stays for an hour. A background chore
+    # (`sprint poll --background`) shows only when it fails or goes stale. Anything a sprint polls
     # (benchmarks, CI, deploys) shows here, so no panel is sprint-specific.
     (pagePanelFrom liveItemsDs 44 "live" (pos 0 5 24 8) [
       ''
@@ -351,6 +352,9 @@ in {
         FROM live_items
         WHERE sprint = '$sprint' AND (subgoal IS NULL OR ${inScope "subgoal"})
           AND (state = 'live' OR done_at > CAST(strftime('%s', 'now') AS INTEGER) - 3600)
+          -- A background chore shows only when it fails or goes stale.
+          AND (background = 0 OR error IS NOT NULL
+               OR (stale_after IS NOT NULL AND seen_at < CAST(strftime('%s', 'now') AS INTEGER) - stale_after))
         ORDER BY state = 'done', created_at, key''
     ])
     # The sprint's do_now list, filtered: a subgoal's view keeps the sprint's

@@ -112,7 +112,7 @@ func cmdPoll(c *call) {
 	if c.has("timeout") {
 		timeout = parseEvery(c.flag("timeout"))
 	}
-	ch := liveChange{"stale_after": int64(3 * every.Seconds())}
+	ch := liveChange{"stale_after": int64(3 * every.Seconds()), "background": c.has("background")}
 	if c.has("title") {
 		ch["title"] = c.flag("title")
 	}

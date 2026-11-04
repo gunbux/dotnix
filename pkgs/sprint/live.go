@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS live_items (
   -- stale_after seconds.
   seen_at INTEGER NOT NULL,
   done_at INTEGER,
+  -- A chore, such as the PR board sync: the dashboard shows its card only
+  -- when it fails or goes stale.
+  background INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (sprint, key)
 );`
 
@@ -63,6 +66,10 @@ func openLive(path string) (Store, func()) {
 	s := Store{db}
 	s.exec("PRAGMA journal_mode=WAL")
 	s.exec(liveSQL)
+	// Files made before the background column get it here.
+	if s.int("SELECT COUNT(*) FROM pragma_table_info('live_items') WHERE name = 'background'") == 0 {
+		s.exec("ALTER TABLE live_items ADD COLUMN background INTEGER NOT NULL DEFAULT 0")
+	}
 	return s, func() { db.Close() }
 }
 
@@ -72,15 +79,16 @@ type LiveItem struct {
 	EndsAt, StaleAfter                sql.NullInt64
 	Link, State, Error                string
 	UpdatedAt, SeenAt                 int64
+	Background                        bool
 }
 
 const liveCols = "sprint, key, COALESCE(subgoal, ''), title, body, done_n, total_n, ends_at, stale_after, " +
-	"COALESCE(link, ''), state, COALESCE(error, ''), updated_at, seen_at"
+	"COALESCE(link, ''), state, COALESCE(error, ''), updated_at, seen_at, background"
 
 func scanLive(r interface{ Scan(...any) error }) LiveItem {
 	var l LiveItem
 	check(r.Scan(&l.Sprint, &l.Key, &l.Subgoal, &l.Title, &l.Body, &l.Done, &l.Total, &l.EndsAt, &l.StaleAfter,
-		&l.Link, &l.State, &l.Error, &l.UpdatedAt, &l.SeenAt))
+		&l.Link, &l.State, &l.Error, &l.UpdatedAt, &l.SeenAt, &l.Background))
 	return l
 }
 
@@ -312,7 +320,11 @@ func cmdLiveLs(c *call) {
 			if l.Total.Valid {
 				progress = fmt.Sprintf(" %s/%s", fmtNum(l.Done.Float64), fmtNum(l.Total.Float64))
 			}
-			c.printf("%s\t%s\t%s\t%s%s\t%s\n", l.Key, state, where, ago(l.UpdatedAt), progress, l.Title)
+			title := l.Title
+			if l.Background {
+				title += " (background)"
+			}
+			c.printf("%s\t%s\t%s\t%s%s\t%s\n", l.Key, state, where, ago(l.UpdatedAt), progress, title)
 			if l.Error != "" {
 				c.printf("\terror: %s\n", l.Error)
 			}
