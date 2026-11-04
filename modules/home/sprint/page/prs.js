@@ -64,7 +64,7 @@ for (const [k, name, mark, desc] of GROUPS) {
       steps.push(p.note);
     }
     const meta = [p.stage || 'whole sprint', p.base && p.base !== 'main' ? `base ${p.base}` : ''].filter(Boolean).join(' · ');
-    h += `<tr><td class="n">${k === 'wait' ? '' : `<span class="rk">${i + 1}</span>`}`
+    h += `<tr class="fit"><td class="n">${k === 'wait' ? '' : `<span class="rk">${i + 1}</span>`}`
       + `<a href="${esc(p.url)}" target="_blank">${esc(num(p))}</a>`
       + (p.stack ? `<div class="stack">${esc(p.stack)}</div>` : '')
       + (k === 'wait' || !p.why ? '' : `<div class="stack">${esc(p.why)}</div>`) + '</td>'

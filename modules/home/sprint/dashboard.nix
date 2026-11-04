@@ -69,8 +69,9 @@ let
       defaultContent = "{{{html}}}";
       wrap = true;
       editors = [];
-      helpers = builtins.readFile ./page/prelude.js + "\n" + builtins.readFile (./page + "/${name}.js");
-      afterRender = "";
+      helpers = "const panelName = '${name}';\n" + builtins.readFile ./page/prelude.js + "\n" + builtins.readFile (./page + "/${name}.js");
+      # Folds what doesn't fit the panel, so no section scrolls on its own.
+      afterRender = builtins.readFile ./page/fit.js;
       externalStyles = [];
       contentPartials = [];
       styles = builtins.readFile ./page/page.css;
@@ -343,7 +344,7 @@ in {
     # Live items for this view: a subgoal's view shows its own items and the
     # whole sprint's. A done item stays for an hour. Anything a sprint polls
     # (benchmarks, CI, deploys) shows here, so no panel is sprint-specific.
-    (pagePanelFrom liveItemsDs 44 "live" (pos 0 5 24 7) [
+    (pagePanelFrom liveItemsDs 44 "live" (pos 0 5 24 8) [
       ''
         SELECT key, subgoal, title, body, done_n, total_n, ends_at, stale_after, link, state, error,
                updated_at, seen_at, done_at
@@ -354,14 +355,14 @@ in {
     ])
     # The sprint's do_now list, filtered: a subgoal's view keeps the sprint's
     # step numbers and shows the steps without a subgoal too.
-    (pagePanel 33 "donow" (pos 0 12 10 15) [
+    (pagePanel 33 "donow" (pos 0 13 10 15) [
       ''
         SELECT item, title, status, note, stage, rank, total, '$subgoal' != '-' AS filtered
         FROM do_now
         WHERE sprint_id = ${sid} AND (subgoal IS NULL OR ${inScope "subgoal"})
         ORDER BY rank''
     ])
-    (pagePanel 34 "stages" (pos 10 12 14 15) [
+    (pagePanel 34 "stages" (pos 10 13 14 15) [
       ''
         SELECT g.key, g.title, g.status, g.done_when, p.done, p.in_scope, p.percent
         FROM subgoal_state g JOIN subgoal_progress p ON p.sprint_id = g.sprint_id AND p.key = g.key
@@ -370,7 +371,7 @@ in {
     ])
     # Open PRs, sorted by what to do next, from the log: `sprint pr sync`
     # writes each PR's board row (pr_review_state), so no generator runs.
-    (pagePanel 45 "prs" (pos 0 27 24 18) [
+    (pagePanel 45 "prs" (pos 0 28 24 12) [
       ''
         SELECT p.url, p.title, p.state, p.at, COALESCE(g.title, ''') AS stage,
                r.number, r.head, r.base, r.draft, r.failing, r.running, r.threads, r.bots,
@@ -385,10 +386,10 @@ in {
         ORDER BY p.state = 'merged', CASE WHEN p.state != 'merged' THEN COALESCE(r.rank, 1e9) END, p.at DESC''
       "SELECT MAX(at) AS at FROM pr_syncs WHERE sprint_id = ${sid}"
     ])
-    (pagePanel 35 "context" (pos 0 45 24 9) [
+    (pagePanel 35 "context" (pos 0 40 24 10) [
       "SELECT title, body, at FROM context_state WHERE sprint_id = ${sid} AND subgoal IS NULL AND body != '' ORDER BY position, id"
     ])
-    (pagePanel 36 "left" (pos 0 54 24 14) [
+    (pagePanel 36 "left" (pos 0 50 24 14) [
       ''
         SELECT g.key, g.title, g.status, g.goal
         FROM subgoal_state g
@@ -403,7 +404,7 @@ in {
         WHERE sprint_id = ${sid} AND subgoal IS NOT NULL AND body != ''' AND ${inScope "subgoal"}
         ORDER BY position, id''
     ])
-    (pagePanel 37 "bench" (pos 0 68 24 9) [
+    (pagePanel 37 "bench" (pos 0 64 24 9) [
       ''
         SELECT suite, metric, unit, latest, baseline, change, ${subgoalTitle "subgoal"} AS stage
         FROM bench_summary
@@ -411,7 +412,7 @@ in {
         ORDER BY suite, COALESCE(change, -1e9) DESC''
     ])
 
-    (row 39 "Charts: burn-up, stage status over time, activity" 77 [
+    (row 39 "Charts: burn-up, stage status over time, activity" 73 [
       (panel 5 "Burn-up: done vs. in scope" "timeseries" (pos 0 63 14 9) "time series" ["time"] ''
         SELECT time, in_scope AS "In scope", done AS "Done"
         FROM scoped_burnup WHERE sprint_id = ${sid} AND scope = '$subgoal'
@@ -513,7 +514,7 @@ in {
         ]))
     ])
 
-    (row 22 "Benchmark charts" 78 [
+    (row 22 "Benchmark charts" 74 [
       # One bar chart per suite: each metric's latest run beside its baseline.
       (panel 19 "\${suite}: latest run against baseline" "barchart" (pos 0 65 12 12) "table" [] ''
         SELECT metric || ' (' || unit || ')' AS "Metric", latest AS "Latest", baseline AS "Baseline"
@@ -717,7 +718,7 @@ in {
       })
     ])
 
-    (row 11 "Plan: every item" 79 [
+    (row 11 "Plan: every item" 75 [
       (panel 12 "Items" "table" (pos 0 74 24 14) "table" ["Updated"] ''
           SELECT item AS "#", title AS "Item", status AS "Status", owner AS "Owner",
                  ${subgoalTitle "subgoal"} AS "Subgoal", at AS "Updated", note AS "Note"
@@ -735,7 +736,7 @@ in {
         ]))
     ])
 
-    (row 13 "Pull requests" 80 [
+    (row 13 "Pull requests" 76 [
       (panel 14 "Pull requests" "table" (pos 0 75 24 12) "table" ["Since"] ''
           SELECT title AS "PR", state AS "State", ${subgoalTitle "subgoal"} AS "Subgoal",
                  at AS "Since", url AS "Link"
@@ -751,7 +752,7 @@ in {
         ]))
     ])
 
-    (row 15 "History: goal, subgoals, context sections" 81 [
+    (row 15 "History: goal, subgoals, context sections" 77 [
       (panel 16 "Goal versions" "table" (pos 0 76 12 9) "table" ["When"] ''
         SELECT at AS "When", text AS "Goal", reason AS "Why", source AS "By"
         FROM goal_versions WHERE sprint_id = ${sid} ORDER BY at DESC, id DESC''

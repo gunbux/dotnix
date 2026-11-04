@@ -24,7 +24,8 @@ import (
 //
 // The command prints Markdown (the item's body) or a JSON object with any of
 // body, progress ("7/12"), ends_at (as in `live set --ends-at`), title and
-// link. Exit 100 marks the item done and stops the poller. Another non-zero
+// link. A field with the wrong type is skipped and shown as the card's
+// error. Exit 100 marks the item done and stops the poller. Another non-zero
 // exit keeps the last body and shows the error on the card.
 
 const exitDone = 100
@@ -169,61 +170,66 @@ func cmdPoll(c *call) {
 	c.printf("poll %s: %s, PID %d, every %s. `sprint poll stop %s` stops it.\n", key, verb, child.Process.Pid, every, key)
 }
 
-// pollResult turns one run of the command into a change to the item.
-func pollResult(stdout []byte) liveChange {
+// pollResult turns one run of the command into a change to the item. A
+// JSON object sets the fields it names. A field with the wrong type is
+// skipped and reported in err, and the other fields still apply, so the card
+// never shows the raw JSON.
+func pollResult(stdout []byte) (ch liveChange, err error) {
 	out := strings.TrimSpace(string(stdout))
-	ch := liveChange{}
-	if strings.HasPrefix(out, "{") {
-		var j struct {
-			Body     *string         `json:"body"`
-			Progress *string         `json:"progress"`
-			EndsAt   json.RawMessage `json:"ends_at"`
-			Title    *string         `json:"title"`
-			Link     *string         `json:"link"`
-		}
-		if json.Unmarshal([]byte(out), &j) == nil {
-			if j.Body != nil {
-				ch["body"] = strings.TrimSpace(*j.Body)
-			}
-			if j.Progress != nil {
-				p := parseProgress(*j.Progress).([2]float64)
-				ch["done_n"], ch["total_n"] = p[0], p[1]
-			}
-			if len(j.EndsAt) > 0 && string(j.EndsAt) != "null" {
-				var v any
-				json.Unmarshal(j.EndsAt, &v)
-				switch t := v.(type) {
-				case float64:
-					ch["ends_at"] = int64(t)
-				case string:
-					ch["ends_at"] = parseTime(t)
-				}
-			}
-			if j.Title != nil && *j.Title != "" {
-				ch["title"] = *j.Title
-			}
-			if j.Link != nil {
-				ch["link"] = null(*j.Link)
-			}
-			return ch
-		}
+	ch = liveChange{}
+	var obj map[string]json.RawMessage
+	if !strings.HasPrefix(out, "{") || json.Unmarshal([]byte(out), &obj) != nil {
+		ch["body"] = out
+		return ch, nil
 	}
-	ch["body"] = out
-	return ch
-}
-
-// tryPollResult is pollResult with bad output reported as an error.
-func tryPollResult(stdout []byte) (ch liveChange, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			if e, ok := r.(userError); ok {
-				err = fmt.Errorf("bad output: %s", e.msg)
-				return
-			}
-			panic(r)
+	var bad []string
+	// field decodes one value and runs set on it; a type error or a
+	// userError from set (such as parseProgress) marks the field bad.
+	field := func(name, want string, dst any, set func()) {
+		raw, ok := obj[name]
+		if !ok || string(raw) == "null" {
+			return
 		}
-	}()
-	return pollResult(stdout), nil
+		defer func() {
+			if r := recover(); r != nil {
+				if _, ok := r.(userError); !ok {
+					panic(r)
+				}
+				bad = append(bad, fmt.Sprintf("%s must be %s, not %s", name, want, raw))
+			}
+		}()
+		if json.Unmarshal(raw, dst) != nil {
+			fail("")
+		}
+		set()
+	}
+	var body, progress, title, link string
+	var endsAt any
+	field("body", "a string", &body, func() { ch["body"] = strings.TrimSpace(body) })
+	field("progress", `a string like "7/12"`, &progress, func() {
+		p := parseProgress(progress).([2]float64)
+		ch["done_n"], ch["total_n"] = p[0], p[1]
+	})
+	field("ends_at", "unix seconds or an RFC 3339 time", &endsAt, func() {
+		switch t := endsAt.(type) {
+		case float64:
+			ch["ends_at"] = int64(t)
+		case string:
+			ch["ends_at"] = parseTime(t)
+		default:
+			fail("")
+		}
+	})
+	field("title", "a string", &title, func() {
+		if title != "" {
+			ch["title"] = title
+		}
+	})
+	field("link", "a string", &link, func() { ch["link"] = null(link) })
+	if len(bad) > 0 {
+		err = fmt.Errorf("bad output: %s", strings.Join(bad, "; "))
+	}
+	return ch, err
 }
 
 // lastLine keeps an error message short enough for a card.
@@ -285,15 +291,15 @@ func pollOnce(stopped context.Context, spec pollSpec, timeout time.Duration) (st
 		}
 		ch = liveChange{"error": msg}
 	default:
+		// A bad field keeps its old value; the card shows why.
 		var perr error
-		if ch, perr = tryPollResult(stdout.Bytes()); perr != nil {
-			// The last good body stays; the card shows why this one failed.
-			ch = liveChange{"error": perr.Error()}
-		} else {
-			ch["error"], ch["updated_at"] = nil, at
-			if ch["body"] == "" && code == exitDone {
-				delete(ch, "body")
-			}
+		ch, perr = pollResult(stdout.Bytes())
+		ch["error"], ch["updated_at"] = nil, at
+		if perr != nil {
+			ch["error"] = perr.Error()
+		}
+		if ch["body"] == "" && code == exitDone {
+			delete(ch, "body")
 		}
 	}
 	ch["seen_at"] = at

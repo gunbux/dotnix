@@ -1,3 +1,4 @@
+// Cards never fold: their rows do, then fit.js fades the bottom of the row.
 // A: live items for this view (`sprint live`, `sprint poll`), live ones
 // first. Times are unix seconds. Ages use this browser's clock, so an item
 // whose poller died shows as stale. Clock times are SGT.
@@ -33,7 +34,11 @@ const card = (r) => {
       + (left >= 0 ? `(in ${span(left)})` : `(${span(left)} late)`) + '</div>';
   }
   if (r.error) h += `<div class="sm bad">Last update failed ${span(nowS - Number(r.seen_at))} ago: ${esc(r.error)}</div>`;
-  if (r.body) h += `<div class="lv-body">${md.render(String(r.body))}</div>`;
+  if (r.body) {
+    // JSON in the body means the poller's output didn't parse as a result.
+    const raw = /^\s*\{\s*"/.test(String(r.body));
+    h += `<div class="lv-body${raw ? ' lv-raw' : ''}">${mdFit(r.body)}</div>`;
+  }
   return h + '</div>';
 };
 render('<h2>Live</h2>' + (items.length

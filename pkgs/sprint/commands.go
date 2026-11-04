@@ -163,6 +163,11 @@ func init() {
 				"checkout": {help: "dotnix checkout (default: the git checkout around this folder)"},
 				"watch":    {isBool: true, help: "write it again on each save"}}},
 		{path: "dash reset", help: "put the dashboard from the last switch back", run: cmdDashReset, noLog: true},
+		{path: "dash check", help: "render every view of the open sprints in headless Chrome and report layout problems",
+			run: cmdDashCheck, noLog: true,
+			flags: map[string]flagDef{
+				"chrome": {help: "Chrome or Chromium binary (default: $SPRINT_CHROME, PATH, then the macOS app)"},
+				"width":  {help: "window width in pixels (default 1512)"}}},
 		{path: "show", help: "goal, subgoals, progress, do-now list, PRs, dashboard link", run: cmdShow,
 			flags: map[string]flagDef{"json": {isBool: true}}},
 	}

@@ -20,21 +20,47 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+// result is pollResult for output that must parse cleanly.
+func result(t *testing.T, out string) liveChange {
+	t.Helper()
+	ch, err := pollResult([]byte(out))
+	if err != nil {
+		t.Fatalf("pollResult(%q): %v", out, err)
+	}
+	return ch
+}
+
 func TestPollResultReadsMarkdownOrJSON(t *testing.T) {
-	eq(t, pollResult([]byte("  # Run 8\n\nok\n"))["body"], any("# Run 8\n\nok"))
-	ch := pollResult([]byte(`{"body":"7 ok","progress":"7/12","ends_at":"2026-11-04T18:30+08:00","link":"https://x"}`))
+	eq(t, result(t, "  # Run 8\n\nok\n")["body"], any("# Run 8\n\nok"))
+	ch := result(t, `{"body":"7 ok","progress":"7/12","ends_at":"2026-11-04T18:30+08:00","link":"https://x"}`)
 	eq(t, ch["body"], any("7 ok"))
 	eq(t, ch["done_n"], any(7.0))
 	eq(t, ch["total_n"], any(12.0))
 	eq(t, ch["ends_at"], any(int64(1793788200)))
 	eq(t, ch["link"], any("https://x"))
-	eq(t, pollResult([]byte(`{"ends_at": 1793788200}`))["ends_at"], any(int64(1793788200)))
-	_, hasBody := pollResult([]byte(`{"progress":"1/2"}`))["body"]
+	eq(t, result(t, `{"ends_at": 1793788200}`)["ends_at"], any(int64(1793788200)))
+	_, hasBody := result(t, `{"progress":"1/2"}`)["body"]
 	eq(t, hasBody, false)
 	// Not JSON after all: the whole text is the body.
-	eq(t, pollResult([]byte("{not json"))["body"], any("{not json"))
-	_, err := tryPollResult([]byte(`{"progress":"seven"}`))
-	contains_(t, err.Error(), "must look like 7/12")
+	eq(t, result(t, "{not json")["body"], any("{not json"))
+	_, err := pollResult([]byte(`{"progress":"seven"}`))
+	contains_(t, err.Error(), "progress must be")
+}
+
+// A field with the wrong type is skipped and named in the error; the other
+// fields still apply, so the card never shows the raw JSON.
+func TestPollResultKeepsGoodFieldsBesideABadOne(t *testing.T) {
+	ch, err := pollResult([]byte(`{"body":"| a |\n|---|\n| 1 |","progress":0.02,"ends_at":"2026-11-04T18:30+08:00","title":7}`))
+	eq(t, ch["body"], any("| a |\n|---|\n| 1 |"))
+	eq(t, ch["ends_at"], any(int64(1793788200)))
+	_, hasProgress := ch["done_n"]
+	eq(t, hasProgress, false)
+	_, hasTitle := ch["title"]
+	eq(t, hasTitle, false)
+	contains_(t, err.Error(), `progress must be a string like "7/12", not 0.02`)
+	contains_(t, err.Error(), "title must be a string, not 7")
+	_, err = pollResult([]byte(`{"ends_at":true}`))
+	contains_(t, err.Error(), "ends_at must be")
 }
 
 func pollSpecFor(h *harness, key, script string) pollSpec {
@@ -54,6 +80,12 @@ func TestPollOnceRecordsEachOutcome(t *testing.T) {
 	eq(t, h.live("SELECT error FROM live_items"), "(exit 3)")
 	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", "sleep 5"), 200*time.Millisecond), false)
 	eq(t, h.live("SELECT error FROM live_items"), "(timed out after 200ms)")
+
+	// A bad field: the body still updates, and the card says what was wrong.
+	h.clock(1150)
+	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", `echo '{"body":"run 4","progress":0.3}'`), time.Minute), false)
+	eq(t, h.live("SELECT body, done_n, updated_at, error FROM live_items"),
+		`(run 4, 3, 1150, bad output: progress must be a string like "7/12", not 0.3)`)
 
 	h.clock(1200)
 	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", "echo 'All 12 ok.'; exit 100"), time.Minute), true)
@@ -202,7 +234,7 @@ func TestPollExit100WithBadOutputStillEndsTheItem(t *testing.T) {
 	h := liveSprint(t)
 	h.ok("live", "set", "b", "--title", "Bench", "--file", h.file("b.md", "last good"))
 	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", `echo '{"progress":"seven"}'; exit 100`), time.Minute), true)
-	eq(t, h.live("SELECT body, state, error FROM live_items"), "(last good, done, bad output: --progress must look like 7/12, not \"seven\")")
+	eq(t, h.live("SELECT body, state, error FROM live_items"), `(last good, done, bad output: progress must be a string like "7/12", not "seven")`)
 }
 
 func TestPollStopCancelsARunningCommand(t *testing.T) {

@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -112,4 +114,72 @@ func TestDashCommandsLeaveTheLogAlone(t *testing.T) {
 	if _, err := os.Stat(h.db); !os.IsNotExist(err) {
 		t.Fatalf("dash dev created the log: %v", err)
 	}
+}
+
+// A DOM as Chrome dumps it after page/fit.js ran on each page panel.
+func fitDOM(live string) string {
+	var b strings.Builder
+	for _, p := range pagePanels {
+		attrs := `data-sp-fit="ok" data-sp-hidden="0" data-sp-gap="10" data-sp-wide="0" data-sp-raw="0" data-sp-wide-at=""`
+		if p == "live" {
+			attrs = live
+		}
+		fmt.Fprintf(&b, `<div class="dt-row" data-sp-panel="%s" %s><div class="sp"></div></div>`, p, attrs)
+	}
+	return b.String()
+}
+
+func TestParseFitsReadsEachPanel(t *testing.T) {
+	f := parseFits(fitDOM(`data-sp-fit="folded" data-sp-hidden="4" data-sp-gap="200" data-sp-wide="14" data-sp-raw="1" data-sp-wide-at="td &quot;completed&quot;"`))
+	eq(t, len(f), len(pagePanels))
+	eq(t, f["live"], panelFit{fit: "folded", wideAt: `td "completed"`, hidden: 4, gap: 200, wide: 14, raw: 1})
+	eq(t, f["donow"].fit, "ok")
+}
+
+// dashCheckSetup has one open sprint with two subgoals (one dropped), and a
+// fake Chrome that prints the DOM in dom.html.
+func dashCheckSetup(t *testing.T, dom string) *harness {
+	h := newHarness(t)
+	h.ok("start", "s1", "Sprint one", "--goal", "g")
+	h.ok("sub", "add", "a", "Stage A", "--goal", "ga", "--done-when", "x", "--status", "active")
+	h.ok("sub", "add", "b", "Stage B", "--goal", "gb", "--done-when", "y")
+	h.ok("sub", "set", "b", "dropped", "--reason", "r")
+	h.file("dom.html", dom)
+	chrome := h.file("chrome", "#!/bin/sh\necho \"$@\" >> \""+h.dir+"/chrome.args\"\ncat \""+h.dir+"/dom.html\"\n")
+	os.Chmod(chrome, 0o755)
+	t.Setenv("SPRINT_CHROME", chrome)
+	return h
+}
+
+func TestDashCheckPassesACleanDashboard(t *testing.T) {
+	h := dashCheckSetup(t, fitDOM(`data-sp-fit="folded" data-sp-hidden="3" data-sp-gap="0" data-sp-wide="0" data-sp-raw="0" data-sp-wide-at=""`))
+	out := h.ok("dash", "check")
+	contains_(t, out, "s1 (1512 px wide)")
+	contains_(t, out, "s1 / a (1512 px wide)")
+	contains_(t, out, "note:    live: 3 item(s) folded to fit")
+	if strings.Contains(out, "s1 / b") {
+		t.Fatalf("checked a dropped subgoal:\n%s", out)
+	}
+	args, _ := os.ReadFile(filepath.Join(h.dir, "chrome.args"))
+	contains_(t, string(args), "--window-size=1512,5000")
+	contains_(t, string(args), "var-subgoal=a")
+	contains_(t, string(args), "&kiosk")
+}
+
+func TestDashCheckFailsOnLayoutProblems(t *testing.T) {
+	h := dashCheckSetup(t, fitDOM(`data-sp-fit="clipped" data-sp-hidden="0" data-sp-gap="300" data-sp-wide="14" data-sp-raw="1" data-sp-wide-at="td &quot;completed&quot;"`))
+	out := h.fails("dash", "check", "--width", "1280")
+	contains_(t, out, "layout problem(s)")
+	_, stdout, _ := h.run("dash", "check", "--width", "1280")
+	contains_(t, stdout, `problem: live: content is 14 px wider than its box (td "completed")`)
+	contains_(t, stdout, "problem: live: 1 card(s) show raw JSON")
+	contains_(t, stdout, "note:    live: one item is taller than the panel")
+	contains_(t, stdout, "note:    live: 300 px empty at the bottom")
+}
+
+func TestDashCheckFailsWhenAPanelDidNotRender(t *testing.T) {
+	h := dashCheckSetup(t, `<div data-sp-panel="header" data-sp-fit="ok"></div>`)
+	_, stdout, _ := h.run("dash", "check", "--sprint", "s1")
+	contains_(t, stdout, "problem: live: did not render")
+	contains_(t, h.fails("dash", "check", "--width", "100"), "at least 320")
 }

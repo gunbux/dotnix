@@ -15,8 +15,8 @@ if (!b.length) {
   h += '<div class="suites">' + [...new Set(b.map((r) => r.suite))].map((s) => {
     const rs = b.filter((r) => r.suite === s);
     const top = Math.max(...rs.map((r) => Math.max(r.latest || 0, r.baseline || 0))) || 1;
-    return `<div class="suite"><div class="st">${esc(s)}</div>` + rs.map((r) =>
-      `<div class="br"><div class="bl" title="${esc(r.metric)}">${esc(r.metric)}`
+    return `<div class="suite fit"><div class="st">${esc(s)}</div>` + rs.map((r) =>
+      `<div class="br fit"><div class="bl" title="${esc(r.metric)}">${esc(r.metric)}`
       + (view === '-' && r.stage ? ` · ${esc(r.stage)}` : '') + '</div><div class="bt">'
       + `<div class="bk" style="width:${(100 * (r.latest || 0) / top).toFixed(1)}%"></div>`
       + `<div class="bg" style="width:${(100 * (r.baseline || 0) / top).toFixed(1)}%"></div></div>`

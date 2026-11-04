@@ -129,13 +129,15 @@ Everything an agent waits on or polls goes in the dashboard's Live section, so t
 
 - `--title` is required for a new item. Flags you leave out keep their values. `-` clears `--progress`, `--ends-at`, `--stale-after` and `--link`. `--subgoal -` moves an item to the whole sprint.
 - A poller runs detached and outlives your turn. Its files are in `~/.local/state/sprint/pollers/<sprint>/<key>.{json,pid,log}`. Running `sprint poll` again with the same key replaces the poller. `--stale-after` defaults to 3 times `--every`.
-- For a source without a probe, write a small script. It prints Markdown, or JSON `{"body", "progress": "7/12", "ends_at", "title", "link"}`. Exit 100 when the wait is over. Any other non-zero exit, or a timeout, keeps the last body and shows the error on the card. Set `ends_at` whenever you can estimate it.
+- For a source without a probe, write a small script. It prints Markdown, or JSON `{"body", "progress": "7/12", "ends_at", "title", "link"}`. `progress` is a string, not a number. A field with the wrong type is skipped and shows as an error on the card; the other fields still apply. Exit 100 when the wait is over. Any other non-zero exit, or a timeout, keeps the last body and shows the error on the card. Set `ends_at` whenever you can estimate it.
 
 The PR board comes from the log: `sprint pr sync` records each PR's review state. It shows only PRs tracked with `sprint pr add`, so add each PR when you open it. Set your next step for a PR with `sprint pr note <url> "<step>"` (`-` removes it).
 
 ### Change the dashboard
 
-Edit `modules/home/sprint/dashboard.nix` in a dotnix worktree. Run `sprint dash dev --checkout <worktree> [--watch]`, and Grafana shows the change within 10 s, with no build or switch. The header shows "dev: <branch>@<sha>" (`+` means uncommitted) while a dev copy is live. Check it on `http://127.0.0.1:3001`, then open the PR. After you merge, `sprint dash reset` puts the built dashboard back. The next switch does the same. Data sources and Grafana settings still need a switch. To change the shape of every future sprint's context sections, edit `templates/` instead.
+Edit `modules/home/sprint/dashboard.nix` in a dotnix worktree. Run `sprint dash dev --checkout <worktree> [--watch]`, and Grafana shows the change within 10 s, with no build or switch. The header shows "dev: <branch>@<sha>" (`+` means uncommitted) while a dev copy is live. Check it on `http://127.0.0.1:3001`. Then run `sprint dash check`, and open the PR only when it reports no problem.
+
+Grafana gives each panel a fixed height, but the data sets how tall a section is. So `page/fit.js` fits each section into its panel: it folds items marked `.fit` and adds a "Show all" bar, and no panel scrolls on its own. In a new section, mark each repeated item (a card, a table row) `.fit`. `sprint dash check` renders every view of the open sprints in headless Chrome. It fails when a section didn't render, content is wider than its box, or a Live card shows raw JSON. It notes folds, cut sections, and large gaps. Use `--width` to check another window size. After you merge, `sprint dash reset` puts the built dashboard back. The next switch does the same. Data sources and Grafana settings still need a switch. To change the shape of every future sprint's context sections, edit `templates/` instead.
 
 ## Answer status questions
 

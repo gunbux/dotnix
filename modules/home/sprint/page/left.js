@@ -4,7 +4,7 @@ const st = rows('A');
 const items = rows('B');
 const cx = rows('C');
 const table = (open) => '<table class="steps">' + (open.map((i) =>
-  `<tr><td class="mut">#${esc(i.item)}</td><td>${inl(i.title)}`
+  `<tr class="fit"><td class="mut">#${esc(i.item)}</td><td>${inl(i.title)}`
   + (i.note ? `<div class="note">${inl(i.note)}</div>` : '')
   + `</td><td><span class="chip${i.owner === 'user' ? ' you' : ''}">${i.owner === 'user' ? 'you' : 'agent'}</span></td>`
   + `<td>${pill(i.status)}</td></tr>`).join('') || '<tr><td colspan="4" class="mut">No open steps.</td></tr>') + '</table>';

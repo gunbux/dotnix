@@ -2,13 +2,17 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -184,4 +188,188 @@ func cmdDashReset(c *call) {
 	target := filepath.Join(dashboardsDir(), "sprint.json")
 	writeAtomic(target, data)
 	c.printf("reset: %s -> %s\n", built, target)
+}
+
+// The page panels of modules/home/sprint/dashboard.nix. Each one runs
+// page/fit.js, which writes data-sp-* attributes that dashCheck reads.
+var pagePanels = []string{"header", "progress", "live", "donow", "stages", "prs", "context", "left", "bench"}
+
+// Thresholds for `dash check`, in CSS pixels.
+const (
+	maxWide = 2   // content wider than its box: a table out of a card
+	maxGap  = 160 // empty space at the bottom of a panel: about 4 grid rows
+)
+
+func findChrome(c *call) string {
+	if v := c.flag("chrome"); v != "" {
+		return v
+	}
+	if v := os.Getenv("SPRINT_CHROME"); v != "" {
+		return v
+	}
+	for _, name := range []string{"chromium", "google-chrome-stable", "google-chrome", "chrome"} {
+		if p, err := exec.LookPath(name); err == nil {
+			return p
+		}
+	}
+	mac := "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+	if _, err := os.Stat(mac); err == nil {
+		return mac
+	}
+	fail("no Chrome or Chromium found; pass --chrome <path> or set SPRINT_CHROME")
+	return ""
+}
+
+var spAttrRE = regexp.MustCompile(`data-sp-(panel|fit|hidden|gap|wide|raw|wide-at)="([^"]*)"`)
+
+type panelFit struct {
+	fit, wideAt            string
+	hidden, gap, wide, raw int
+}
+
+// renderFits loads one view in headless Chrome and returns what fit.js
+// wrote on each page panel. The window is tall, so Grafana renders every
+// panel; the panels' heights don't depend on it.
+func renderFits(chrome, url string, width int) (map[string]panelFit, error) {
+	profile, err := os.MkdirTemp("", "sprint-dash-check-")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(profile)
+	cmd := exec.Command(chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+		"--user-data-dir="+profile, fmt.Sprintf("--window-size=%d,5000", width),
+		"--virtual-time-budget=20000", "--dump-dom", url)
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("chrome: %v", err)
+	}
+	return parseFits(string(out)), nil
+}
+
+// parseFits reads the data-sp-* attributes from a dumped DOM, by panel.
+func parseFits(dom string) map[string]panelFit {
+	fits := map[string]panelFit{}
+	// fit.js writes the attributes in one order, so each panel's run of
+	// matches starts at data-sp-panel.
+	var cur string
+	for _, m := range spAttrRE.FindAllStringSubmatch(dom, -1) {
+		if m[1] == "panel" {
+			cur = m[2]
+			fits[cur] = panelFit{}
+			continue
+		}
+		f := fits[cur]
+		n, _ := strconv.Atoi(m[2])
+		switch m[1] {
+		case "fit":
+			f.fit = m[2]
+		case "hidden":
+			f.hidden = n
+		case "gap":
+			f.gap = n
+		case "wide":
+			f.wide = n
+		case "raw":
+			f.raw = n
+		case "wide-at":
+			f.wideAt = html.UnescapeString(m[2])
+		}
+		fits[cur] = f
+	}
+	return fits
+}
+
+// cmdDashCheck renders every view of each open sprint and reports layout
+// problems: a section that didn't render, content out of its box, raw JSON
+// on a Live card, a section cut because one item is taller than its panel,
+// and a large empty gap. It exits 1 on a problem, and 0 when there are only
+// notes.
+func cmdDashCheck(c *call) {
+	chrome := findChrome(c)
+	width := 1512
+	if v := c.flag("width"); v != "" {
+		w, err := strconv.Atoi(v)
+		if err != nil || w < 320 {
+			fail("--width must be a number of pixels, at least 320")
+		}
+		width = w
+	}
+	type view struct{ sprint, subgoal, url string }
+	var views []view
+	// The log is open only while the views are listed: a render takes
+	// seconds, and pollers write meanwhile.
+	db := c.flag("db")
+	if db == "" {
+		db = defaultDB()
+	}
+	s, closeDB := openWrite(db)
+	for _, sp := range s.openSprints() {
+		if slug := c.flag("sprint"); slug != "" && slug != sp.Slug {
+			continue
+		}
+		views = append(views, view{sp.Slug, "", dashboardURL(sp.Slug, "", sp.StartedAt)})
+		s.each("SELECT key FROM subgoal_state WHERE sprint_id = ? AND status != 'dropped' ORDER BY position",
+			[]any{sp.ID}, func(r *sql.Rows) {
+				var key string
+				check(r.Scan(&key))
+				views = append(views, view{sp.Slug, key, dashboardURL(sp.Slug, key, sp.StartedAt)})
+			})
+	}
+	closeDB()
+	if len(views) == 0 {
+		fail("no open sprint to check")
+	}
+	problems := 0
+	for _, v := range views {
+		name := v.sprint
+		if v.subgoal != "" {
+			name += " / " + v.subgoal
+		}
+		fits, err := renderFits(chrome, v.url+"&kiosk", width)
+		if err != nil {
+			fail("%s: %v", name, err)
+		}
+		var lines []string
+		bad := func(format string, a ...any) {
+			problems++
+			lines = append(lines, "  problem: "+fmt.Sprintf(format, a...))
+		}
+		note := func(format string, a ...any) { lines = append(lines, "  note:    "+fmt.Sprintf(format, a...)) }
+		for _, p := range pagePanels {
+			f, ok := fits[p]
+			switch {
+			case !ok:
+				bad("%s: did not render (a script error, or fit.js didn't run)", p)
+				continue
+			case f.fit == "all":
+				// Shown in full because someone asked; nothing to judge.
+				continue
+			}
+			if f.wide > maxWide {
+				bad("%s: content is %d px wider than its box (%s)", p, f.wide, f.wideAt)
+			}
+			if f.raw > 0 {
+				bad("%s: %d card(s) show raw JSON: the poller's output did not parse", p, f.raw)
+			}
+			if f.fit == "clipped" {
+				note("%s: one item is taller than the panel, so it is cut (Show all opens it)", p)
+			} else if f.hidden > 0 {
+				note("%s: %d item(s) folded to fit", p, f.hidden)
+			}
+			if f.gap > maxGap {
+				note("%s: %d px empty at the bottom", p, f.gap)
+			}
+		}
+		status := "ok"
+		if len(lines) > 0 {
+			status = ""
+		}
+		c.printf("%s (%d px wide) %s\n", name, width, status)
+		for _, l := range lines {
+			c.printf("%s\n", l)
+		}
+	}
+	if problems > 0 {
+		fail("%d layout problem(s)", problems)
+	}
 }

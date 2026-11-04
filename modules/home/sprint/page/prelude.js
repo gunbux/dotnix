@@ -29,12 +29,18 @@ const when = (t) => new Date(Number(t) * 1000).toLocaleString('en-GB',
 const viewLink = (key) => '/d/sprint/sprint?' + rv('${sprint:queryparam}&from=${__from}&to=${__to}')
   + '&var-subgoal=' + encodeURIComponent(key);
 
+// Rendered Markdown with its table body rows and list items marked .fit,
+// so ./fit.js can fold them when the panel is full.
+const mdFit = (s) => md.render(s == null ? '' : String(s))
+  .replace(/<tbody>[\s\S]*?<\/tbody>/g, (b) => b.replace(/<tr>/g, '<tr class="fit">'))
+  .replace(/<li>/g, '<li class="fit">');
+
 const ctxHtml = (list, openFirst) => list.map((r, n) =>
   `<details class="ctx"${openFirst && n === 0 ? ' open' : ''}><summary>${esc(r.title)}`
-  + `<span class="mut sm"> · updated ${when(r.at)}</span></summary>${md.render(r.body || '')}</details>`).join('');
+  + `<span class="mut sm"> · updated ${when(r.at)}</span></summary>${mdFit(r.body)}</details>`).join('');
 
 // Blank lines would end Markdown's HTML block, so the output has none.
 const render = (html) => {
   const theme = context.grafana.theme.isDark ? 'dark' : 'light';
-  if (context.data) context.data.html = `<div class="sp ${theme}">${html}</div>`.replace(/\n\s*\n/g, '\n');
+  if (context.data) context.data.html = `<div class="sp ${theme} sp-p-${panelName}">${html}</div>`.replace(/\n\s*\n/g, '\n');
 };
