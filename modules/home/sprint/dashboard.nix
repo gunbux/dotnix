@@ -59,18 +59,6 @@ let
     .pill-doing { background: rgba(87, 148, 242, .22); color: #5794F2; }
     .pill-blocked { background: rgba(255, 152, 48, .22); color: #FF9830; }
 
-    .todo { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start;
-      padding: 9px 12px; margin: 0 0 8px; border-radius: 8px; border-left: 3px solid transparent;
-      background: rgba(128, 128, 128, .08); }
-    .todo.next { border-left-color: #5794F2; background: rgba(87, 148, 242, .10); }
-    .todo .num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
-      font-size: 12px; font-weight: 600; background: rgba(128, 128, 128, .22); }
-    .todo.next .num { background: #5794F2; color: #fff; }
-    .todo .t { font-size: 14px; line-height: 1.4; font-weight: 500; }
-    .todo .meta { margin-top: 5px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    .todo .meta .chip { margin: 0; }
-    .todo .note { font-size: 12px; line-height: 1.4; opacity: .7; margin-top: 4px; }
-
     .ctx { --accent: #B877D9; margin: 0 0 12px; padding: 10px 14px 4px;
       border: 1px solid rgba(128, 128, 128, .22); border-left: 3px solid var(--accent);
       border-radius: 6px; background: rgba(128, 128, 128, .04); }
@@ -134,6 +122,21 @@ let
         value = 25;
       }
     ];
+  };
+
+  # "you" stands out; the agent's steps stay plain.
+  ownerColors = {
+    type = "value";
+    options = {
+      user = {
+        text = "you";
+        color = "orange";
+      };
+      agent = {
+        text = "agent";
+        color = "transparent";
+      };
+    };
   };
 
   statusColors = {
@@ -486,29 +489,38 @@ in {
       };
     })
 
-    # The user's open steps as numbered cards; the first is the next one.
-    (panel 4 "Do now (you)" "marcusolsson-dynamictext-panel" (pos 0 7 9 9) "table" [] ''
-        SELECT ROW_NUMBER() OVER (ORDER BY position) AS n, title, status,
-               ${subgoalTitle "subgoal"} AS stage, COALESCE(note, ''') AS note,
-               CASE WHEN ROW_NUMBER() OVER (ORDER BY position) = 1 THEN 'next' ELSE ''' END AS cls
-        FROM item_state
-        WHERE sprint_id = ${sid} AND owner = 'user' AND status NOT IN ('done', 'dropped')
-          AND ${inScope "subgoal"}
-        ORDER BY position''
-      (text "allRows" ''
-        {{#each data}}
-        <div class="todo {{cls}}">
-          <div class="num">{{n}}</div>
-          <div>
-            <div class="t">{{title}}</div>
-            <div class="meta"><span class="pill pill-{{status}}">{{status}}</span>{{#if stage}}<span class="chip">{{stage}}</span>{{/if}}</div>
-            {{#if note}}<div class="note">{{note}}</div>{{/if}}
-          </div>
-        </div>
-        {{/each}}
-      '' "Nothing for you to do now."))
+    # Every open step. The user's steps come first, then the active stages,
+    # each in plan order. The full list, done items too, is in "Plan: every item".
+    (panel 23 "What's left (your steps first)" "table" (pos 0 7 14 9) "table" [] ''
+        SELECT i.item AS "#", i.title AS "Step", i.owner AS "Owner", i.status AS "Status",
+               COALESCE(g.title, 'Whole sprint') AS "Stage", i.note AS "Note"
+        FROM item_state i
+        LEFT JOIN subgoal_state g ON g.sprint_id = i.sprint_id AND g.key = i.subgoal
+        WHERE i.sprint_id = ${sid} AND ${inScope "i.subgoal"} AND i.status NOT IN ('done', 'dropped')
+        ORDER BY i.owner = 'user' DESC,
+                 CASE g.status WHEN 'active' THEN 0 WHEN 'planned' THEN 1 ELSE 2 END,
+                 g.position, i.position''
+      (table [
+          (colorText "Status")
+          (override "Owner" [
+            {
+              id = "mappings";
+              value = [ownerColors];
+            }
+            {
+              id = "custom.cellOptions";
+              value = {type = "color-background";};
+            }
+          ])
+          (width "#" 40)
+          (width "Owner" 60)
+          (width "Status" 75)
+          (width "Stage" 140)
+          (wrapText "Step")
+          (wrapText "Note")
+        ]))
 
-    (panel 5 "Burn-up: done vs. in scope" "timeseries" (pos 9 7 15 9) "time series" ["time"] ''
+    (panel 5 "Burn-up: done vs. in scope" "timeseries" (pos 14 7 10 9) "time series" ["time"] ''
       SELECT time, in_scope AS "In scope", done AS "Done"
       FROM scoped_burnup WHERE sprint_id = ${sid} AND scope = '$subgoal'
       UNION ALL
@@ -636,27 +648,8 @@ in {
         (hide "Link")
       ]))
 
-    # Every open step, active stages first, in plan order.
-    (panel 23 "What's left, in order" "table" (pos 0 31 24 10) "table" [] ''
-        SELECT i.item AS "#", COALESCE(g.title, 'Whole sprint') AS "Stage", i.title AS "Step",
-               i.owner AS "Owner", i.status AS "Status", i.note AS "Note"
-        FROM item_state i
-        LEFT JOIN subgoal_state g ON g.sprint_id = i.sprint_id AND g.key = i.subgoal
-        WHERE i.sprint_id = ${sid} AND ${inScope "i.subgoal"} AND i.status NOT IN ('done', 'dropped')
-        ORDER BY CASE g.status WHEN 'active' THEN 0 WHEN 'planned' THEN 1 ELSE 2 END,
-                 g.position, i.position''
-      (table [
-        (colorText "Status")
-        (width "#" 45)
-        (width "Stage" 170)
-        (width "Owner" 65)
-        (width "Status" 80)
-        (wrapText "Step")
-        (wrapText "Note")
-      ]))
-
     # One bar chart per suite: each metric's latest run beside its baseline.
-    (panel 19 "\${suite}: latest run against baseline" "barchart" (pos 0 41 12 12) "table" [] ''
+    (panel 19 "\${suite}: latest run against baseline" "barchart" (pos 0 31 12 12) "table" [] ''
         SELECT metric || ' (' || unit || ')' AS "Metric", latest AS "Latest", baseline AS "Baseline"
         FROM bench_summary
         WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
@@ -715,7 +708,7 @@ in {
       };
     })
 
-    (panel 9 "Benchmarks: latest run vs baseline" "table" (pos 0 53 14 14) "table" [] ''
+    (panel 9 "Benchmarks: latest run vs baseline" "table" (pos 0 43 14 14) "table" [] ''
         SELECT suite AS "Suite", metric AS "Metric", ${subgoalTitle "subgoal"} AS "Subgoal",
                latest AS "Latest", baseline AS "Baseline", unit AS "Unit", change AS "Change %",
                runs AS "Runs"
@@ -767,7 +760,7 @@ in {
         ])
       ]))
 
-    (panel 20 "Benchmarks at most 5% worse than baseline" "stat" (pos 14 53 10 3) "table" [] ''
+    (panel 20 "Benchmarks at most 5% worse than baseline" "stat" (pos 14 43 10 3) "table" [] ''
         SELECT SUM(change <= 5) || ' of ' || COUNT(*) AS "Within 5%"
         FROM bench_summary
         WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
@@ -785,7 +778,7 @@ in {
       };
     })
 
-    (panel 21 "Change against baseline, worst first (%)" "bargauge" (pos 14 56 10 11) "table" [] ''
+    (panel 21 "Change against baseline, worst first (%)" "bargauge" (pos 14 46 10 11) "table" [] ''
         SELECT suite || ' · ' || metric AS "Metric", change AS "Change"
         FROM bench_summary
         WHERE sprint_id = ${sid} AND ${inScope "subgoal"} AND suite IN (''${suite:sqlstring})
@@ -817,8 +810,8 @@ in {
       };
     })
 
-    (row 22 "Benchmarks over time" 67 [
-      (panel 10 "Benchmarks over time" "timeseries" (pos 0 68 24 10) "time series" ["time"] ''
+    (row 22 "Benchmarks over time" 57 [
+      (panel 10 "Benchmarks over time" "timeseries" (pos 0 58 24 10) "time series" ["time"] ''
         SELECT at AS time,
                suite || ' ' || metric || ' (' || unit || ')'
                || CASE WHEN '$subgoal' = '-' THEN ' · ' || COALESCE(subgoal, 'whole sprint') ELSE ''' END
@@ -864,8 +857,8 @@ in {
 
     ])
 
-    (row 11 "Plan: every item" 75 [
-      (panel 12 "Items" "table" (pos 0 76 24 14) "table" ["Updated"] ''
+    (row 11 "Plan: every item" 65 [
+      (panel 12 "Items" "table" (pos 0 66 24 14) "table" ["Updated"] ''
           SELECT item AS "#", title AS "Item", status AS "Status", owner AS "Owner",
                  ${subgoalTitle "subgoal"} AS "Subgoal", at AS "Updated", note AS "Note"
           FROM item_state WHERE sprint_id = ${sid} AND ${inScope "subgoal"} ORDER BY position''
@@ -882,8 +875,8 @@ in {
         ]))
     ])
 
-    (row 13 "Pull requests" 76 [
-      (panel 14 "Pull requests" "table" (pos 0 77 24 12) "table" ["Since"] ''
+    (row 13 "Pull requests" 66 [
+      (panel 14 "Pull requests" "table" (pos 0 67 24 12) "table" ["Since"] ''
           SELECT title AS "PR", state AS "State", ${subgoalTitle "subgoal"} AS "Subgoal",
                  at AS "Since", url AS "Link"
           FROM pr_state WHERE sprint_id = ${sid} AND ${inScope "subgoal"} ORDER BY at DESC''
@@ -898,17 +891,17 @@ in {
         ]))
     ])
 
-    (row 15 "History: goal, subgoals, context sections" 77 [
-      (panel 16 "Goal versions" "table" (pos 0 78 12 9) "table" ["When"] ''
+    (row 15 "History: goal, subgoals, context sections" 67 [
+      (panel 16 "Goal versions" "table" (pos 0 68 12 9) "table" ["When"] ''
         SELECT at AS "When", text AS "Goal", reason AS "Why", source AS "By"
         FROM goal_versions WHERE sprint_id = ${sid} ORDER BY at DESC, id DESC''
       (table [(when "When") (width "When" 105) (width "By" 55) (wrapText "Goal") (wrapText "Why")]))
-      (panel 17 "Subgoal changes" "table" (pos 12 78 12 9) "table" ["When"] ''
+      (panel 17 "Subgoal changes" "table" (pos 12 68 12 9) "table" ["When"] ''
         SELECT at AS "When", title AS "Subgoal", status AS "Status", goal AS "Goal",
                done_when AS "Done when", reason AS "Why"
         FROM subgoal_events WHERE sprint_id = ${sid} AND ${inScope "key"} ORDER BY at DESC, id DESC''
       (table [(when "When") (colorText "Status") (width "When" 105) (width "Status" 70) (wrapText "Goal") (wrapText "Done when") (wrapText "Why")]))
-      (panel 18 "Context section versions (open a cell to read it)" "table" (pos 0 87 24 10) "table" ["When"] ''
+      (panel 18 "Context section versions (open a cell to read it)" "table" (pos 0 77 24 10) "table" ["When"] ''
         SELECT at AS "When", ${subgoalTitle "subgoal"} AS "Subgoal", title AS "Section",
                CASE WHEN body = ''' THEN '(removed)' ELSE body END AS "Text"
         FROM context_versions
