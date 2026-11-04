@@ -104,6 +104,9 @@
         };
         ## wakatime-cli release binary; nixpkgs lags behind (modules/home/wakatime.nix)
         wakatime-cli = prev.callPackage ./pkgs/wakatime-cli/default.nix {};
+        hex = prev.callPackage ./pkgs/hex/default.nix {
+          upstreamHex = inputs.hex.packages.${prev.stdenv.hostPlatform.system}.default;
+        };
         ## Pokémon sprite greeting for interactive shells
         pokego = prev.callPackage ./pkgs/pokego/default.nix {};
         ## Fun cursor
