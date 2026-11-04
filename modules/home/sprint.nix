@@ -16,9 +16,6 @@
 }: let
   port = 3001;
   db = "${config.xdg.stateHome}/sprint/sprint.db";
-  # Live benchmark progress, apart from the sprint log. A status page
-  # generator rewrites this file (temp file, then rename) every minute.
-  benchDb = "${config.xdg.stateHome}/sprint/bench-live.db";
   # Live items (`sprint live`, `sprint poll`): updated in place, apart from
   # the append-only log.
   liveDb = "${config.xdg.stateHome}/sprint/live.db";
@@ -45,51 +42,18 @@
     ${pkgs.coreutils}/bin/mv -f ${dashDir}/.sprint.json.tmp ${dashDir}/sprint.json
   '';
 
-  # Grafana expands $SPRINT_DB, $SPRINT_BENCH_DB and $SPRINT_LIVE_DB from the service
+  # Grafana expands $SPRINT_DB and $SPRINT_LIVE_DB from the service
   # environment, so a second instance can point the same provisioning at
   # demo databases.
   datasource = yaml.generate "sprint-datasource.yaml" {
     apiVersion = 1;
-    # The live status source was "Benchmark live" until 34498c7. Provisioning
-    # matches by name, so the old row's uid blocks the renamed one; delete it
-    # first.
+    # Earlier sources for a per-sprint generator's file (bench-live.db):
+    # "Benchmark live", renamed "Live status" in 34498c7. Live items replace
+    # them, so remove them from Grafana's database.
     deleteDatasources = [
       {
         name = "Benchmark live";
         orgId = 1;
-      }
-    ];
-    datasources = [
-      {
-        name = "Sprint log";
-        type = "frser-sqlite-datasource";
-        uid = "sprint-sqlite";
-        access = "proxy";
-        isDefault = true;
-        editable = false;
-        jsonData = {
-          path = "$SPRINT_DB";
-          pathPrefix = "file:";
-          # A dashboard runs its panel queries at once. Without a busy
-          # timeout some of them fail with SQLITE_BUSY.
-          pathOptions = "_pragma=query_only(1)&_pragma=busy_timeout(5000)";
-          attachLimit = 0;
-        };
-      }
-      {
-        name = "Live status";
-        type = "frser-sqlite-datasource";
-        uid = "sprint-bench-live";
-        access = "proxy";
-        editable = false;
-        jsonData = {
-          path = "$SPRINT_BENCH_DB";
-          pathPrefix = "file:";
-          # Read-only, so Grafana never creates the file before the
-          # generator first writes it.
-          pathOptions = "mode=ro&_pragma=query_only(1)&_pragma=busy_timeout(5000)";
-          attachLimit = 0;
-        };
       }
       {
         name = "Live";
@@ -162,7 +126,6 @@
   start = pkgs.writeShellScript "sprint-grafana-start" ''
     set -eu
     export SPRINT_DB=${db}
-    export SPRINT_BENCH_DB=${benchDb}
     export SPRINT_LIVE_DB=${liveDb}
     ${pkgs.coreutils}/bin/mkdir -p ${dataDir}/log
     [ -e ${dashDir}/sprint.json ] || ${copyDashboard}

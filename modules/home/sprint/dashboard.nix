@@ -10,13 +10,6 @@ let
     type = "frser-sqlite-datasource";
     uid = "sprint-sqlite";
   };
-  # Live status: a separate SQLite file that a status page generator
-  # rewrites every minute. Benchmark progress (bench_meta, bench_sessions)
-  # and the PR board (pr_meta, pr_board).
-  liveDs = {
-    type = "frser-sqlite-datasource";
-    uid = "sprint-bench-live";
-  };
   # Live items (`sprint live`, `sprint poll`): live.db beside the log.
   liveItemsDs = {
     type = "frser-sqlite-datasource";
@@ -84,39 +77,6 @@ let
     };
   };
   pagePanel = pagePanelFrom ds;
-  # A built-in panel that reads the live status file.
-  livePanel = id: title: type: gridPos: queryType: timeColumns: sql: extra:
-    panel id title type gridPos queryType timeColumns sql ({
-        datasource = liveDs;
-        targets = [((target queryType sql timeColumns) // {datasource = liveDs;})];
-      }
-      // extra);
-  redFrom = n: {
-    mode = "absolute";
-    steps = [
-      {
-        color = "green";
-        value = null;
-      }
-      {
-        color = "red";
-        value = n;
-      }
-    ];
-  };
-  thresholdOverride = name: steps: {
-    matcher = {
-      id = "byName";
-      options = name;
-    };
-    properties = [
-      {
-        id = "thresholds";
-        value = steps;
-      }
-    ];
-  };
-
   # Change against the baseline, in percent; lower is better.
   changeSteps = {
     mode = "absolute";
@@ -381,7 +341,8 @@ in {
         SELECT percent, done, in_scope FROM subgoal_progress WHERE sprint_id = ${sid} AND key = '$subgoal' ''
     ])
     # Live items for this view: a subgoal's view shows its own items and the
-    # whole sprint's. A done item stays for an hour.
+    # whole sprint's. A done item stays for an hour. Anything a sprint polls
+    # (benchmarks, CI, deploys) shows here, so no panel is sprint-specific.
     (pagePanelFrom liveItemsDs 44 "live" (pos 0 5 24 7) [
       ''
         SELECT key, subgoal, title, body, done_n, total_n, ends_at, stale_after, link, state, error,
@@ -391,107 +352,16 @@ in {
           AND (state = 'live' OR done_at > CAST(strftime('%s', 'now') AS INTEGER) - 3600)
         ORDER BY state = 'done', created_at, key''
     ])
-    # Benchmark sessions from the last 3 hours, and how old that data is.
-    (pagePanelFrom liveDs 40 "benchnow" (pos 0 12 24 8) [
-      "SELECT updated_at, runner_log FROM bench_meta WHERE sprint = '$sprint'"
-      ''
-        SELECT session_id, scenario, started_at, state, runs_finished, runs_ok,
-               inflight_run, inflight_started_at, last_runs
-        FROM bench_sessions WHERE sprint = '$sprint' ORDER BY position''
-    ])
-    # Staging wave 1: the greptile tenant's reviews since its Kubernetes flag went on. A
-    # collector (/tmp/status/staging-reviews) reads staging every 2 minutes; the status
-    # generator copies it into the live file.
-    (livePanel 41 "Staging wave 1: greptile tenant reviews since the flag (06:13 UTC)" "stat" (pos 0 20 14 4) "table" [] ''
-      SELECT on_kubernetes AS "On Kubernetes", kubernetes_failed AS "Kubernetes failed",
-             no_trex_on_grepbox AS "No T-Rex, still on Grepbox", with_trex_on_grepbox AS "With T-Rex (stays on Grepbox)",
-             grepbox_failed AS "Grepbox failed", flag_on AS "Flag",
-             (CAST(strftime('%s', 'now') AS INTEGER) - updated_at) / 60 AS "Data age (min)"
-      FROM staging_meta WHERE sprint = '$sprint' '' {
-      description = "A review with a T-Rex run on its PR stays on Grepbox by design. 'No T-Rex, still on Grepbox' should stay 0.";
-      fieldConfig = {
-        defaults.thresholds = {
-          mode = "absolute";
-          steps = [
-            {
-              color = "text";
-              value = null;
-            }
-          ];
-        };
-        overrides = [
-          (thresholdOverride "Kubernetes failed" (redFrom 1))
-          (thresholdOverride "No T-Rex, still on Grepbox" (redFrom 1))
-          (thresholdOverride "Grepbox failed" (redFrom 1))
-          (thresholdOverride "Data age (min)" (redFrom 10))
-          {
-            matcher = {
-              id = "byName";
-              options = "Flag";
-            };
-            properties = [
-              {
-                id = "mappings";
-                value = [
-                  {
-                    type = "value";
-                    options = {
-                      "1" = {
-                        text = "on";
-                        color = "green";
-                      };
-                      "0" = {
-                        text = "OFF";
-                        color = "red";
-                      };
-                    };
-                  }
-                ];
-              }
-            ];
-          }
-        ];
-      };
-      options = {
-        textMode = "value_and_name";
-        colorMode = "value";
-        graphMode = "none";
-        justifyMode = "center";
-        reduceOptions = {
-          values = true;
-          calcs = [];
-          fields = "/.*/";
-        };
-      };
-    })
-    (livePanel 43 "Staging wave 1: reviews per hour (UTC)" "barchart" (pos 0 24 14 5) "table" [] ''
-      SELECT strftime('%H:00', hour, 'unixepoch') AS "Hour", kubernetes AS "Kubernetes",
-             grepbox_no_trex AS "Grepbox, no T-Rex", grepbox_trex AS "Grepbox, with T-Rex"
-      FROM staging_hourly WHERE sprint = '$sprint' ORDER BY hour'' {
-      options = {
-        xField = "Hour";
-        stacking = "normal";
-        showValue = "auto";
-        legend = {
-          displayMode = "list";
-          placement = "right";
-        };
-      };
-    })
-    (livePanel 42 "Staging wave 1: latest greptile tenant reviews" "table" (pos 14 20 10 9) "table" ["Created"] ''
-      SELECT created AS "Created", pr AS "PR", status AS "Status", backend AS "Backend",
-             CASE with_trex WHEN 1 THEN 'yes' ELSE 'no' END AS "T-Rex run"
-      FROM staging_recent WHERE sprint = '$sprint' ORDER BY created DESC'' {})
     # The sprint's do_now list, filtered: a subgoal's view keeps the sprint's
     # step numbers and shows the steps without a subgoal too.
-    (pagePanel 33 "donow" (pos 0 29 10 15) [
+    (pagePanel 33 "donow" (pos 0 12 10 15) [
       ''
         SELECT item, title, status, note, stage, rank, total, '$subgoal' != '-' AS filtered
         FROM do_now
         WHERE sprint_id = ${sid} AND (subgoal IS NULL OR ${inScope "subgoal"})
         ORDER BY rank''
     ])
-    (pagePanel 34 "stages" (pos 10 29 14 15) [
+    (pagePanel 34 "stages" (pos 10 12 14 15) [
       ''
         SELECT g.key, g.title, g.status, g.done_when, p.done, p.in_scope, p.percent
         FROM subgoal_state g JOIN subgoal_progress p ON p.sprint_id = g.sprint_id AND p.key = g.key
@@ -500,7 +370,7 @@ in {
     ])
     # Open PRs, sorted by what to do next, from the log: `sprint pr sync`
     # writes each PR's board row (pr_review_state), so no generator runs.
-    (pagePanel 45 "prs" (pos 0 44 24 18) [
+    (pagePanel 45 "prs" (pos 0 27 24 18) [
       ''
         SELECT p.url, p.title, p.state, p.at, COALESCE(g.title, ''') AS stage,
                r.number, r.head, r.base, r.draft, r.failing, r.running, r.threads, r.bots,
@@ -515,17 +385,10 @@ in {
         ORDER BY p.state = 'merged', CASE WHEN p.state != 'merged' THEN COALESCE(r.rank, 1e9) END, p.at DESC''
       "SELECT MAX(at) AS at FROM pr_syncs WHERE sprint_id = ${sid}"
     ])
-    # The k8s generator's board, until that sprint moves to `sprint pr sync`.
-    # The status generator reads GitHub
-    # and writes the board for each view into the live file.
-    (pagePanelFrom liveDs 38 "prboard" (pos 0 62 24 22) [
-      "SELECT updated_at FROM pr_meta WHERE sprint = '$sprint'"
-      "SELECT html FROM pr_board WHERE sprint = '$sprint' AND view = '$subgoal'"
-    ])
-    (pagePanel 35 "context" (pos 0 84 24 9) [
+    (pagePanel 35 "context" (pos 0 45 24 9) [
       "SELECT title, body, at FROM context_state WHERE sprint_id = ${sid} AND subgoal IS NULL AND body != '' ORDER BY position, id"
     ])
-    (pagePanel 36 "left" (pos 0 93 24 14) [
+    (pagePanel 36 "left" (pos 0 54 24 14) [
       ''
         SELECT g.key, g.title, g.status, g.goal
         FROM subgoal_state g
@@ -540,7 +403,7 @@ in {
         WHERE sprint_id = ${sid} AND subgoal IS NOT NULL AND body != ''' AND ${inScope "subgoal"}
         ORDER BY position, id''
     ])
-    (pagePanel 37 "bench" (pos 0 107 24 9) [
+    (pagePanel 37 "bench" (pos 0 68 24 9) [
       ''
         SELECT suite, metric, unit, latest, baseline, change, ${subgoalTitle "subgoal"} AS stage
         FROM bench_summary
@@ -548,7 +411,7 @@ in {
         ORDER BY suite, COALESCE(change, -1e9) DESC''
     ])
 
-    (row 39 "Charts: burn-up, stage status over time, activity" 116 [
+    (row 39 "Charts: burn-up, stage status over time, activity" 77 [
       (panel 5 "Burn-up: done vs. in scope" "timeseries" (pos 0 63 14 9) "time series" ["time"] ''
         SELECT time, in_scope AS "In scope", done AS "Done"
         FROM scoped_burnup WHERE sprint_id = ${sid} AND scope = '$subgoal'
@@ -650,7 +513,7 @@ in {
         ]))
     ])
 
-    (row 22 "Benchmark charts" 117 [
+    (row 22 "Benchmark charts" 78 [
       # One bar chart per suite: each metric's latest run beside its baseline.
       (panel 19 "\${suite}: latest run against baseline" "barchart" (pos 0 65 12 12) "table" [] ''
         SELECT metric || ' (' || unit || ')' AS "Metric", latest AS "Latest", baseline AS "Baseline"
@@ -854,7 +717,7 @@ in {
       })
     ])
 
-    (row 11 "Plan: every item" 118 [
+    (row 11 "Plan: every item" 79 [
       (panel 12 "Items" "table" (pos 0 74 24 14) "table" ["Updated"] ''
           SELECT item AS "#", title AS "Item", status AS "Status", owner AS "Owner",
                  ${subgoalTitle "subgoal"} AS "Subgoal", at AS "Updated", note AS "Note"
@@ -872,7 +735,7 @@ in {
         ]))
     ])
 
-    (row 13 "Pull requests" 119 [
+    (row 13 "Pull requests" 80 [
       (panel 14 "Pull requests" "table" (pos 0 75 24 12) "table" ["Since"] ''
           SELECT title AS "PR", state AS "State", ${subgoalTitle "subgoal"} AS "Subgoal",
                  at AS "Since", url AS "Link"
@@ -888,7 +751,7 @@ in {
         ]))
     ])
 
-    (row 15 "History: goal, subgoals, context sections" 120 [
+    (row 15 "History: goal, subgoals, context sections" 81 [
       (panel 16 "Goal versions" "table" (pos 0 76 12 9) "table" ["When"] ''
         SELECT at AS "When", text AS "Goal", reason AS "Why", source AS "By"
         FROM goal_versions WHERE sprint_id = ${sid} ORDER BY at DESC, id DESC''
