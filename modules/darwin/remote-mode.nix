@@ -11,6 +11,7 @@
 }: let
   remote-mode = pkgs.writeShellApplication {
     name = "remote-mode";
+    runtimeInputs = [pkgs.flock];
     text = ''
       flag=/var/db/remote-mode
       pamfile=/etc/pam.d/sudo_touchid
@@ -32,9 +33,9 @@
       fi
 
       # One update at a time: a switch and a manual toggle must not interleave.
-      lock=/var/db/remote-mode.lock
-      until mkdir "$lock" 2> /dev/null; do sleep 0.2; done
-      trap 'rmdir "$lock"' EXIT
+      # The kernel drops the flock when this process dies, so a crash leaves no stale lock.
+      exec 9> /var/db/remote-mode.lock
+      flock 9
 
       case "$1" in
         on) touch "$flag" ;;
