@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -95,20 +96,27 @@ func (s Store) liveItem(sprint, key string) (LiveItem, bool) {
 type liveChange map[string]any
 
 // liveSet creates or updates an item and makes it live again. A new item
-// needs a title.
+// needs a title. Each case is one statement, so a reader never sees half an
+// item.
 func liveSet(s Store, sprint, key string, ch liveChange) (created bool) {
 	at := now()
-	if _, ok := s.liveItem(sprint, key); !ok {
-		if ch["title"] == nil || ch["title"] == "" {
-			fail("new live item %q needs --title", key)
-		}
-		s.exec("INSERT INTO live_items (sprint, key, title, created_at, updated_at, seen_at) VALUES (?, ?, ?, ?, ?, ?)",
-			sprint, key, ch["title"], at, at, at)
-		created = true
-	}
 	ch["state"], ch["done_at"], ch["error"], ch["updated_at"], ch["seen_at"] = "live", nil, nil, at, at
-	liveUpdate(s, sprint, key, ch)
-	return created
+	if _, ok := s.liveItem(sprint, key); ok {
+		liveUpdate(s, sprint, key, ch)
+		return false
+	}
+	if ch["title"] == nil || ch["title"] == "" {
+		fail("new live item %q needs --title", key)
+	}
+	ch["sprint"], ch["key"], ch["created_at"] = sprint, key, at
+	cols := make([]string, 0, len(ch))
+	args := make([]any, 0, len(ch))
+	for col, v := range ch {
+		cols = append(cols, col)
+		args = append(args, v)
+	}
+	s.exec("INSERT INTO live_items ("+strings.Join(cols, ", ")+") VALUES (?"+strings.Repeat(", ?", len(cols)-1)+")", args...)
+	return true
 }
 
 func liveUpdate(s Store, sprint, key string, ch liveChange) {
@@ -146,7 +154,8 @@ func parseProgress(v string) any {
 	n, m, ok := strings.Cut(v, "/")
 	done, err1 := strconv.ParseFloat(strings.TrimSpace(n), 64)
 	total, err2 := strconv.ParseFloat(strings.TrimSpace(m), 64)
-	if !ok || err1 != nil || err2 != nil || total <= 0 || done < 0 {
+	finite := !math.IsNaN(done) && !math.IsInf(done, 0) && !math.IsNaN(total) && !math.IsInf(total, 0)
+	if !ok || err1 != nil || err2 != nil || !finite || total <= 0 || done < 0 {
 		fail("--progress must look like 7/12, not %q", v)
 	}
 	return [2]float64{done, total}

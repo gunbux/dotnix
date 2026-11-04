@@ -77,6 +77,8 @@ func TestLiveSetChecksItsInput(t *testing.T) {
 	contains_(t, h.fails("live", "set", "x"), "needs --title")
 	contains_(t, h.fails("live", "set", "x", "--title", "X", "--progress", "7"), "must look like 7/12")
 	contains_(t, h.fails("live", "set", "x", "--title", "X", "--progress", "1/0"), "must look like 7/12")
+	contains_(t, h.fails("live", "set", "x", "--title", "X", "--progress", "NaN/12"), "must look like 7/12")
+	contains_(t, h.fails("live", "set", "x", "--title", "X", "--progress", "1/Inf"), "must look like 7/12")
 	contains_(t, h.fails("live", "set", "x", "--title", "X", "--ends-at", "tomorrow"), "bad time")
 	contains_(t, h.fails("live", "set", "x", "--title", "X", "--stale-after", "soon"), "bad duration")
 	contains_(t, h.fails("live", "set", "x", "--title", "X", "--subgoal", "nope"), `no subgoal "nope"`)
