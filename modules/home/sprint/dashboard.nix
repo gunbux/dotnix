@@ -458,7 +458,7 @@ in {
       SELECT created AS "Created", pr AS "PR", status AS "Status", backend AS "Backend",
              CASE with_trex WHEN 1 THEN 'yes' ELSE 'no' END AS "T-Rex run"
       FROM staging_recent WHERE sprint = '$sprint' ORDER BY created DESC'' {})
-    (pagePanel 33 "donow" (pos 0 22 10 10) [
+    (pagePanel 33 "donow" (pos 0 22 10 15) [
       ''
         SELECT i.item, i.title, i.status, i.note, COALESCE(g.title, ''') AS stage
         FROM item_state i LEFT JOIN subgoal_state g ON g.sprint_id = i.sprint_id AND g.key = i.subgoal
@@ -466,7 +466,7 @@ in {
           AND ${inScope "i.subgoal"}
         ORDER BY i.position''
     ])
-    (pagePanel 34 "stages" (pos 10 22 14 10) [
+    (pagePanel 34 "stages" (pos 10 22 14 15) [
       ''
         SELECT g.key, g.title, g.status, g.done_when, p.done, p.in_scope, p.percent
         FROM subgoal_state g JOIN subgoal_progress p ON p.sprint_id = g.sprint_id AND p.key = g.key
@@ -475,14 +475,14 @@ in {
     ])
     # Open PRs, sorted by what to do next. The status generator reads GitHub
     # and writes the board for each view into the live file.
-    (pagePanelFrom liveDs 38 "prboard" (pos 0 32 24 22) [
+    (pagePanelFrom liveDs 38 "prboard" (pos 0 37 24 22) [
       "SELECT updated_at FROM pr_meta WHERE sprint = '$sprint'"
       "SELECT html FROM pr_board WHERE sprint = '$sprint' AND view = '$subgoal'"
     ])
-    (pagePanel 35 "context" (pos 0 54 24 9) [
+    (pagePanel 35 "context" (pos 0 59 24 9) [
       "SELECT title, body, at FROM context_state WHERE sprint_id = ${sid} AND subgoal IS NULL AND body != '' ORDER BY position, id"
     ])
-    (pagePanel 36 "left" (pos 0 63 24 14) [
+    (pagePanel 36 "left" (pos 0 68 24 14) [
       ''
         SELECT g.key, g.title, g.status, g.goal
         FROM subgoal_state g
@@ -497,7 +497,7 @@ in {
         WHERE sprint_id = ${sid} AND subgoal IS NOT NULL AND body != ''' AND ${inScope "subgoal"}
         ORDER BY position, id''
     ])
-    (pagePanel 37 "bench" (pos 0 77 24 9) [
+    (pagePanel 37 "bench" (pos 0 82 24 9) [
       ''
         SELECT suite, metric, unit, latest, baseline, change, ${subgoalTitle "subgoal"} AS stage
         FROM bench_summary
@@ -505,7 +505,7 @@ in {
         ORDER BY suite, COALESCE(change, -1e9) DESC''
     ])
 
-    (row 39 "Charts: burn-up, stage status over time, activity" 86 [
+    (row 39 "Charts: burn-up, stage status over time, activity" 91 [
       (panel 5 "Burn-up: done vs. in scope" "timeseries" (pos 0 63 14 9) "time series" ["time"] ''
         SELECT time, in_scope AS "In scope", done AS "Done"
         FROM scoped_burnup WHERE sprint_id = ${sid} AND scope = '$subgoal'
@@ -607,7 +607,7 @@ in {
         ]))
     ])
 
-    (row 22 "Benchmark charts" 87 [
+    (row 22 "Benchmark charts" 92 [
       # One bar chart per suite: each metric's latest run beside its baseline.
       (panel 19 "\${suite}: latest run against baseline" "barchart" (pos 0 65 12 12) "table" [] ''
         SELECT metric || ' (' || unit || ')' AS "Metric", latest AS "Latest", baseline AS "Baseline"
@@ -811,7 +811,7 @@ in {
       })
     ])
 
-    (row 11 "Plan: every item" 88 [
+    (row 11 "Plan: every item" 93 [
       (panel 12 "Items" "table" (pos 0 74 24 14) "table" ["Updated"] ''
           SELECT item AS "#", title AS "Item", status AS "Status", owner AS "Owner",
                  ${subgoalTitle "subgoal"} AS "Subgoal", at AS "Updated", note AS "Note"
@@ -829,7 +829,7 @@ in {
         ]))
     ])
 
-    (row 13 "Pull requests" 89 [
+    (row 13 "Pull requests" 94 [
       (panel 14 "Pull requests" "table" (pos 0 75 24 12) "table" ["Since"] ''
           SELECT title AS "PR", state AS "State", ${subgoalTitle "subgoal"} AS "Subgoal",
                  at AS "Since", url AS "Link"
@@ -845,7 +845,7 @@ in {
         ]))
     ])
 
-    (row 15 "History: goal, subgoals, context sections" 90 [
+    (row 15 "History: goal, subgoals, context sections" 95 [
       (panel 16 "Goal versions" "table" (pos 0 76 12 9) "table" ["When"] ''
         SELECT at AS "When", text AS "Goal", reason AS "Why", source AS "By"
         FROM goal_versions WHERE sprint_id = ${sid} ORDER BY at DESC, id DESC''
