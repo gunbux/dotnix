@@ -1,6 +1,6 @@
 ---
 name: chun-status-timeline
-description: Track long multi-PR work as a sprint (one goal) split into subgoals (stages with their own goal and exit check), in an append-only log (the `sprint` CLI) shown on a local Grafana dashboard and, on trial, a static HTML status page. The dashboard holds the goal and every change to it, progress over time, the user's next steps, PRs, benchmarks, and agent-written context such as architecture, findings, and caveats. Use for /chun-status-timeline, or when Chun asks for the timeline, overview, "what's next", "what's left", "how far along", or status during multi-PR work.
+description: Track long multi-PR work as a sprint (one goal) split into subgoals (stages with their own goal and exit check), in an append-only log (the `sprint` CLI) shown on a local Grafana dashboard and, on trial, a static HTML status page. The dashboard holds the goal and every change to it, progress over time, the user's next steps, PRs, benchmarks, and agent-written context such as architecture, findings, and caveats. Use for /chun-status-timeline, or when Chun asks for the timeline, overview, "what's next", "what's left", "how far along", or status during multi-PR work. Also use when Chun asks to see the sprints of another machine, such as the Mac's sprints from legion-nix.
 ---
 
 # Chun status timeline
@@ -101,3 +101,14 @@ Run `sprint pr sync`, then `sprint show`. Reply with:
 3. Both links: the dashboard link from `sprint show` (the whole-sprint link, or the subgoal link when the question is about one stage) and the static page.
 
 Don't repeat what the dashboard shows. List running agents with their task and status in the reply, because the views don't show them.
+
+## Another machine's sprints
+
+Each machine has its own log and dashboard on `127.0.0.1`. The work Mac and legion-nix are on different tailnets, so a browser on one machine cannot open the other machine's dashboard. Chun decided to keep both dashboards off the network. Use T3 to show the other machine's sprints as a snapshot:
+
+1. Call `t3_environment_links`. Find the other machine: "Chun's MacBook Pro" or "legion-nix". If it is missing or expired, call `t3_environment_link` with the machine name as the hint.
+2. Start one read-only child there with `delegate_task`, `mode: "wait"`, and `target.environmentId`. Tell it to run `sprint list`, then `sprint show --json --sprint <slug>` for each open sprint (or only the one Chun named), and to return the raw JSON. It must not run `sprint pr sync` or write to the log.
+3. Render the JSON as one HTML page with `html_render`, in the layout of the static status page: "Do now" first, then subgoals with progress bars and open PRs. `sprint show --json` has no context sections. A large sprint gives about 100 KB of JSON, so the harness saves the result to a file: read it from there. Say which machine the page came from and when.
+4. The dashboard links in the JSON point to the other machine's `127.0.0.1`. Don't present them as links. Say they open only on that machine.
+
+The snapshot does not update itself. Make a new one when Chun asks again.
