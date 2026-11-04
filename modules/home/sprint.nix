@@ -42,6 +42,15 @@
   # demo databases.
   datasource = yaml.generate "sprint-datasource.yaml" {
     apiVersion = 1;
+    # The live status source was "Benchmark live" until 34498c7. Provisioning
+    # matches by name, so the old row's uid blocks the renamed one; delete it
+    # first.
+    deleteDatasources = [
+      {
+        name = "Benchmark live";
+        orgId = 1;
+      }
+    ];
     datasources = [
       {
         name = "Sprint log";
