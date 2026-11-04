@@ -60,7 +60,7 @@
         };
       }
       {
-        name = "Benchmark live";
+        name = "Live status";
         type = "frser-sqlite-datasource";
         uid = "sprint-bench-live";
         access = "proxy";
