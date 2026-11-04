@@ -147,14 +147,20 @@ func cmdPoll(c *call) {
 	check(child.Start())
 	// The CLI exits at once and init adopts the poller. A longer-lived
 	// caller (the tests) must still reap it.
-	go child.Wait()
+	exited := make(chan struct{})
+	go func() { child.Wait(); close(exited) }()
 	// The poller writes its own PID file first, so its cleanup always finds
-	// it. Wait for that before saying it started.
+	// it. Wait for that, or for a poller that already finished.
 	for i := 0; i < 50; i++ {
 		if pid, ok := pollerPID(db, sp.Slug, key); ok && pid == child.Process.Pid {
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-exited:
+			c.printf("poll %s: the command finished on its first run\n", key)
+			return
+		case <-time.After(100 * time.Millisecond):
+		}
 	}
 	verb := "started"
 	if replaced {
