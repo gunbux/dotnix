@@ -36,6 +36,21 @@
   # the kernel reclaims build memory first; builds slow down, games don't.
   systemd.services.nix-daemon.serviceConfig.MemoryHigh = "6G";
 
+  # Steam runs each game in an app-steam-app<ID>-<pid>.scope. When RAM runs
+  # out, the kernel swaps other apps before a game's first 8G, and kills
+  # nothing. A cgroup only gets this protection if every parent has it too.
+  systemd.slices."user".sliceConfig.MemoryLow = "8G";
+  systemd.slices."user-" = {
+    overrideStrategy = "asDropin";
+    sliceConfig.MemoryLow = "8G";
+  };
+  systemd.services."user@".serviceConfig.MemoryLow = "8G";
+  systemd.user.slices."app".sliceConfig.MemoryLow = "8G";
+  systemd.user.units."app-steam-.scope" = {
+    overrideStrategy = "asDropin";
+    text = "[Scope]\nMemoryLow=8G\n";
+  };
+
   # scx
   # services.scx_loader = {
   #   enable = true;
@@ -84,6 +99,8 @@
   };
 
   programs.gamemode.enable = true;
+  # gamemoded needs this group to switch the CPU governor through polkit.
+  users.users.chun.extraGroups = ["gamemode"];
 
   programs.gamescope = {
     enable = true;
