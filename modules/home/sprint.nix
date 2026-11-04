@@ -56,6 +56,28 @@
         orgId = 1;
       }
       {
+        name = "Live status";
+        orgId = 1;
+      }
+    ];
+    datasources = [
+      {
+        name = "Sprint log";
+        type = "frser-sqlite-datasource";
+        uid = "sprint-sqlite";
+        access = "proxy";
+        isDefault = true;
+        editable = false;
+        jsonData = {
+          path = "$SPRINT_DB";
+          pathPrefix = "file:";
+          # A dashboard runs its panel queries at once. Without a busy
+          # timeout some of them fail with SQLITE_BUSY.
+          pathOptions = "_pragma=query_only(1)&_pragma=busy_timeout(5000)";
+          attachLimit = 0;
+        };
+      }
+      {
         name = "Live";
         type = "frser-sqlite-datasource";
         uid = "sprint-live";
