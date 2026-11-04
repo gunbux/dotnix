@@ -139,3 +139,7 @@
 .sp .lv-body { margin-top: 6px; font-size: 13px; }
 .sp .lv-body p:last-child { margin-bottom: 0; }
 .sp .p-stale { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); font-weight: 600; }
+.sp .lv-body code { white-space: normal; overflow-wrap: anywhere; }
+/* A card with a table takes two columns; a long body scrolls in its card. */
+.sp .lv:has(table) { grid-column: span 2; }
+.sp .lv-body { max-height: 230px; overflow: auto; }
