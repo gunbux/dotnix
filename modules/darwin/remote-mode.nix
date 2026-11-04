@@ -31,6 +31,11 @@
         exec /usr/bin/sudo "$0" "$@"
       fi
 
+      # One update at a time: a switch and a manual toggle must not interleave.
+      lock=/var/db/remote-mode.lock
+      until mkdir "$lock" 2> /dev/null; do sleep 0.2; done
+      trap 'rmdir "$lock"' EXIT
+
       case "$1" in
         on) touch "$flag" ;;
         off) rm -f "$flag" ;;
@@ -50,12 +55,17 @@
       mv "$tmp" "$pamfile"
 
       # `apply` runs on every switch; leave biometrics alone unless remote mode is on.
+      # A failed write exits non-zero, except in `apply`, which must not fail a switch.
+      rc=0
       if [ "$1" != apply ] || [ "$bio" = 0 ]; then
-        /usr/bin/bioutil -w -s -f "$bio" -u "$bio" > /dev/null \
-          || echo "warning: bioutil could not change system biometrics" >&2
+        /usr/bin/bioutil -w -s -f "$bio" -u "$bio" > /dev/null || rc=1
       fi
 
       status
+      if [ "$rc" -ne 0 ]; then
+        echo "error: bioutil failed. The sudo setting changed, system biometrics did not." >&2
+        [ "$1" = apply ] || exit 1
+      fi
     '';
   };
 in {
