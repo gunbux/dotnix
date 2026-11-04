@@ -113,7 +113,7 @@ Replace a section with `sprint context set <same key>`. The old version stays in
 
 ## Live data
 
-Everything an agent waits on or polls goes in the dashboard's Live section, so the user can see it without asking: a benchmark run, CI, a review bot, a deploy. Each item is a card with a progress bar, the end time in SGT, and a "stale" tag when updates stop. Live items are not part of the log, so you can update them in place.
+Everything an agent waits on or polls goes in the dashboard's Live section, so the user can see it without asking: a benchmark run, CI, a review bot, a deploy. Each item is a card with a progress bar, the end time in SGT, and a "stale" tag when updates stop. A subgoal view shows its own items and the whole sprint's. Live items live in `~/.local/state/sprint/live.db`, not in the append-only log, so you can update them in place.
 
 | Need | Command |
 | --- | --- |
@@ -121,17 +121,21 @@ Everything an agent waits on or polls goes in the dashboard's Live section, so t
 | A GitHub Actions run | `sprint poll ci --every 60s --title "CI" -- sprint probe gh-run <run url>` |
 | A PR's review bots | `sprint poll review --every 2m --title "Review" -- sprint probe greptile <pr url> --until five` |
 | A runner's log | `sprint poll bench --every 30s --title "Bench" -- sprint probe tail <file> --until '<done regex>'` |
-| One update by hand | `sprint live set <key> [--title ..] [--progress 7/12] [--ends-at +45m] --file -` |
+| Keep the PR board current | `sprint poll prs --every 3m --title "PR board sync" -- sprint pr sync` |
+| One update by hand | `sprint live set <key> [--title ..] [--subgoal <key>\|-] [--progress 7/12] [--ends-at +45m] [--stale-after 3m] [--link <url>] --file -` |
 | Finish or remove an item | `sprint live done <key>` (it stays 1 h), `sprint live rm <key>` |
-| See pollers and items | `sprint poll ls`, `sprint live ls`, `sprint poll stop <key>` |
+| See pollers and items | `sprint poll ls`, `sprint live ls` |
+| Stop a poller | `sprint poll stop <key>`. The card stays: then `live done` or `live rm` it. |
 
-For a source without a probe, write a small script. It prints Markdown, or JSON `{"body": ..., "progress": "7/12", "ends_at": ...}`. Exit 100 when the wait is over. Set `ends_at` whenever you can estimate it.
+- `--title` is required for a new item. Flags you leave out keep their values. `-` clears `--progress`, `--ends-at`, `--stale-after` and `--link`. `--subgoal -` moves an item to the whole sprint.
+- A poller runs detached and outlives your turn. Its files are in `~/.local/state/sprint/pollers/<sprint>/<key>.{json,pid,log}`. Running `sprint poll` again with the same key replaces the poller. `--stale-after` defaults to 3 times `--every`.
+- For a source without a probe, write a small script. It prints Markdown, or JSON `{"body", "progress": "7/12", "ends_at", "title", "link"}`. Exit 100 when the wait is over. Any other non-zero exit, or a timeout, keeps the last body and shows the error on the card. Set `ends_at` whenever you can estimate it.
 
-The PR board comes from the log: `sprint pr sync` records each PR's review state. Set your next step for a PR with `sprint pr note <url> "<step>"`.
+The PR board comes from the log: `sprint pr sync` records each PR's review state. It shows only PRs tracked with `sprint pr add`, so add each PR when you open it. Set your next step for a PR with `sprint pr note <url> "<step>"` (`-` removes it).
 
 ### Change the dashboard
 
-Edit `modules/home/sprint/dashboard.nix` in a dotnix worktree. Run `sprint dash dev --checkout <worktree> [--watch]`, and Grafana shows the change within 10 s, with no build or switch. Check it on `http://127.0.0.1:3001`, then open the PR. After you merge, `sprint dash reset` puts the built dashboard back. The next switch does the same. To change the shape of every future sprint's context sections, edit `templates/` instead.
+Edit `modules/home/sprint/dashboard.nix` in a dotnix worktree. Run `sprint dash dev --checkout <worktree> [--watch]`, and Grafana shows the change within 10 s, with no build or switch. The header shows "dev: <branch>@<sha>" (`+` means uncommitted) while a dev copy is live. Check it on `http://127.0.0.1:3001`, then open the PR. After you merge, `sprint dash reset` puts the built dashboard back. The next switch does the same. Data sources and Grafana settings still need a switch. To change the shape of every future sprint's context sections, edit `templates/` instead.
 
 ## Answer status questions
 
