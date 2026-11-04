@@ -138,7 +138,11 @@ func TestPollRunsDetachedUntilStopped(t *testing.T) {
 
 func TestPollEndsItselfOnExit100(t *testing.T) {
 	h := detachedSprint(t)
+	start := time.Now()
 	h.ok("poll", "job", "--every", "5s", "--title", "Job", "--", "sh", "-c", "echo 'finished'; exit 100")
+	if time.Since(start) > 3*time.Second {
+		t.Fatalf("poll waited %s for a poller that had finished", time.Since(start))
+	}
 	waitFor(t, "item done", func() bool { return h.live("SELECT state FROM live_items") == "(done)" })
 	eq(t, h.live("SELECT body FROM live_items"), "(finished)")
 	waitFor(t, "PID file removed", func() bool { return pidOf(t, h, "job") == 0 })
