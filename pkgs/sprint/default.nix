@@ -4,6 +4,7 @@
   makeWrapper,
   gh,
   git,
+  ps,
 }:
 buildGoModule {
   pname = "sprint";
@@ -25,13 +26,14 @@ buildGoModule {
   ldflags = ["-s" "-w"];
 
   nativeBuildInputs = [makeWrapper];
-  # The `dash dev` tests make a git checkout.
-  nativeCheckInputs = [git];
+  # The `dash dev` tests make a git checkout; the poller tests check PIDs with ps.
+  nativeCheckInputs = [git ps];
 
   # `sprint pr add` and `pr sync` ask GitHub through gh. `dash dev` reads the
-  # checkout's branch with git, and runs the user's own nix.
+  # checkout's branch with git, and runs the user's own nix. `poll` checks a
+  # PID's command line with ps before it signals it.
   postInstall = ''
-    wrapProgram $out/bin/sprint --suffix PATH : ${lib.makeBinPath [gh git]}
+    wrapProgram $out/bin/sprint --suffix PATH : ${lib.makeBinPath [gh git ps]}
   '';
 
   meta = {

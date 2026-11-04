@@ -19,8 +19,8 @@ import (
 
 // A poller runs a command every --every and writes what it prints to a live
 // item. It runs detached, so it outlives the shell or agent turn that
-// started it. Each poller has three files in the pollers folder, named
-// <sprint>.<key>: .json (what to run), .pid, and .log (its own errors).
+// started it. Each poller has three files in the pollers folder, under
+// <sprint>/<key>: .json (what to run), .pid, and .log (its own errors).
 //
 // The command prints Markdown (the item's body) or a JSON object with any of
 // body, progress ("7/12"), ends_at (as in `live set --ends-at`), title and
@@ -48,7 +48,9 @@ func pollersDir(dbPath string) string {
 }
 
 func pollFile(dbPath, sprint, key, ext string) string {
-	return filepath.Join(pollersDir(dbPath), sprint+"."+key+ext)
+	// Slugs and keys have no "/", so one folder per sprint keeps every
+	// poller's files apart.
+	return filepath.Join(pollersDir(dbPath), sprint, key+ext)
 }
 
 func parseEvery(v string) time.Duration {
@@ -71,18 +73,27 @@ func pollerPID(dbPath, sprint, key string) (int, bool) {
 		return 0, false
 	}
 	out, err := exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "command=").Output()
-	if err != nil || !strings.Contains(string(out), "poll run "+key) {
+	cmdline := string(out)
+	if err != nil || !strings.Contains(cmdline, "--sprint "+sprint+" poll run "+key) {
 		return 0, false
 	}
 	return pid, true
 }
 
+// stopPoller ends a poller and waits until it is gone. SIGTERM cancels its
+// running command; a poller still there after 10 s gets SIGKILL.
 func stopPoller(dbPath, sprint, key string) bool {
 	pid, ok := pollerPID(dbPath, sprint, key)
 	if ok {
 		syscall.Kill(pid, syscall.SIGTERM)
-		for i := 0; i < 50 && syscall.Kill(pid, 0) == nil; i++ {
+		for i := 0; i < 100 && syscall.Kill(pid, 0) == nil; i++ {
 			time.Sleep(100 * time.Millisecond)
+		}
+		if syscall.Kill(pid, 0) == nil {
+			syscall.Kill(pid, syscall.SIGKILL)
+			for i := 0; i < 20 && syscall.Kill(pid, 0) == nil; i++ {
+				time.Sleep(100 * time.Millisecond)
+			}
 		}
 	}
 	for _, ext := range []string{".pid", ".json"} {
@@ -121,7 +132,6 @@ func cmdPoll(c *call) {
 		Cmd: c.many, Dir: wd, Started: now()}
 	data, err := json.MarshalIndent(spec, "", "  ")
 	check(err)
-	check(os.MkdirAll(pollersDir(db), 0o755))
 	writeAtomic(pollFile(db, sp.Slug, key, ".json"), data)
 
 	self, err := os.Executable()
@@ -135,10 +145,17 @@ func cmdPoll(c *call) {
 	// Its own session: closing the starting shell or agent turn doesn't stop it.
 	child.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	check(child.Start())
-	writeAtomic(pollFile(db, sp.Slug, key, ".pid"), []byte(strconv.Itoa(child.Process.Pid)+"\n"))
 	// The CLI exits at once and init adopts the poller. A longer-lived
 	// caller (the tests) must still reap it.
 	go child.Wait()
+	// The poller writes its own PID file first, so its cleanup always finds
+	// it. Wait for that before saying it started.
+	for i := 0; i < 50; i++ {
+		if pid, ok := pollerPID(db, sp.Slug, key); ok && pid == child.Process.Pid {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	verb := "started"
 	if replaced {
 		verb = "restarted"
@@ -213,28 +230,32 @@ func lastLine(s string) string {
 	return l
 }
 
-// pollOnce runs the command once and records the result. It reports
+// pollOnce runs the command once and records the result. stopped ends the
+// run early (poll stop), and its result is then dropped. Only a live item
+// takes a result, so `live done` or `live rm` during a run wins. It reports
 // whether the poller should stop.
-func pollOnce(spec pollSpec, timeout time.Duration) (stop bool) {
+func pollOnce(stopped context.Context, spec pollSpec, timeout time.Duration) (stop bool) {
 	live, closeLive := openLive(livePath(spec.DB))
 	defer closeLive()
-	cur, ok := live.liveItem(spec.Sprint, spec.Key)
-	if !ok || cur.State == "done" {
+	if cur, ok := live.liveItem(spec.Sprint, spec.Key); !ok || cur.State == "done" {
 		fmt.Fprintf(os.Stderr, "%s: item %s is gone or done; stopping\n", time.Now().Format(time.RFC3339), spec.Key)
 		return true
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(stopped, timeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, spec.Cmd[0], spec.Cmd[1:]...)
 	cmd.Dir = spec.Dir
-	// A timeout kills the whole process group, so a shell's children can't
-	// keep the output pipes open.
+	// A timeout or a stop kills the whole process group, so a shell's
+	// children can't keep the output pipes open.
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error { return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) }
 	cmd.WaitDelay = 5 * time.Second
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	err := cmd.Run()
+	if stopped.Err() != nil {
+		return true
+	}
 	code := 0
 	var ee *exec.ExitError
 	switch {
@@ -246,7 +267,9 @@ func pollOnce(spec pollSpec, timeout time.Duration) (stop bool) {
 		code = -1
 	}
 	at := now()
-	if code != 0 && code != exitDone {
+	var ch liveChange
+	switch {
+	case code != 0 && code != exitDone:
 		msg := lastLine(stderr.String())
 		if msg == "" {
 			msg = fmt.Sprintf("exit %d", code)
@@ -254,47 +277,51 @@ func pollOnce(spec pollSpec, timeout time.Duration) (stop bool) {
 				msg = err.Error()
 			}
 		}
-		liveUpdate(live, spec.Sprint, spec.Key, liveChange{"error": msg, "seen_at": at})
-		return false
+		ch = liveChange{"error": msg}
+	default:
+		var perr error
+		if ch, perr = tryPollResult(stdout.Bytes()); perr != nil {
+			// The last good body stays; the card shows why this one failed.
+			ch = liveChange{"error": perr.Error()}
+		} else {
+			ch["error"], ch["updated_at"] = nil, at
+			if ch["body"] == "" && code == exitDone {
+				delete(ch, "body")
+			}
+		}
 	}
-	ch, perr := tryPollResult(stdout.Bytes())
-	if perr != nil {
-		liveUpdate(live, spec.Sprint, spec.Key, liveChange{"error": perr.Error(), "seen_at": at})
-		return code == exitDone
-	}
-	if code == exitDone && ch["body"] == "" {
-		delete(ch, "body")
-	}
-	liveSet(live, spec.Sprint, spec.Key, ch)
+	ch["seen_at"] = at
 	if code == exitDone {
-		liveUpdate(live, spec.Sprint, spec.Key, liveChange{"state": "done", "done_at": at})
-		return true
+		ch["state"], ch["done_at"] = "done", at
 	}
-	return false
+	updated := liveUpdateWhere(live, spec.Sprint, spec.Key, ch, "state = 'live'")
+	return code == exitDone || updated == 0
 }
 
 func cmdPollRun(c *call) {
-	sp := c.flag("sprint")
-	data, err := os.ReadFile(pollFile(c.flag("db"), sp, c.pos["key"], ".json"))
+	sp, key := c.flag("sprint"), c.pos["key"]
+	// First, so cleanup below always finds this poller's own PID file.
+	writeAtomic(pollFile(c.flag("db"), sp, key, ".pid"), []byte(strconv.Itoa(os.Getpid())+"\n"))
+	data, err := os.ReadFile(pollFile(c.flag("db"), sp, key, ".json"))
 	check(err)
 	var spec pollSpec
 	check(json.Unmarshal(data, &spec))
 	every, timeout := parseEvery(spec.Every), parseEvery(spec.Timeout)
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+	stopped, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+	defer cancel()
 	defer func() {
-		// Only this poller's PID file: a restart may have written a new one.
-		if pid, _ := os.ReadFile(pollFile(spec.DB, sp, spec.Key, ".pid")); strings.TrimSpace(string(pid)) == strconv.Itoa(os.Getpid()) {
-			os.Remove(pollFile(spec.DB, sp, spec.Key, ".pid"))
-			os.Remove(pollFile(spec.DB, sp, spec.Key, ".json"))
+		// Only this poller's files: a restart may have written new ones.
+		if pid, _ := os.ReadFile(pollFile(spec.DB, sp, key, ".pid")); strings.TrimSpace(string(pid)) == strconv.Itoa(os.Getpid()) {
+			os.Remove(pollFile(spec.DB, sp, key, ".pid"))
+			os.Remove(pollFile(spec.DB, sp, key, ".json"))
 		}
 	}()
 	for {
-		if pollOnce(spec, timeout) {
+		if pollOnce(stopped, spec, timeout) {
 			return
 		}
 		select {
-		case <-sigs:
+		case <-stopped.Done():
 			return
 		case <-time.After(every):
 		}
@@ -303,7 +330,7 @@ func cmdPollRun(c *call) {
 
 func cmdPollLs(c *call) {
 	dir := pollersDir(c.dbPath)
-	files, _ := filepath.Glob(filepath.Join(dir, "*.json"))
+	files, _ := filepath.Glob(filepath.Join(dir, "*", "*.json"))
 	sort.Strings(files)
 	live, closeLive := openLive(livePath(c.dbPath))
 	defer closeLive()

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -43,30 +44,30 @@ func pollSpecFor(h *harness, key, script string) pollSpec {
 func TestPollOnceRecordsEachOutcome(t *testing.T) {
 	h := liveSprint(t)
 	h.ok("live", "set", "b", "--title", "Bench", "--stale-after", "1m")
-	eq(t, pollOnce(pollSpecFor(h, "b", `echo '{"body":"run 3","progress":"3/12"}'`), time.Minute), false)
+	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", `echo '{"body":"run 3","progress":"3/12"}'`), time.Minute), false)
 	eq(t, h.live("SELECT body, done_n, state, error FROM live_items"), "(run 3, 3, live, <nil>)")
 
 	h.clock(1100)
-	eq(t, pollOnce(pollSpecFor(h, "b", "echo 'gh: rate limited' >&2; exit 2"), time.Minute), false)
+	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", "echo 'gh: rate limited' >&2; exit 2"), time.Minute), false)
 	eq(t, h.live("SELECT body, error, updated_at, seen_at FROM live_items"), "(run 3, gh: rate limited, 1000, 1100)")
-	eq(t, pollOnce(pollSpecFor(h, "b", "exit 3"), time.Minute), false)
+	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", "exit 3"), time.Minute), false)
 	eq(t, h.live("SELECT error FROM live_items"), "(exit 3)")
-	eq(t, pollOnce(pollSpecFor(h, "b", "sleep 5"), 200*time.Millisecond), false)
+	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", "sleep 5"), 200*time.Millisecond), false)
 	eq(t, h.live("SELECT error FROM live_items"), "(timed out after 200ms)")
 
 	h.clock(1200)
-	eq(t, pollOnce(pollSpecFor(h, "b", "echo 'All 12 ok.'; exit 100"), time.Minute), true)
+	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", "echo 'All 12 ok.'; exit 100"), time.Minute), true)
 	eq(t, h.live("SELECT body, state, done_at, error FROM live_items"), "(All 12 ok., done, 1200, <nil>)")
 	// A done or removed item stops the poller before it runs the command.
-	eq(t, pollOnce(pollSpecFor(h, "b", "echo again"), time.Minute), true)
+	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", "echo again"), time.Minute), true)
 	h.ok("live", "rm", "b")
-	eq(t, pollOnce(pollSpecFor(h, "b", "echo again"), time.Minute), true)
+	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", "echo again"), time.Minute), true)
 }
 
 func TestPollExit100WithNoOutputKeepsTheBody(t *testing.T) {
 	h := liveSprint(t)
 	h.ok("live", "set", "b", "--title", "Bench", "--file", h.file("b.md", "last body"))
-	eq(t, pollOnce(pollSpecFor(h, "b", "exit 100"), time.Minute), true)
+	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", "exit 100"), time.Minute), true)
 	eq(t, h.live("SELECT body, state FROM live_items"), "(last body, done)")
 }
 
@@ -87,7 +88,7 @@ func detachedSprint(t *testing.T) *harness {
 	t.Setenv("SPRINT_NOW", "")
 	t.Setenv("SPRINT_TEST_AS_CLI", "1")
 	t.Cleanup(func() {
-		files, _ := filepath.Glob(filepath.Join(filepath.Dir(h.db), "pollers", "*.pid"))
+		files, _ := filepath.Glob(filepath.Join(filepath.Dir(h.db), "pollers", "*", "*.pid"))
 		for _, f := range files {
 			data, _ := os.ReadFile(f)
 			if pid, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil {
@@ -99,7 +100,7 @@ func detachedSprint(t *testing.T) *harness {
 }
 
 func pidOf(t *testing.T, h *harness, key string) int {
-	data, err := os.ReadFile(filepath.Join(filepath.Dir(h.db), "pollers", "s1."+key+".pid"))
+	data, err := os.ReadFile(filepath.Join(filepath.Dir(h.db), "pollers", "s1", key+".pid"))
 	if err != nil {
 		return 0
 	}
@@ -169,4 +170,83 @@ func TestProbeTailEndsWhenALineMatches(t *testing.T) {
 	h.file("bench.log", "start\nDONE 12 runs\n")
 	code, _, _ := h.run("probe", "tail", log, "--until", "^DONE")
 	eq(t, code, exitDone)
+}
+
+func TestPollKeepsADoneOrRemovedItemThatEndsDuringARun(t *testing.T) {
+	h := liveSprint(t)
+	h.ok("live", "set", "b", "--title", "Bench", "--file", h.file("b.md", "before"))
+	done := make(chan bool)
+	go func() { done <- pollOnce(context.Background(), pollSpecFor(h, "b", "sleep 1; echo late"), time.Minute) }()
+	time.Sleep(200 * time.Millisecond)
+	h.ok("live", "done", "b")
+	eq(t, <-done, true)
+	eq(t, h.live("SELECT body, state FROM live_items"), "(before, done)")
+
+	h.ok("live", "set", "c", "--title", "C")
+	go func() {
+		done <- pollOnce(context.Background(), pollSpecFor(h, "c", `sleep 1; echo '{"title":"Back"}'`), time.Minute)
+	}()
+	time.Sleep(200 * time.Millisecond)
+	h.ok("live", "rm", "c")
+	eq(t, <-done, true)
+	eq(t, h.live("SELECT COUNT(*) FROM live_items WHERE key = 'c'"), "(0)")
+}
+
+func TestPollExit100WithBadOutputStillEndsTheItem(t *testing.T) {
+	h := liveSprint(t)
+	h.ok("live", "set", "b", "--title", "Bench", "--file", h.file("b.md", "last good"))
+	eq(t, pollOnce(context.Background(), pollSpecFor(h, "b", `echo '{"progress":"seven"}'; exit 100`), time.Minute), true)
+	eq(t, h.live("SELECT body, state, error FROM live_items"), "(last good, done, bad output: --progress must look like 7/12, not \"seven\")")
+}
+
+func TestPollStopCancelsARunningCommand(t *testing.T) {
+	h := detachedSprint(t)
+	h.ok("poll", "slow", "--every", "5s", "--title", "Slow", "--", "sh", "-c", "sleep 30; echo late")
+	pid := pidOf(t, h, "slow")
+	if pid == 0 {
+		t.Fatal("poll returned before the poller wrote its PID file")
+	}
+	start := time.Now()
+	h.ok("poll", "stop", "slow")
+	if time.Since(start) > 5*time.Second {
+		t.Fatalf("stop took %s", time.Since(start))
+	}
+	eq(t, syscall.Kill(pid, 0) != nil, true)
+	eq(t, h.live("SELECT body FROM live_items"), "()")
+}
+
+func TestPollersOfDottedNamesKeepTheirOwnFiles(t *testing.T) {
+	h := detachedSprint(t)
+	h.ok("start", "a.b", "AB", "--goal", "g")
+	h.ok("start", "a", "A", "--goal", "g")
+	h.ok("--sprint", "a.b", "poll", "c", "--every", "5s", "--title", "One", "--", "sh", "-c", "echo one")
+	h.ok("--sprint", "a", "poll", "b.c", "--every", "5s", "--title", "Two", "--", "sh", "-c", "echo two")
+	out := h.ok("poll", "ls")
+	contains_(t, out, "c\ta.b\tPID ")
+	contains_(t, out, "b.c\ta\tPID ")
+	h.ok("--sprint", "a.b", "poll", "stop", "c")
+	contains_(t, h.ok("poll", "ls"), "b.c\ta\tPID ")
+	h.ok("--sprint", "a", "poll", "stop", "b.c")
+}
+
+func TestProbeGreptileWaitsWhenThreadsAreNotAllRead(t *testing.T) {
+	h := newHarness(t)
+	head := "abcdef1234567890"
+	st := prStatus{Number: 3, URL: pr3, Title: "T", State: "OPEN", HeadRefOid: head}
+	st.Comments.Nodes = []botPost{{Author: &struct{ Login string }{"greptile-apps"}, UpdatedAt: "2026-11-04T01:00:00Z",
+		Body: "Confidence Score: 5/5 Last reviewed commit: " + head}}
+	stubStatus(t, func(string) (prStatus, error) { return st, nil })
+	code, out, _ := h.run("probe", "greptile", pr3, "--until", "five")
+	eq(t, code, exitDone)
+	contains_(t, out, "**5/5** on the head commit")
+	st.ReviewThreads.PageInfo.HasNextPage = true
+	code, out, _ = h.run("probe", "greptile", pr3, "--until", "five")
+	eq(t, code, 0)
+	contains_(t, out, "over 100 threads")
+}
+
+func stubStatus(t *testing.T, fn func(string) (prStatus, error)) {
+	real := ghPRStatus
+	ghPRStatus = fn
+	t.Cleanup(func() { ghPRStatus = real })
 }
