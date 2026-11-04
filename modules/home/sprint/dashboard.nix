@@ -297,6 +297,14 @@ in {
   };
 
   templating.list = [
+    # `sprint dash dev` sets this to the checkout's branch@sha. The header
+    # shows it, so a dev copy is never mistaken for the switched one.
+    {
+      name = "dev";
+      type = "constant";
+      query = "";
+      hide = 2;
+    }
     {
       name = "sprint";
       label = "Sprint";
