@@ -10,7 +10,7 @@ const questions = [
 ];
 
 // A fake T3 MCP: one reachable Mac with one waiting thread and one question.
-function fakeMcp({ pending = ["r1"], reachable = "reachable", failThreads = false } = {}) {
+function fakeMcp({ pending = ["r1"], reachable = "reachable", failThreads = false, threadStatus = "running" } = {}) {
   const calls = [];
   return {
     calls,
@@ -21,7 +21,7 @@ function fakeMcp({ pending = ["r1"], reachable = "reachable", failThreads = fals
       }
       if (name === "t3_thread_list") {
         if (failThreads) throw new Error("relay down");
-        return { threads: [{ threadId: THREAD, title: "t3-ask test" }] };
+        return { threads: args.statuses && !args.statuses.includes(threadStatus) ? [] : [{ threadId: THREAD, title: "t3-ask test", status: threadStatus }] };
       }
       if (name === "t3_pending_request" && args.action === "list") return { requestIds: pending };
       if (name === "t3_pending_request" && args.action === "read") return { requestId: args.requestId, questions };
@@ -45,9 +45,16 @@ test("peerItems lists waiting questions on reachable machines only", async () =>
   assert.equal(items[0].thread, "MacBook Pro · t3-ask test");
   assert.equal(items[0].qs.length, 2);
   assert.equal(items[0].qs[1].m, true);
-  const list = mcp.calls.find(([name]) => name === "t3_thread_list")[1];
-  assert.deepEqual(list, { environmentId: MAC, allProjects: true, statuses: ["running", "waiting"], limit: 50 });
   assert.ok(!mcp.calls.some(([, args]) => args.environmentId === "x"));
+});
+
+test("pending questions remain visible after the agent run finishes", async () => {
+  for (const threadStatus of ["completed", "idle", "failed", "interrupted", "cancelled"]) {
+    const items = await peerItems(fakeMcp({ threadStatus }));
+    assert.equal(items.length, 1, `pending question hidden by run status ${threadStatus}`);
+    assert.equal(items[0].rid, "r1");
+    assert.deepEqual(await peerItems(fakeMcp({ threadStatus, pending: [] })), []);
+  }
 });
 
 test("a failing machine is logged and left out", async () => {

@@ -109,15 +109,12 @@ export async function peerItems(mcp, log = () => {}, links) {
 
 async function machineItems(mcp, link) {
   const environmentId = link.environmentId;
-  // A thread asking a question keeps run status "running" (measured: the
-  // run stays running while the question item waits). "waiting" covers runs
-  // that wait on other things. The thread list has no pending count, so
-  // each candidate's question requests are listed; most have none.
+  // Async questions can remain pending after their agent run completes.
+  // The request list, rather than the run status, decides what needs an answer.
   const { threads = [] } =
     (await mcp.call("t3_thread_list", {
       environmentId,
       allProjects: true,
-      statuses: ["running", "waiting"],
       limit: 50,
     })) ?? {};
   const lists = await Promise.all(
