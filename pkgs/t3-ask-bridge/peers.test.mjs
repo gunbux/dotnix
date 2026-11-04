@@ -56,6 +56,25 @@ test("a failing machine is logged and left out", async () => {
   assert.match(lines[0], /relay down/);
 });
 
+test("supplied peer catalog bypasses MCP discovery and keeps list/read/respond routing", async () => {
+  const mcp = fakeMcp();
+  const links = [{ environmentId: MAC, label: "Catalog Mac", status: "reachable" }];
+  const items = await peerItems(mcp, () => {}, links);
+  assert.equal(items[0].thread, "Catalog Mac · t3-ask test");
+  assert.ok(!mcp.calls.some(([name]) => name === "t3_environment_links"));
+  const result = await answerPeer(mcp, items[0].tid, items[0].rid, [[1], [0, 1]]);
+  assert.equal(result.label, "Banana | Red, Blue");
+  const operations = mcp.calls.filter(([name]) => name === "t3_pending_request");
+  assert.deepEqual(operations.map(([, args]) => args.action), ["list", "read", "list", "read", "respond"]);
+  assert.ok(operations.every(([, args]) => args.environmentId === MAC && args.threadId === THREAD));
+});
+
+test("an empty supplied catalog does not try unsupported MCP discovery", async () => {
+  const mcp = fakeMcp();
+  assert.deepEqual(await peerItems(mcp, () => {}, []), []);
+  assert.deepEqual(mcp.calls, []);
+});
+
 test("answerPeer responds on the right machine and thread", async () => {
   const mcp = fakeMcp();
   const result = await answerPeer(mcp, `${MAC}/${THREAD}`, "r1", [[1], [0, 1]]);

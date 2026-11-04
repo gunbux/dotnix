@@ -123,6 +123,9 @@
         t3-activity = prev.callPackage ./pkgs/t3-activity/default.nix {};
         ## Lets the T3 Ask Garmin watch app answer T3 Code questions
         t3-ask-bridge = prev.callPackage ./pkgs/t3-ask-bridge/default.nix {};
+        ## Official headless runtime and rootless watch gateway OCI images.
+        t3-headless = final.callPackage ./pkgs/t3-headless/default.nix {};
+        t3-watch-gateway = final.callPackage ./pkgs/t3-watch-gateway/default.nix {};
         ## Append-only sprint log read by the local sprint dashboard
         sprint = prev.callPackage ./pkgs/sprint/default.nix {};
         ## Greptile CLI (npm package, not in nixpkgs)
@@ -258,7 +261,13 @@
       config.allowUnfree = true;
       overlays = [overlays.custom-packages];
     };
+    watchImages = shellPkgs.callPackage ./pkgs/t3-watch-gateway/images.nix {};
   in {
+    packages.${system} = {
+      inherit (shellPkgs) t3-ask-bridge t3-headless t3-watch-gateway;
+      t3-ask-bridge-image = watchImages.bridge;
+      t3-watch-gateway-image = watchImages.gateway;
+    };
     ## Project devshells: `nix develop ~/dotnix#<name>`
     devShells.${system} = {
       firecracker-eks = import ./shells/firecracker-eks.nix {pkgs = shellPkgs;};

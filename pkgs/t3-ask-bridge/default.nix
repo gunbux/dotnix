@@ -13,7 +13,7 @@ in
 
     src = lib.fileset.toSource {
       root = ./.;
-      fileset = lib.fileset.unions [./bridge.mjs ./watch-api.mjs ./watch-api.test.mjs ./peers.mjs ./peers.test.mjs ./helloride.mjs ./helloride.test.mjs ./street-map.mjs ./street-map.test.mjs ./street-render.py ./street-render.test.py];
+      fileset = lib.fileset.unions [./bridge.mjs ./bridge.test.mjs ./watch-api.mjs ./watch-api.test.mjs ./peers.mjs ./peers.test.mjs ./peer-catalog.mjs ./peer-catalog.test.mjs ./helloride.mjs ./helloride.test.mjs ./street-map.mjs ./street-map.test.mjs ./street-render.py ./street-render.test.py];
     };
 
     nativeBuildInputs = [makeWrapper];
@@ -22,14 +22,14 @@ in
     doCheck = true;
     checkPhase = ''
         runHook preCheck
-        node --test watch-api.test.mjs peers.test.mjs helloride.test.mjs street-map.test.mjs
+        node --test bridge.test.mjs watch-api.test.mjs peers.test.mjs peer-catalog.test.mjs helloride.test.mjs street-map.test.mjs
         python3 street-render.test.py
       runHook postCheck
     '';
 
     installPhase = ''
       runHook preInstall
-      install -Dm444 bridge.mjs watch-api.mjs peers.mjs helloride.mjs street-map.mjs street-render.py -t $out/lib/t3-ask-bridge
+      install -Dm444 bridge.mjs watch-api.mjs peers.mjs peer-catalog.mjs helloride.mjs street-map.mjs street-render.py -t $out/lib/t3-ask-bridge
       makeWrapper ${lib.getExe nodejs} $out/bin/t3-ask-bridge \
         --add-flags $out/lib/t3-ask-bridge/bridge.mjs \
         --set BUS_AUNTY_MAP_PYTHON ${mapPython}/bin/python3

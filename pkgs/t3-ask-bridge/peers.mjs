@@ -90,8 +90,10 @@ export const shortLabel = (label) => String(label ?? "Linked").replace(/^.*?['â€
 
 // Every pending question on every reachable linked machine, as watch items.
 // One machine failing does not hide the others.
-export async function peerItems(mcp, log = () => {}) {
-  const { links = [] } = (await mcp.call("t3_environment_links", {})) ?? {};
+export async function peerItems(mcp, log = () => {}, links) {
+  // T3 0.1.7 exposes link discovery through its CLI, rather than public MCP.
+  // Gateway callers supply that catalog; older installations retain MCP discovery.
+  if (links === undefined) ({ links = [] } = (await mcp.call("t3_environment_links", {})) ?? {});
   const perMachine = await Promise.all(
     links
       .filter((link) => link.status === "reachable")

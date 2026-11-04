@@ -15,16 +15,19 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { answerPeer, mcpClient, PeerError, peerItems } from "./peers.mjs";
+import { readPeerCatalog } from "./peer-catalog.mjs";
 import { parsePeerTid, pendingItems, resolveAnswer } from "./watch-api.mjs";
 
 const configDir = `${process.env.XDG_CONFIG_HOME ?? `${process.env.HOME}/.config`}/t3-ask`;
 const config = {
+  host: process.env.T3_ASK_HOST ?? "127.0.0.1",
   port: Number(process.env.T3_ASK_PORT ?? 8789),
   t3Url: process.env.T3_ASK_T3_URL ?? "http://127.0.0.1:3773",
   t3TokenFile: process.env.T3_ASK_T3_TOKEN_FILE ?? `${configDir}/t3-token`,
   watchTokenFile: process.env.T3_ASK_WATCH_TOKEN_FILE ?? `${configDir}/watch-token`,
   // Optional. Without it, only this machine's questions are listed.
   t3McpTokenFile: process.env.T3_ASK_T3_MCP_TOKEN_FILE ?? `${configDir}/t3-mcp-token`,
+  peersFile: process.env.T3_ASK_PEERS_FILE,
   perMinute: Number(process.env.T3_ASK_RATE_PER_MINUTE ?? 30),
 };
 
@@ -140,11 +143,13 @@ let peerMcp = null;
 // This machine's questions, then the linked machines'. A linked machine
 // that fails is logged and left out; this machine failing still fails.
 async function listAll(t3Token) {
+  // Catalog failure must fail the poll, rather than claim no linked questions.
+  const links = config.peersFile === undefined ? undefined : readPeerCatalog(config.peersFile);
   const [local, remote] = await Promise.all([
     withT3(t3Token, listPending),
     peerMcp === null
       ? []
-      : peerItems(peerMcp, log).catch((error) => {
+      : peerItems(peerMcp, log, links).catch((error) => {
           log(`peers: ${error.message}`);
           return [];
         }),
@@ -278,7 +283,7 @@ function main() {
   setInterval(() => {
     for (const [rid, at] of answered) if (Date.now() - at > ANSWERED_TTL_MS) answered.delete(rid);
   }, 60_000).unref();
-  server.listen(config.port, "127.0.0.1", () => log(`t3-ask-bridge on http://127.0.0.1:${config.port}, T3 at ${config.t3Url}, linked machines ${peerMcp ? "on" : "off (no MCP token)"}`));
+  server.listen(config.port, config.host, () => log(`t3-ask-bridge on http://${config.host}:${config.port}, T3 at ${config.t3Url}, linked machines ${peerMcp ? "on" : "off (no MCP token)"}`));
 }
 
 main();
