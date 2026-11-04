@@ -73,6 +73,7 @@ type fetchedPR struct {
 type fetchedPRs struct {
 	sprintID int64
 	prs      []fetchedPR
+	statuses map[string]prStatus // review state of the PRs still open, by log key
 }
 
 // recordPR writes the events that GitHub shows and the log doesn't have yet.
@@ -157,6 +158,13 @@ func fetchPRSync(c *call) {
 		}
 		out.prs = append(out.prs, fetchedPR{u, info, seen[u]})
 	}
+	var open []string
+	for _, p := range out.prs {
+		if p.info.State == "OPEN" {
+			open = append(open, p.key)
+		}
+	}
+	out.statuses = fetchStatuses(c, open)
 	c.fetched = out
 }
 
@@ -189,7 +197,10 @@ func cmdPRAdd(c *call) {
 	savePRs(c, false, subgoal)
 }
 
-func cmdPRSync(c *call) { savePRs(c, true, "") }
+func cmdPRSync(c *call) {
+	savePRs(c, true, "")
+	syncBoard(c, c.fetched.(fetchedPRs))
+}
 
 func cmdPRReady(c *call) {
 	s := c.store
