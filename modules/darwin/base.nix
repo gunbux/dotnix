@@ -52,11 +52,7 @@
     source-serif-pro
   ];
 
-  # Touch ID for sudo (also works inside tmux)
-  security.pam.services.sudo_local = {
-    touchIdAuth = true;
-    reattach = true;
-  };
+  # Touch ID for sudo (also inside tmux) is set up in remote-mode.nix, so it can be toggled.
 
   # Declarative Homebrew, for GUI apps that nixpkgs packages poorly on macOS.
   # Homebrew itself must be installed once by hand (https://brew.sh).

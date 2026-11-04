@@ -2,6 +2,7 @@
 {...}: {
   imports = [
     ../../modules/darwin/base.nix
+    ../../modules/darwin/remote-mode.nix
   ];
 
   nixpkgs.hostPlatform = "aarch64-darwin";
