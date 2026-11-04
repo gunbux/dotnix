@@ -236,6 +236,10 @@ type prStatus struct {
 		Nodes []struct {
 			IsResolved bool `json:"isResolved"`
 		} `json:"nodes"`
+		// More than the 100 threads read: the count is a floor.
+		PageInfo struct {
+			HasNextPage bool `json:"hasNextPage"`
+		} `json:"pageInfo"`
 	} `json:"reviewThreads"`
 	Comments struct{ Nodes []botPost } `json:"comments"`
 	Reviews  struct{ Nodes []botPost } `json:"reviews"`
@@ -265,7 +269,7 @@ const prStatusQuery = `query($u: URI!) { resource(url: $u) { ... on PullRequest 
     ... on CheckRun { name status conclusion startedAt }
     ... on StatusContext { context state }
   } } } } } }
-  reviewThreads(first: 100) { nodes { isResolved } }
+  reviewThreads(first: 100) { nodes { isResolved } pageInfo { hasNextPage } }
   comments(last: 40) { nodes { author { login } body updatedAt } }
   reviews(last: 40) { nodes { author { login } body submittedAt } }
 } } }`

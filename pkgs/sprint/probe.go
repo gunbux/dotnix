@@ -117,11 +117,15 @@ func cmdProbeGreptile(c *call) {
 	if len(scores) == 0 {
 		b.WriteString("- No review bot has posted yet.\n")
 	}
-	threads := p.openThreads()
-	fmt.Fprintf(&b, "- %d open review threads\n", threads)
+	threads, allRead := p.openThreads(), !p.ReviewThreads.PageInfo.HasNextPage
+	if allRead {
+		fmt.Fprintf(&b, "- %d open review threads\n", threads)
+	} else {
+		fmt.Fprintf(&b, "- %d or more open review threads (over 100 threads; check GitHub)\n", threads)
+	}
 	emit(c, map[string]any{"body": b.String(), "link": p.URL})
 	closed := p.State == "MERGED" || p.State == "CLOSED"
-	if closed || (until == "reviewed" && reviewed) || (until == "five" && five && threads == 0) {
+	if closed || (until == "reviewed" && reviewed) || (until == "five" && five && threads == 0 && allRead) {
 		panic(probeDone{})
 	}
 }
