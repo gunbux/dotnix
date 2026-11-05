@@ -17,6 +17,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - When you make a report again, keep every section of the last version. If the user wants a short version, make a separate page and say what it leaves out.
 - For system internals, follow the **internals-writing** skill.
 - Write all prose (replies, pages, docs, notes, PR descriptions, and drafts) in ASD-STE100 Simplified Technical English: at most 20 words per procedure sentence and 25 per description sentence, one instruction per sentence, active voice, present tense, one meaning per word, and terms defined before use. Keep real code names as written.
+- Give the user one action per step, with its condition first ("When X, do Y"). Number the steps in the order to do them. Never join two actions in one step with "then" or "after".
 - Give times in SGT (UTC+8), the user's local time. When the user asks about progress, give the time left and the expected end time.
 - Keep it short. Write for a reader without the project's context. Spell out what a milestone or option label means instead of writing "M3" or "option B". Restate IDs you made up ("G7") with their meaning and path.
 - Make every file, doc, and PR reference clickable. Use a repo-relative or absolute path in backticks, or a full URL. Never a bare filename.

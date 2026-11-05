@@ -66,7 +66,7 @@ Add an optional section with `sprint context set <key> --title "<title>" [--subg
 
 Add the plan of the active subgoal as items, in order. New items, PRs, benchmarks, and log entries go to the only active subgoal. When two subgoals are active, pass `--subgoal <key>`, or set `SPRINT_SUBGOAL=<key>` for the thread. Use `--subgoal -` for work that belongs to the whole sprint. One sprint can span repos and threads. Each thread passes `--sprint <slug>` or sets `SPRINT=<slug>` when more than one sprint is open.
 
-Give the user's own steps (merges, deploys, wizard runs, tests on a device) `--owner user`, in the order the user must do them. Put each deploy or validation after the merge it follows. Put the step's copy-paste command in `--note`, in backticks, such as a rerun script or a wizard path. The "Do now" panel shows it.
+Give the user's own steps (merges, deploys, wizard runs, tests on a device) `--owner user`, in the order the user must do them. Put each deploy or validation after the merge it follows. Give each step one action. Put its condition first, then the action: "When #18259 scores 5/5, run the Datadog wizard", then a separate step "Merge #18259". Never join two actions in one step with "then" or "after". Put the step's copy-paste command in `--note`, in backticks, such as a rerun script or a wizard path. If the order is not obvious, say why in the note. The "Do now" panel shows it.
 
 ## Steering
 
