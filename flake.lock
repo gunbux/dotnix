@@ -312,11 +312,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793635973,
-        "narHash": "sha256-vsi+NEca5lPCTIrxWfl8cuF9ZIyoZesw1UzUNI268rA=",
+        "lastModified": 1793843840,
+        "narHash": "sha256-GdYiedQ2Kle1cUT/Zxk7ADL8OaZBZzy6h0kF4aevrEY=",
         "ref": "refs/heads/main",
-        "rev": "651d542822f3ae235abf00998717be45a0de78bb",
-        "revCount": 3,
+        "rev": "c7f448b661b21cc5a53e327239ab88f37ee83f54",
+        "revCount": 4,
         "type": "git",
         "url": "ssh://git@github.com/gunbux/muesli"
       },
