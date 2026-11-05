@@ -393,10 +393,9 @@ in {
         ORDER BY p.state = 'merged', CASE WHEN p.state != 'merged' THEN COALESCE(r.rank, 1e9) END, p.at DESC''
       "SELECT MAX(at) AS at FROM pr_syncs WHERE sprint_id = ${sid}"
     ])
-    (pagePanel 35 "context" (pos 0 40 24 10) [
-      "SELECT title, body, at FROM context_state WHERE sprint_id = ${sid} AND subgoal IS NULL AND body != '' ORDER BY position, id"
-    ])
-    (pagePanel 36 "left" (pos 0 50 24 14) [
+    # What is left comes before the context sections: Chun reads the open
+    # steps first (6 Nov).
+    (pagePanel 36 "left" (pos 0 40 24 14) [
       ''
         SELECT g.key, g.title, g.status, g.goal
         FROM subgoal_state g
@@ -410,6 +409,9 @@ in {
         SELECT subgoal, title, body, at FROM context_state
         WHERE sprint_id = ${sid} AND subgoal IS NOT NULL AND body != ''' AND ${inScope "subgoal"}
         ORDER BY position, id''
+    ])
+    (pagePanel 35 "context" (pos 0 54 24 10) [
+      "SELECT title, body, at FROM context_state WHERE sprint_id = ${sid} AND subgoal IS NULL AND body != '' ORDER BY position, id"
     ])
     (pagePanel 37 "bench" (pos 0 64 24 9) [
       ''
