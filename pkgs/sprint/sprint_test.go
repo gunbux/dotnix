@@ -680,3 +680,13 @@ func TestDoNowOrdersByStageThenStep(t *testing.T) {
 	check(json.Unmarshal([]byte(h.ok("show", "--json")), &d))
 	eq(t, fmt.Sprint(d.DoNow[0].Item, d.DoNow[1].Item), "4 2")
 }
+
+func TestSubSetMovesASubgoal(t *testing.T) {
+	h := viewHarness(t)
+	// The harness has parity, then hot-snap.
+	h.ok("sub", "set", "hot-snap", "--first")
+	eq(t, h.query("SELECT key FROM subgoal_state ORDER BY position"), "(hot-snap) (parity)")
+	h.ok("sub", "set", "hot-snap", "--after", "parity")
+	eq(t, h.query("SELECT key FROM subgoal_state ORDER BY position"), "(parity) (hot-snap)")
+	h.fails("sub", "set", "parity", "--first", "--after", "hot-snap")
+}

@@ -56,6 +56,8 @@ func init() {
 				"reason":    {help: "why; required when the goal changes"},
 				"done-when": {help: "new exit check"},
 				"title":     {help: "new title"},
+				"after":     {help: "move the subgoal after this subgoal"},
+				"first":     {isBool: true, help: "move the subgoal before every other subgoal"},
 				"source":    {choices: sources}}},
 		{path: "item add", help: "add a plan item", run: cmdItemAdd,
 			args: []argDef{{name: "title"}},
@@ -250,6 +252,16 @@ func cmdSubSet(c *call) {
 	if v, ok := c.pos["status"]; ok {
 		status = v
 	}
+	position := cur.Position
+	switch {
+	case c.has("first") && c.has("after"):
+		fail("pass --first or --after, not both")
+	case c.has("first"):
+		position, _ = s.float("SELECT MIN(position) - 1 FROM subgoal_state WHERE sprint_id = ?", sp.ID)
+	case c.has("after"):
+		p := s.latestSubgoal(sp.ID, c.flag("after")).Position
+		position = s.positionAfter("subgoal_state", sp.ID, &p)
+	}
 	reason := c.flag("reason")
 	if reason == "" {
 		reason = "edited"
@@ -260,7 +272,7 @@ func cmdSubSet(c *call) {
 	at := now()
 	s.exec("INSERT INTO subgoal_events (sprint_id, key, at, title, goal, done_when, status, position, reason, source) "+
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		sp.ID, cur.Key, at, title, goal, null(doneWhen), status, cur.Position, reason, source(c))
+		sp.ID, cur.Key, at, title, goal, null(doneWhen), status, position, reason, source(c))
 	if goalChanged {
 		s.exec("INSERT INTO log (sprint_id, at, kind, text, subgoal) VALUES (?, ?, 'steer', ?, ?)",
 			sp.ID, at, cur.Title+" goal changed: "+c.flag("reason"), cur.Key)
