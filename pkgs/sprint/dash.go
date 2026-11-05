@@ -220,11 +220,11 @@ func findChrome(c *call) string {
 	return ""
 }
 
-var spAttrRE = regexp.MustCompile(`data-sp-(panel|fit|hidden|gap|wide|raw|wide-at)="([^"]*)"`)
+var spAttrRE = regexp.MustCompile(`data-sp-(panel|fit|hidden|gap|wide|raw|wide-at|cut|open)="([^"]*)"`)
 
 type panelFit struct {
-	fit, wideAt            string
-	hidden, gap, wide, raw int
+	fit, wideAt                       string
+	hidden, gap, wide, raw, cut, open int
 }
 
 // renderFits loads one view in headless Chrome and returns what fit.js
@@ -271,6 +271,10 @@ func parseFits(dom string) map[string]panelFit {
 			f.wide = n
 		case "raw":
 			f.raw = n
+		case "cut":
+			f.cut = n
+		case "open":
+			f.open = n
 		case "wide-at":
 			f.wideAt = html.UnescapeString(m[2])
 		}
@@ -280,9 +284,11 @@ func parseFits(dom string) map[string]panelFit {
 }
 
 // cmdDashCheck renders every view of each open sprint and reports layout
-// problems: a section that didn't render, content out of its box, raw JSON
-// on a Live card, a section cut because one item is taller than its panel,
-// and a large empty gap. It exits 1 on a problem, and 0 when there are only
+// problems: a section that didn't render, content out of its box, content
+// cut where the panel doesn't scroll, and raw JSON on a Live card. It notes
+// folds, a section cut because one item is taller than its panel, and a
+// large empty gap. --open opens every list first (Merged, Waiting, context
+// sections), as a reader who clicks them would. It exits 1 on a problem, and 0 when there are only
 // notes.
 func cmdDashCheck(c *call) {
 	chrome := findChrome(c)
@@ -325,7 +331,11 @@ func cmdDashCheck(c *call) {
 		if v.subgoal != "" {
 			name += " / " + v.subgoal
 		}
-		fits, err := renderFits(chrome, v.url+"&kiosk", width)
+		url := v.url + "&kiosk"
+		if c.has("open") {
+			url += "&sp-open=1"
+		}
+		fits, err := renderFits(chrome, url, width)
 		if err != nil {
 			fail("%s: %v", name, err)
 		}
@@ -341,9 +351,9 @@ func cmdDashCheck(c *call) {
 			case !ok:
 				bad("%s: did not render (a script error, or fit.js didn't run)", p)
 				continue
-			case f.fit == "all":
-				// Shown in full because someone asked; nothing to judge.
-				continue
+			}
+			if f.cut > 0 {
+				bad("%s: content is cut by %d px and the panel doesn't scroll", p, f.cut)
 			}
 			if f.wide > maxWide {
 				bad("%s: content is %d px wider than its box (%s)", p, f.wide, f.wideAt)
@@ -351,12 +361,15 @@ func cmdDashCheck(c *call) {
 			if f.raw > 0 {
 				bad("%s: %d card(s) show raw JSON: the poller's output did not parse", p, f.raw)
 			}
-			if f.fit == "clipped" {
+			switch {
+			case f.fit == "all":
+				note("%s: shown in full (%d list(s) opened); the panel scrolls", p, f.open)
+			case f.fit == "clipped":
 				note("%s: one item is taller than the panel, so it is cut (Show all opens it)", p)
-			} else if f.hidden > 0 {
+			case f.hidden > 0:
 				note("%s: %d item(s) folded to fit", p, f.hidden)
 			}
-			if f.gap > maxGap {
+			if f.gap > maxGap && f.fit != "all" {
 				note("%s: %d px empty at the bottom", p, f.gap)
 			}
 		}

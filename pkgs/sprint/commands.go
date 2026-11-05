@@ -178,7 +178,8 @@ func init() {
 			run: cmdDashCheck, noLog: true,
 			flags: map[string]flagDef{
 				"chrome": {help: "Chrome or Chromium binary (default: $SPRINT_CHROME, PATH, then the macOS app)"},
-				"width":  {help: "window width in pixels (default 1512)"}}},
+				"width":  {help: "window width in pixels (default 1512)"},
+				"open":   {isBool: true, help: "open every list (Merged, Waiting, context sections) before checking"}}},
 		{path: "show", help: "goal, subgoals, progress, do-now list, PRs, dashboard link", run: cmdShow,
 			flags: map[string]flagDef{"json": {isBool: true}}},
 	}

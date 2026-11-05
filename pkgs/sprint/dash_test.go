@@ -177,6 +177,24 @@ func TestDashCheckFailsOnLayoutProblems(t *testing.T) {
 	contains_(t, stdout, "note:    live: 300 px empty at the bottom")
 }
 
+// An opened list that the panel cuts without a scroll is a problem; one
+// the panel shows in full and scrolls is a note. --open asks the page to
+// open every list.
+func TestDashCheckFailsOnCutContentAndOpensLists(t *testing.T) {
+	h := dashCheckSetup(t, fitDOM(`data-sp-fit="ok" data-sp-hidden="0" data-sp-gap="0" data-sp-wide="0" data-sp-raw="0" data-sp-wide-at="" data-sp-cut="240" data-sp-open="0"`))
+	_, stdout, _ := h.run("dash", "check", "--open")
+	contains_(t, stdout, "problem: live: content is cut by 240 px and the panel doesn't scroll")
+	args, _ := os.ReadFile(filepath.Join(h.dir, "chrome.args"))
+	contains_(t, string(args), "&kiosk&sp-open=1")
+
+	h.file("dom.html", fitDOM(`data-sp-fit="all" data-sp-hidden="0" data-sp-gap="400" data-sp-wide="0" data-sp-raw="0" data-sp-wide-at="" data-sp-cut="0" data-sp-open="2"`))
+	out := h.ok("dash", "check")
+	contains_(t, out, "note:    live: shown in full (2 list(s) opened); the panel scrolls")
+	if strings.Contains(out, "px empty") {
+		t.Fatalf("a panel shown in full has no gap to report:\n%s", out)
+	}
+}
+
 func TestDashCheckFailsWhenAPanelDidNotRender(t *testing.T) {
 	h := dashCheckSetup(t, `<div data-sp-panel="header" data-sp-fit="ok"></div>`)
 	_, stdout, _ := h.run("dash", "check", "--sprint", "s1")

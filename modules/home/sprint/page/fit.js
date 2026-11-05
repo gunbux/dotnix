@@ -10,6 +10,11 @@
 // 3. Show "Show all (N more)" at the bottom. It shows everything and lets
 //    the panel scroll; "Fold to fit" goes back.
 //
+// Opening a closed list (a <details>, such as Merged or Waiting) means the
+// reader wants all of it: the panel shows everything and scrolls, like Show
+// all, and "Fold to fit" closes the list again. Opened lists stay open when
+// Grafana renders the panel again on a refresh.
+//
 // A table wider than its box gets class `tight`, which breaks words anywhere.
 //
 // It writes what it did on context.element as data-sp-* attributes, and
@@ -24,6 +29,22 @@ for (let p = el; p && p !== document.body; p = p.parentElement) {
   if (/(auto|scroll|hidden)/.test(getComputedStyle(p).overflowY)) { box = p; break; }
 }
 const over = () => box.scrollHeight - box.clientHeight;
+
+// Lists the reader opened, by summary text without numbers, so a count that
+// changes on refresh keeps the list open. Kept on `this`, which outlives a
+// render.
+const listKey = (d) => {
+  const s = d.querySelector(':scope > summary');
+  return s ? s.textContent.replace(/\d+/g, '').replace(/\s+/g, ' ').trim() : '';
+};
+self.opened = self.opened || new Set();
+// `?sp-open=1` opens every list, for `sprint dash check --open`.
+const openAll = new URLSearchParams(location.search).get('sp-open') === '1';
+root.querySelectorAll('details').forEach((d) => {
+  if (d.open) d.dataset.fitInit = '';
+  else if (openAll || self.opened.has(listKey(d))) { d.dataset.fitUser = ''; d.open = true; }
+});
+const userOpen = () => root.querySelector('details[open][data-fit-user]') !== null;
 
 const fit = () => {
   root.querySelectorAll('.fit-hide').forEach((n) => n.classList.remove('fit-hide'));
@@ -42,7 +63,7 @@ const fit = () => {
 
   let hidden = 0;
   let state = 'ok';
-  if (self.showAll) {
+  if (self.showAll || userOpen()) {
     state = 'all';
   } else if (over() > 1) {
     // Measure with a bar of the real size in place.
@@ -113,7 +134,20 @@ const fit = () => {
     bar.className = 'fit-bar';
     bar.textContent = state === 'all' ? 'Fold to fit'
       : 'Show all' + (hidden ? ` (${hidden} more)` : '');
-    bar.onclick = () => { self.showAll = !self.showAll; fit(); };
+    bar.onclick = () => {
+      if (state === 'all') {
+        // Fold to fit: also close the lists the reader opened.
+        self.showAll = false;
+        self.opened.clear();
+        root.querySelectorAll('details[open][data-fit-user]').forEach((d) => {
+          delete d.dataset.fitUser;
+          d.open = false;
+        });
+      } else {
+        self.showAll = true;
+      }
+      fit();
+    };
     // Outside the clipped root, so the cut never hides it.
     (state === 'clipped' ? el : root).appendChild(bar);
   }
@@ -140,7 +174,36 @@ const fit = () => {
   el.dataset.spWide = String(Math.max(0, Math.round(wide)));
   el.dataset.spRaw = String(root.querySelectorAll('.lv-raw').length);
   el.dataset.spWideAt = wideAt;
+  // Content cut with no way to see it: taller than the panel, and the panel
+  // doesn't scroll. Fitted states never leave this; it catches a missed case.
+  el.dataset.spCut = String(over() > 1 && !/(auto|scroll)/.test(getComputedStyle(box).overflowY) ? Math.round(over()) : 0);
+  el.dataset.spOpen = String(root.querySelectorAll('details[open][data-fit-user]').length);
 };
+
+// Opening or closing a list changes the height, so fit again. The toggle
+// event doesn't bubble, so listen in the capture phase.
+const onToggle = (e) => {
+  const d = e.target;
+  if (!(d instanceof HTMLDetailsElement) || !root.contains(d)) return;
+  // Lists the page rendered open fire a toggle too: not the reader's doing.
+  if (d.open && 'fitInit' in d.dataset && !('fitClosed' in d.dataset)) return;
+  if (!d.open) {
+    d.dataset.fitClosed = '';
+    delete d.dataset.fitUser;
+    self.opened.delete(listKey(d));
+  } else if (!('fitInit' in d.dataset) || 'fitClosed' in d.dataset) {
+    d.dataset.fitUser = '';
+    self.opened.add(listKey(d));
+  }
+  fit();
+  if (d.open) {
+    // Bring the opened list into view inside the panel, not the page.
+    const r = d.getBoundingClientRect();
+    const b = box.getBoundingClientRect();
+    if (r.bottom > b.bottom) box.scrollTop += Math.min(r.top - b.top, r.bottom - b.bottom);
+  }
+};
+root.addEventListener('toggle', onToggle, true);
 
 fit();
 // Fit again when the panel or the window changes size.
@@ -150,4 +213,4 @@ const ro = new ResizeObserver(() => {
   if (now !== last) { last = now; fit(); }
 });
 ro.observe(box);
-return () => ro.disconnect();
+return () => { ro.disconnect(); root.removeEventListener('toggle', onToggle, true); };
