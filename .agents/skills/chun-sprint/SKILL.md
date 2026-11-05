@@ -89,6 +89,7 @@ Then add, drop, or move items (`sprint item set <n> --subgoal <key>`) to match.
 | Work on an item starts, is blocked, or ends | `sprint item set <n> doing\|blocked\|done\|dropped --note "<why>"` |
 | New work appears | `sprint item add "<title>" [--owner user] [--after <n>]` |
 | You open a PR | `sprint pr add <url>` |
+| A PR belongs to another stage, or has none | `sprint pr set <url> --subgoal <key>` (`-` for the whole sprint) |
 | A PR passes the review gate (Greptile 5/5) | `sprint pr ready <url>` |
 | A PR merges or closes | `sprint pr sync` |
 | A benchmark run finishes | `sprint bench <suite> <metric> <value> <unit> [--baseline] [--commit <sha>] [--link <run>]` |
@@ -131,7 +132,13 @@ Everything an agent waits on or polls goes in the dashboard's Live section, so t
 - A poller runs detached and outlives your turn. Its files are in `~/.local/state/sprint/pollers/<sprint>/<key>.{json,pid,log}`. Running `sprint poll` again with the same key replaces the poller. `--stale-after` defaults to 3 times `--every`.
 - For a source without a probe, write a small script. It prints Markdown, or JSON `{"body", "progress": "7/12", "ends_at", "title", "link"}`. `progress` is a string, not a number. A field with the wrong type is skipped and shows as an error on the card; the other fields still apply. Exit 100 when the wait is over. Any other non-zero exit, or a timeout, keeps the last body and shows the error on the card. Set `ends_at` whenever you can estimate it.
 
-The PR board comes from the log: `sprint pr sync` records each PR's review state. It shows only PRs tracked with `sprint pr add`, so add each PR when you open it. Set your next step for a PR with `sprint pr note <url> "<step>"` (`-` removes it).
+The PR board comes from the log: `sprint pr sync` records each PR's review state. Add each PR with `sprint pr add` when you open it, so it gets its stage. Set your next step for a PR with `sprint pr note <url> "<step>"` (`-` removes it).
+
+`sprint pr sync` also triages, so no open PR is missed:
+
+- It lists your open PRs in each GitHub repository the sprint already tracks a PR in, and adds each one new to the log with no stage. It skips a PR that another open sprint tracks, and a PR whose head branch, title, or URL matches one of the sprint's ignore patterns (`sprint pr ignore '<regexp>'`; `--rm` removes one; no argument lists them).
+- While the sprint has stages, a PR with no stage shows "Needs a stage" on the PR board and in `sprint show`. Give it one with `sprint pr set <url> --subgoal <key>`.
+- It adds your steps to Do now: "Merge #N: <title>" on the PR's stage when the board puts the PR in Merge now and no open step of yours names `#N`, and "Pick a stage for #N: <title>" for a PR with no stage. It adds each step once per PR. When the PR merges or closes, or gets a stage, it marks its own step done. Its steps carry the note "Added by sprint pr sync: ...". Drop a step you don't want; sync does not add it again.
 
 ### Change the dashboard
 

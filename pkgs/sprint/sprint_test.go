@@ -30,7 +30,15 @@ func newHarness(t *testing.T) *harness {
 	stubStatus(t, func(url string) (prStatus, error) {
 		return prStatus{URL: url, Number: 3, Title: "T", State: "OPEN", BaseRefName: "main", HeadRefOid: "0000000000"}, nil
 	})
+	// Nor does PR discovery: no open PRs of the user's, unless a test says so.
+	stubMine(t, func(string) ([]openPR, error) { return nil, nil })
 	return h
+}
+
+func stubMine(t *testing.T, fn func(string) ([]openPR, error)) {
+	real := ghMyOpenPRs
+	ghMyOpenPRs = fn
+	t.Cleanup(func() { ghMyOpenPRs = real })
 }
 
 func (h *harness) clock(at int64) { h.t.Setenv("SPRINT_NOW", strconv.FormatInt(at, 10)) }

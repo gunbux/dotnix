@@ -379,7 +379,10 @@ in {
       ''
         SELECT p.url, p.title, p.state, p.at, COALESCE(g.title, ''') AS stage,
                r.number, r.head, r.base, r.draft, r.failing, r.running, r.threads, r.bots,
-               r.grp, r.steps, r.rank, r.why, r.stack, COALESCE(n.text, ''') AS note
+               r.grp, r.steps, r.rank, r.why, r.stack, COALESCE(n.text, ''') AS note,
+               -- No stage while the sprint has stages: `sprint pr set` gives it one.
+               p.subgoal IS NULL AND EXISTS (SELECT 1 FROM subgoal_state s
+                                             WHERE s.sprint_id = p.sprint_id AND s.status != 'dropped') AS unstaged
         FROM pr_state p
         LEFT JOIN pr_review_state r ON r.sprint_id = p.sprint_id AND r.url = p.url
         LEFT JOIN subgoal_state g ON g.sprint_id = p.sprint_id AND g.key = p.subgoal

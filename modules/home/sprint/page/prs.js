@@ -1,6 +1,7 @@
 // The PR board, from the sprint log. A: the view's open PRs with their last
 // board row from `sprint pr sync` (grp, steps, rank: see pkgs/sprint/prboard.go),
-// the user's note, and PRs merged in the last 3 days. B: the last finished sync.
+// the user's note, whether it needs a stage, and PRs merged in the last 3
+// days. B: the last finished sync.
 // Clock times are SGT.
 const prs = rows('A');
 const synced = rows('B')[0];
@@ -38,6 +39,7 @@ const gate = (p, merged) => {
 const open = prs.filter((p) => p.state !== 'merged').map((p) => (p.grp ? p
   : { ...p, grp: 'wait', steps: JSON.stringify(['Not synced yet. Run `sprint pr sync`.']) }));
 const merged = prs.filter((p) => p.state === 'merged');
+const unstaged = open.filter((p) => Number(p.unstaged));
 
 let h = '<h2>PRs: what to do</h2>';
 if (synced && synced.at) {
@@ -47,6 +49,8 @@ if (synced && synced.at) {
 }
 h += '<div class="prb"><div class="prb-tiles">'
   + GROUPS.map(([k, name]) => `<div class="prb-tile g-${k}"><b>${open.filter((p) => p.grp === k).length}</b>${name}</div>`).join('')
+  + (unstaged.length ? `<div class="prb-tile g-stage" title="No stage yet. Run sprint pr set &lt;url&gt; --subgoal &lt;key&gt;.">`
+    + `<b>${unstaged.length}</b>Needs a stage</div>` : '')
   + '</div>';
 for (const [k, name, mark, desc] of GROUPS) {
   const g = open.filter((p) => p.grp === k);
@@ -63,12 +67,13 @@ for (const [k, name, mark, desc] of GROUPS) {
     } else if (p.note) {
       steps.push(p.note);
     }
-    const meta = [p.stage || 'whole sprint', p.base && p.base !== 'main' ? `base ${p.base}` : ''].filter(Boolean).join(' · ');
+    const meta = [p.stage || (Number(p.unstaged) ? '' : 'whole sprint'), p.base && p.base !== 'main' ? `base ${p.base}` : ''].filter(Boolean).join(' · ');
     h += `<tr class="fit"><td class="n">${k === 'wait' ? '' : `<span class="rk">${i + 1}</span>`}`
       + `<a href="${esc(p.url)}" target="_blank">${esc(num(p))}</a>`
       + (p.stack ? `<div class="stack">${esc(p.stack)}</div>` : '')
       + (k === 'wait' || !p.why ? '' : `<div class="stack">${esc(p.why)}</div>`) + '</td>'
-      + `<td><div class="t">${esc(p.title)}</div><div class="note">${esc(meta)}</div></td>`
+      + `<td><div class="t">${esc(p.title)}</div><div class="note">`
+      + (Number(p.unstaged) ? '<span class="gc stage">Needs a stage</span> ' : '') + `${esc(meta)}</div></td>`
       + `<td class="gate">${p.number ? gate(p, false) : ''}</td>`
       + `<td class="why"><ul>${steps.map((s) => `<li>${inl(s)}</li>`).join('')}</ul></td></tr>`;
   });

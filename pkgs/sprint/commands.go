@@ -79,9 +79,17 @@ func init() {
 		{path: "pr add", help: "track PRs; records their GitHub history", run: cmdPRAdd, prefetch: fetchPRAdd,
 			args:  []argDef{{name: "url", many: true}},
 			flags: map[string]flagDef{"subgoal": {help: subgoalHelp + " (new PRs only)"}}},
+		{path: "pr set", help: "move a tracked PR to a subgoal, or to the whole sprint with -", run: cmdPRSet,
+			args:     []argDef{{name: "url"}},
+			flags:    map[string]flagDef{"subgoal": {help: "subgoal key; - for the whole sprint"}},
+			required: []string{"subgoal"}},
+		{path: "pr ignore", help: "list, add, or remove (--rm) a pattern `pr sync` skips when it finds your open PRs",
+			run:   cmdPRIgnore,
+			args:  []argDef{{name: "pattern", opt: true}},
+			flags: map[string]flagDef{"rm": {isBool: true, help: "remove the pattern"}}},
 		{path: "pr ready", help: "mark a PR ready to merge (review gate passed)", run: cmdPRReady,
 			args: []argDef{{name: "url"}}},
-		{path: "pr sync", help: "record merges, closes, reopens, and the PR board's review state from GitHub",
+		{path: "pr sync", help: "record merges, closes, reopens, your new open PRs, and the PR board's review state from GitHub; keep Do now covering them",
 			run: cmdPRSync, prefetch: fetchPRSync},
 		{path: "pr note", help: "set your next step for a PR, shown on the PR board; - removes it", run: cmdPRNote,
 			args: []argDef{{name: "url"}, {name: "text"}}},
@@ -550,6 +558,7 @@ type summary struct {
 	DoNow       []summaryItem    `json:"do_now"`
 	Items       []summaryItem    `json:"items"`
 	PRs         []summaryPR      `json:"prs"`
+	NeedsStage  []summaryPR      `json:"needs_stage"`
 	Subgoals    []summarySubgoal `json:"subgoals"`
 	Dashboard   string           `json:"dashboard"`
 }
@@ -563,7 +572,8 @@ func orNil(v string) any {
 
 func makeSummary(s Store, sp Sprint) summary {
 	out := summary{Sprint: sp.Slug, Title: sp.Title, Dashboard: dashboardURL(sp.Slug, "", sp.StartedAt),
-		DoNow: []summaryItem{}, Items: []summaryItem{}, PRs: []summaryPR{}, Subgoals: []summarySubgoal{}}
+		DoNow: []summaryItem{}, Items: []summaryItem{}, PRs: []summaryPR{}, NeedsStage: []summaryPR{},
+		Subgoals: []summarySubgoal{}}
 	s.one("SELECT text, versions FROM goal_current WHERE sprint_id = ?", []any{sp.ID}, &out.Goal, &out.GoalVersion)
 	var pct float64
 	s.one("SELECT done, in_scope, dropped, percent FROM progress WHERE sprint_id = ?", []any{sp.ID},
@@ -586,6 +596,9 @@ func makeSummary(s Store, sp Sprint) summary {
 		p := scanPR(r)
 		out.PRs = append(out.PRs, summaryPR{p.URL, p.Title, p.State, orNil(p.Subgoal)})
 	})
+	for _, p := range s.unstagedPRs(sp.ID) {
+		out.NeedsStage = append(out.NeedsStage, summaryPR{p.URL, p.Title, p.State, nil})
+	}
 	s.each("SELECT g.key, g.title, g.goal, COALESCE(g.done_when, ''), g.status, p.done, p.in_scope, p.percent "+
 		"FROM subgoal_state g JOIN subgoal_progress p ON p.sprint_id = g.sprint_id AND p.key = g.key "+
 		"WHERE g.sprint_id = ? ORDER BY g.position", []any{sp.ID}, func(r *sql.Rows) {
@@ -628,6 +641,12 @@ func cmdShow(c *call) {
 	}
 	for _, p := range d.PRs {
 		c.printf("  PR %-7s %s\n", p.State, p.URL)
+	}
+	if len(d.NeedsStage) > 0 {
+		c.printf("Needs a stage (sprint pr set <url> --subgoal <key>):\n")
+		for _, p := range d.NeedsStage {
+			c.printf("  %s %s\n", p.URL, p.Title)
+		}
 	}
 	c.printf("%s\n", d.Dashboard)
 }

@@ -13,7 +13,7 @@ import (
 )
 
 // SchemaVersion is stored in PRAGMA user_version. A bump recreates the views.
-const SchemaVersion = 7
+const SchemaVersion = 8
 
 const tablesSQL = `
 CREATE TABLE IF NOT EXISTS sprints (
@@ -149,6 +149,16 @@ CREATE TABLE IF NOT EXISTS pr_syncs (
   sprint_id INTEGER NOT NULL REFERENCES sprints(id),
   at INTEGER NOT NULL
 );
+-- Patterns (Go regular expressions, any case) that "sprint pr sync" skips
+-- when it finds the user's open PRs: matched on head branch, title, and URL.
+-- The latest row per pattern wins; active = 0 removes it.
+CREATE TABLE IF NOT EXISTS pr_ignores (
+  id INTEGER PRIMARY KEY,
+  sprint_id INTEGER NOT NULL REFERENCES sprints(id),
+  at INTEGER NOT NULL,
+  pattern TEXT NOT NULL,
+  active INTEGER NOT NULL CHECK (active IN (0, 1))
+);
 CREATE INDEX IF NOT EXISTS pr_reviews_latest ON pr_reviews (sprint_id, url, id);
 CREATE INDEX IF NOT EXISTS pr_notes_latest ON pr_notes (sprint_id, url, id);
 CREATE INDEX IF NOT EXISTS item_events_latest ON item_events (sprint_id, item, at, id);
@@ -166,12 +176,12 @@ var addedColumns = [][2]string{
 
 var tables = []string{"sprints", "goal_versions", "item_events", "pr_events", "bench_results", "log",
 	"subgoal_events", "context_versions", "bench_removals", "pr_reviews", "pr_notes",
-	"pr_syncs"}
+	"pr_syncs", "pr_ignores"}
 
 // Views hold no data, so a schema bump drops and recreates them.
 var views = []string{"item_state", "pr_state", "goal_current", "progress", "burnup",
 	"subgoal_state", "subgoal_progress", "do_now", "context_state", "scoped_burnup", "bench_live", "bench_summary", "activity",
-	"pr_review_state", "pr_note_state"}
+	"pr_review_state", "pr_note_state", "pr_ignore_state"}
 
 var viewsSQL = []string{`
 CREATE VIEW item_state AS
@@ -194,6 +204,11 @@ CREATE VIEW pr_note_state AS
   WHERE n.id = (SELECT MAX(n2.id) FROM pr_notes n2
                 WHERE n2.sprint_id = n.sprint_id AND n2.url = n.url)
     AND n.text != ''`, `
+CREATE VIEW pr_ignore_state AS
+  SELECT i.* FROM pr_ignores i
+  WHERE i.id = (SELECT MAX(i2.id) FROM pr_ignores i2
+                WHERE i2.sprint_id = i.sprint_id AND i2.pattern = i.pattern)
+    AND i.active = 1`, `
 CREATE VIEW goal_current AS
   SELECT g.sprint_id, g.at, g.text, g.reason, g.source,
          (SELECT COUNT(*) FROM goal_versions g2 WHERE g2.sprint_id = g.sprint_id) AS versions
@@ -360,7 +375,15 @@ CREATE VIEW activity AS
                LAG(subgoal) OVER w AS p_subgoal
         FROM item_events e WINDOW w AS (PARTITION BY sprint_id, item ORDER BY at, id)) x
   UNION ALL
-  SELECT sprint_id, subgoal, at, id, 'pr', 'PR ' || state || ': ' || title, url FROM pr_events
+  SELECT sprint_id, subgoal, at, id, 'pr',
+         CASE WHEN state = p_state AND subgoal IS NOT p_subgoal
+              THEN 'PR moved to ' || COALESCE((SELECT g.title FROM subgoal_state g
+                                               WHERE g.sprint_id = x.sprint_id AND g.key = x.subgoal), 'the whole sprint')
+                   || ': ' || title
+              ELSE 'PR ' || state || ': ' || title END,
+         url
+  FROM (SELECT p.*, LAG(state) OVER w AS p_state, LAG(subgoal) OVER w AS p_subgoal
+        FROM pr_events p WINDOW w AS (PARTITION BY sprint_id, url ORDER BY id)) x
   UNION ALL
   SELECT sprint_id, subgoal, at, id, 'bench',
          'Benchmark ' || suite || ' ' || metric || ' = ' || printf('%g', value) || ' ' || unit

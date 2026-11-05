@@ -51,8 +51,7 @@ var toolingRE = regexp.MustCompile(`^(docs|tests?|chore|ci)(\(|:)`)
 func priority(p *prReview, title string, items []Item) ([2]int, string) {
 	// A full URL names this PR only in its own repository; a bare #N names
 	// it in any.
-	mention := regexp.MustCompile(fmt.Sprintf(`(?i)(^|[^\w/])#%d(\D|$)|github\.com/%s/pull/%d(\D|$)`,
-		p.Number, regexp.QuoteMeta(repoOf(p.URL)), p.Number))
+	mention := mentionRE(p.URL, p.Number)
 	tooling := 0
 	if toolingRE.MatchString(title) {
 		tooling = 1
@@ -328,14 +327,15 @@ func (s Store) openItems(sprintID int64) []Item {
 }
 
 // syncBoard builds the board from the statuses fetched for PRs that are
-// still open after this sync, and logs what changed.
-func syncBoard(c *call, f fetchedPRs) {
+// still open after this sync, and logs what changed. It returns the board,
+// and the log's key for each GitHub URL; nil when it kept another sync's.
+func syncBoard(c *call, f fetchedPRs) ([]*prReview, map[string]string) {
 	s := c.store
 	// Another sync that finished during this one's GitHub calls may have
 	// newer data, so this board is dropped.
 	if s.int("SELECT MAX(id) FROM pr_syncs WHERE sprint_id = ?", f.sprintID) != f.lastSync {
 		c.printf("PR board: another sync finished during the GitHub calls; kept its board\n")
-		return
+		return nil, nil
 	}
 	var statuses []prStatus
 	key := map[string]string{}
@@ -348,7 +348,18 @@ func syncBoard(c *call, f fetchedPRs) {
 		statuses = append(statuses, st)
 		key[st.URL] = p.key
 	}
-	board := buildBoard(statuses, s.openItems(f.sprintID))
+	// The steps sync adds name their PR, so they must not move it up.
+	auto := map[int64]bool{}
+	for _, it := range s.syncItems(f.sprintID) {
+		auto[it.item] = true
+	}
+	var items []Item
+	for _, i := range s.openItems(f.sprintID) {
+		if !auto[i.Item] {
+			items = append(items, i)
+		}
+	}
+	board := buildBoard(statuses, items)
 	s.recordReviews(f.sprintID, board, key)
 	// Only a complete sync makes the board's data fresh; after a failed read
 	// the dashboard keeps showing the last complete sync's age.
@@ -362,6 +373,7 @@ func syncBoard(c *call, f fetchedPRs) {
 		counts[p.Group]++
 	}
 	c.printf("PR board: %d merge now, %d fix first, %d waiting\n", counts["merge"], counts["fix"], counts["wait"])
+	return board, key
 }
 
 func cmdPRNote(c *call) {

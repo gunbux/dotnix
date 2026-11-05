@@ -98,6 +98,8 @@
 .sp .prb .g-merge { border-left-color:var(--ok) }
 .sp .prb .g-fix { border-left-color:var(--bad) }
 .sp .prb .g-wait { border-left-color:var(--mut) }
+.sp .prb .g-stage { border-left-color:var(--warn) }
+.sp .prb .gc.stage { color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent);font-weight:600 }
 .sp .prb h3.g-merge { color:var(--ok) }
 .sp .prb h3.g-fix { color:var(--bad) }
 .sp .prb h3.g-wait { color:var(--mut) }

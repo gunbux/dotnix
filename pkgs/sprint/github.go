@@ -65,9 +65,10 @@ func (s Store) lastPREvent(sprintID int64, url string) int64 {
 }
 
 type fetchedPR struct {
-	key  string // the PR's key in the log
-	info prInfo
-	seen int64 // the key's newest event id before the GitHub call
+	key   string // the PR's key in the log
+	info  prInfo
+	seen  int64 // the key's newest event id before the GitHub call
+	found bool  // found by the search for the user's open PRs, not added
 }
 
 type fetchedPRs struct {
@@ -127,9 +128,9 @@ func fetchPRAdd(c *call) {
 			fail("%v", err)
 		}
 		if known != 0 {
-			out.prs = append(out.prs, fetchedPR{arg, info, known})
+			out.prs = append(out.prs, fetchedPR{key: arg, info: info, seen: known})
 		} else {
-			out.prs = append(out.prs, fetchedPR{info.URL, info, s.lastPREvent(sp.ID, info.URL)})
+			out.prs = append(out.prs, fetchedPR{key: info.URL, info: info, seen: s.lastPREvent(sp.ID, info.URL)})
 		}
 	}
 	c.fetched = out
@@ -151,6 +152,8 @@ func fetchPRSync(c *call) {
 	for _, u := range urls {
 		seen[u] = s.lastPREvent(sp.ID, u)
 	}
+	found, failed := discoverPRs(c, sp, map[string]bool{})
+	out.failed += failed
 	out.lastSync = s.int("SELECT MAX(id) FROM pr_syncs WHERE sprint_id = ?", sp.ID)
 	for _, u := range urls {
 		// One deleted or private repo must not stop the other PRs updating.
@@ -160,8 +163,9 @@ func fetchPRSync(c *call) {
 			out.failed++
 			continue
 		}
-		out.prs = append(out.prs, fetchedPR{u, info, seen[u]})
+		out.prs = append(out.prs, fetchedPR{key: u, info: info, seen: seen[u]})
 	}
+	out.prs = append(out.prs, found...)
 	var open []string
 	for _, p := range out.prs {
 		if p.info.State == "OPEN" {
@@ -180,6 +184,8 @@ func savePRs(c *call, quietUnchanged bool, subgoal string) {
 		switch {
 		case !ok:
 			c.printf("%s: changed during the GitHub call; run `sprint pr sync` again\n", p.key)
+		case p.found && len(wrote) > 0:
+			c.printf("%s: found open, added with no stage: %s\n", p.key, p.info.Title)
 		case len(wrote) > 0:
 			c.printf("%s: %s\n", p.key, strings.Join(wrote, ", "))
 		case !quietUnchanged:
@@ -203,8 +209,10 @@ func cmdPRAdd(c *call) {
 }
 
 func cmdPRSync(c *call) {
+	f := c.fetched.(fetchedPRs)
 	savePRs(c, true, "")
-	syncBoard(c, c.fetched.(fetchedPRs))
+	board, key := syncBoard(c, f)
+	triageItems(c, f.sprintID, board, key)
 }
 
 func cmdPRReady(c *call) {
