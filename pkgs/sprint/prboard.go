@@ -37,7 +37,7 @@ type prReview struct {
 	status   prStatus    // what GitHub said
 	fix      []string    // what blocks the merge
 	wait     []string    // what it waits on
-	prio     [2]int      // review order: reason, then tooling last
+	prio     [3]int      // review order: reason, Do now step, then tooling last
 	children []*prReview // PRs stacked on this one
 }
 
@@ -46,9 +46,11 @@ var groupOrder = map[string]int{"merge": 0, "fix": 1, "wait": 2}
 // toolingRE marks PRs reviewed last: docs, tests, chores, CI.
 var toolingRE = regexp.MustCompile(`^(docs|tests?|chore|ci)(\(|:)`)
 
-// priority is the review order for a PR: one that an open blocker item names,
-// then one any open item names, then code, then tooling. why says which.
-func priority(p *prReview, title string, items []Item) ([2]int, string) {
+// priority is the review order for a PR: one that the user's open Do now
+// steps name, in Do now order, so the board and Do now agree (6 Nov); then
+// one that an open blocker item names, then one any open item names, then
+// code, then tooling. why says which.
+func priority(p *prReview, title string, items []Item) ([3]int, string) {
 	// A full URL names this PR only in its own repository; a bare #N names
 	// it in any.
 	mention := mentionRE(p.URL, p.Number)
@@ -62,19 +64,30 @@ func priority(p *prReview, title string, items []Item) ([2]int, string) {
 			named = append(named, i)
 		}
 	}
+	// The earliest open user step that names the PR: the board takes its
+	// Do now number.
+	var step *Item
+	for k := range named {
+		if i := &named[k]; i.Step > 0 && (step == nil || i.Step < step.Step) {
+			step = i
+		}
+	}
+	if step != nil {
+		return [3]int{0, step.Step, tooling}, fmt.Sprintf("Do now step %d (item %d)", step.Step, step.Item)
+	}
 	for _, i := range named {
 		if strings.Contains(strings.ToLower(i.Title), "blocker") {
 			short := strings.TrimSpace(regexp.MustCompile(`[:(]`).Split(i.Title, 2)[0])
-			return [2]int{0, tooling}, fmt.Sprintf("%s (sprint item %d)", short, i.Item)
+			return [3]int{1, 0, tooling}, fmt.Sprintf("%s (sprint item %d)", short, i.Item)
 		}
 	}
 	if len(named) > 0 {
-		return [2]int{1, tooling}, fmt.Sprintf("On your sprint list (item %d)", named[0].Item)
+		return [3]int{2, 0, tooling}, fmt.Sprintf("On your sprint list (item %d)", named[0].Item)
 	}
 	if tooling == 1 {
-		return [2]int{3, 1}, "Docs, tests or tooling"
+		return [3]int{4, 0, 1}, "Docs, tests or tooling"
 	}
-	return [2]int{2, 0}, "Code or infra change"
+	return [3]int{3, 0, 0}, "Code or infra change"
 }
 
 func plural(n int, one string) string {
@@ -221,7 +234,11 @@ func buildBoard(statuses []prStatus, items []Item) []*prReview {
 		ra, da := root(a)
 		rb, db := root(b)
 		if ra.prio != rb.prio {
-			return ra.prio[0] < rb.prio[0] || ra.prio[0] == rb.prio[0] && ra.prio[1] < rb.prio[1]
+			for k := range ra.prio {
+				if ra.prio[k] != rb.prio[k] {
+					return ra.prio[k] < rb.prio[k]
+				}
+			}
 		}
 		if ra.Number != rb.Number {
 			return ra.Number < rb.Number
@@ -342,6 +359,16 @@ func (s Store) openItems(sprintID int64) []Item {
 	var items []Item
 	s.each("SELECT "+itemCols+" FROM item_state WHERE sprint_id = ? AND status NOT IN ('done', 'dropped') ORDER BY position",
 		[]any{sprintID}, func(r *sql.Rows) { items = append(items, scanItem(r)) })
+	step := map[int64]int{}
+	s.each("SELECT item, rank FROM do_now WHERE sprint_id = ?", []any{sprintID}, func(r *sql.Rows) {
+		var item int64
+		var rank int
+		check(r.Scan(&item, &rank))
+		step[item] = rank
+	})
+	for k := range items {
+		items[k].Step = step[items[k].Item]
+	}
 	return items
 }
 

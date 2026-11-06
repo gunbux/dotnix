@@ -167,6 +167,24 @@ func TestReviewOrderPutsBlockersFirstAndToolingLast(t *testing.T) {
 		"#20 Code or infra change | #21 Docs, tests or tooling")
 }
 
+func TestReviewOrderFollowsDoNow(t *testing.T) {
+	// The user's steps name #31 (Do now step 4) and #30 (step 2); an agent
+	// item names #29 first. The board takes the Do now order and cites the
+	// user's step, not the first item that names the PR.
+	items := []Item{
+		{Item: 95, Title: "After #30 merges, pin the template"},
+		{Item: 159, Title: "Merge #30", Owner: "user", Step: 2},
+		{Item: 177, Title: "Merge #31", Owner: "user", Step: 4},
+		{Item: 12, Title: "Blocker: needs #29"},
+	}
+	b := buildBoard([]prStatus{clean(29, "fix: a"), clean(30, "fix: b"), clean(31, "fix: c")}, items)
+	var order []string
+	for _, p := range b {
+		order = append(order, fmt.Sprintf("#%d %s", p.Number, p.Why))
+	}
+	eq(t, strings.Join(order, " | "), "#30 Do now step 2 (item 159) | #31 Do now step 4 (item 177) | #29 Blocker (sprint item 12)")
+}
+
 func TestPRSyncLogsTheBoardWhenItChanges(t *testing.T) {
 	h := newHarness(t)
 	h.ok("start", "s1", "One", "--goal", "g")

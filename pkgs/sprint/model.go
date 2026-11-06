@@ -92,6 +92,9 @@ type Item struct {
 	Title, Status, Owner string
 	Position             float64
 	Note, Subgoal        string
+	// Step is the item's number in Do now (the do_now view's rank), or 0
+	// when it is not an open user step. Only the PR board sets it.
+	Step int
 }
 
 const itemCols = "item, at, title, status, owner, position, COALESCE(note, ''), COALESCE(subgoal, '')"
