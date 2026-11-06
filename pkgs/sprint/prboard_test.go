@@ -108,6 +108,23 @@ func TestBoardCountsOnlyTheNewestRunOfACheck(t *testing.T) {
 	}
 }
 
+func TestBoardCountsOnlyRequiredChecksWhenSomeAreRequired(t *testing.T) {
+	p := withChecks(clean(1, "a"),
+		checkNode{Typename: "CheckRun", Name: "unit", Status: "COMPLETED", Conclusion: "SUCCESS", IsRequired: true},
+		checkNode{Typename: "CheckRun", Name: "infra", Status: "COMPLETED", Conclusion: "FAILURE"},
+		checkNode{Typename: "CheckRun", Name: "codeql", Status: "IN_PROGRESS"})
+	eq(t, boardOf([]prStatus{p})[1].Group, "merge")
+	// A failing required check still blocks.
+	q := withChecks(clean(2, "b"),
+		checkNode{Typename: "CheckRun", Name: "unit", Status: "COMPLETED", Conclusion: "FAILURE", IsRequired: true},
+		checkNode{Typename: "CheckRun", Name: "infra", Status: "COMPLETED", Conclusion: "SUCCESS"})
+	eq(t, boardOf([]prStatus{q})[2].Group, "fix")
+	// With no required checks, every check counts.
+	r := withChecks(clean(3, "c"),
+		checkNode{Typename: "CheckRun", Name: "infra", Status: "COMPLETED", Conclusion: "FAILURE"})
+	eq(t, boardOf([]prStatus{r})[3].Group, "fix")
+}
+
 func TestStackedPRWaitsForThePRBelowIt(t *testing.T) {
 	base := clean(10, "base")
 	top := clean(11, "top")

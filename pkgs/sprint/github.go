@@ -285,6 +285,7 @@ type checkNode struct {
 	StartedAt  string `json:"startedAt"`
 	Context    string `json:"context"`
 	State      string `json:"state"`
+	IsRequired bool   `json:"isRequired"`
 }
 
 type botPost struct {
@@ -294,12 +295,12 @@ type botPost struct {
 	SubmittedAt string                  `json:"submittedAt"`
 }
 
-const prStatusQuery = `query($u: URI!) { resource(url: $u) { ... on PullRequest {
+const prStatusQuery = `query($u: URI!, $n: Int!) { resource(url: $u) { ... on PullRequest {
   number url title state isDraft baseRefName headRefName headRepository { nameWithOwner } headRefOid mergeable reviewDecision mergedAt
   commits(last: 1) { nodes { commit { statusCheckRollup { contexts(first: 100) { nodes {
     __typename
-    ... on CheckRun { name status conclusion startedAt }
-    ... on StatusContext { context state }
+    ... on CheckRun { name status conclusion startedAt isRequired(pullRequestNumber: $n) }
+    ... on StatusContext { context state isRequired(pullRequestNumber: $n) }
   } pageInfo { hasNextPage } } } } } }
   reviewThreads(first: 100) { nodes { isResolved } pageInfo { hasNextPage } }
   comments(last: 40) { nodes { author { login } body updatedAt } }
@@ -308,7 +309,8 @@ const prStatusQuery = `query($u: URI!) { resource(url: $u) { ... on PullRequest 
 
 // ghPRStatus reads one PR's review state. Tests replace it.
 var ghPRStatus = func(url string) (prStatus, error) {
-	out, err := exec.Command("gh", "api", "graphql", "-f", "query="+prStatusQuery, "-f", "u="+url).Output()
+	n := url[strings.LastIndex(url, "/")+1:]
+	out, err := exec.Command("gh", "api", "graphql", "-f", "query="+prStatusQuery, "-f", "u="+url, "-F", "n="+n).Output()
 	if err != nil {
 		var ee *exec.ExitError
 		if errors.As(err, &ee) {
@@ -402,13 +404,24 @@ func (p prStatus) allChecksRead() bool {
 // start a check twice and GitHub cancels the older run, so only the newest
 // run of each name counts. Two runs can start in the same second; then a
 // cancelled run loses to the other, whatever order GitHub lists them in.
+// When the base branch requires some checks, only those count: an optional
+// check that fails or runs does not block a merge. With no required checks,
+// every check counts.
 func (p prStatus) checks() (failing []string, running int) {
 	if len(p.Commits.Nodes) == 0 || p.Commits.Nodes[0].Commit.StatusCheckRollup == nil {
 		return nil, 0
 	}
+	all := p.Commits.Nodes[0].Commit.StatusCheckRollup.Contexts.Nodes
+	anyRequired := false
+	for _, c := range all {
+		anyRequired = anyRequired || c.IsRequired
+	}
 	newest := map[string]checkNode{}
 	var names []string
-	for _, c := range p.Commits.Nodes[0].Commit.StatusCheckRollup.Contexts.Nodes {
+	for _, c := range all {
+		if anyRequired && !c.IsRequired {
+			continue
+		}
 		if c.Typename != "CheckRun" {
 			switch {
 			case c.State == "PENDING" || c.State == "EXPECTED":
