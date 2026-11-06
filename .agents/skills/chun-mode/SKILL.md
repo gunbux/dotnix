@@ -89,7 +89,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - For release pings, follow the prompt of the "Release ping sweep" scheduled task.
 - Tools and settings go in dotnix (`~/repo/dotnix` on the Mac, `~/dotnix` on legion-nix). Don't install ad hoc. dotnix is public, so keep secrets and private config out of it.
   - Other sessions share the checkout. Work in a worktree, and commit only your own files. Never stash, pull, or pop their changes.
-  - Build and switch (`nh os switch`, `nh darwin switch`) without asking, and say what the switch changes. On the Mac, the switch stops at sudo: build first, then give the user one switch command. If a switch fails twice, find the root cause.
+  - Build and switch (`nh os switch`, `nh darwin switch`) without asking, and say what the switch changes. On the Mac, the switch stops at sudo: build first, then give the user one switch command. Other threads push dotnix to `origin/main`, so the checkout can be behind. Fast-forward it before you build, and put the pull in the command you give: `git -C ~/repo/dotnix pull --ff-only && nh darwin switch ~/repo/dotnix`. If a switch fails twice, find the root cause.
 - Prefer declarative infrastructure (Nix, Terragrunt) over commands run on the fly. Package tools properly in Nix. On the Mac, Homebrew is the fallback, declared in dotnix.
 - Keep personal files out of repos. Handover docs go in `/tmp` or the notes repo. Local ignores go in the global gitignore.
 
