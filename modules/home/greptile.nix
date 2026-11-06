@@ -58,6 +58,10 @@
     plugins = [pkgs.kubernetes-helmPlugins.helm-diff];
   };
 
+  # `tfplan-summary <plan.json>` says what a Terraform plan changes, in words:
+  # each resource's changed attributes, and a widget diff for Datadog dashboards.
+  tfplan-summary = pkgs.writers.writePython3Bin "tfplan-summary" {doCheck = false;} (builtins.readFile ../../config/tfplan-summary/tfplan-summary.py);
+
   # `greptilia-docs <worktree>` switches what the docs agent below serves.
   greptilia-docs = pkgs.writeShellApplication {
     name = "greptilia-docs";
@@ -77,6 +81,7 @@ in {
     postgresql # psql, used by internal/cli/variants.ts
     posthog-cli # Product analytics; custom package in pkgs/
     datadog-pup # `pup`: Datadog traces, metrics, monitors
+    tfplan-summary # What a Terraform plan changes, in words
     greptile-cli # `greptile review` of local changes; custom package in pkgs/
     # The pre-commit hook lints staged .github/workflows changes with these
     # (scripts/lint/workflows.sh), so even merges from main need them.
