@@ -245,11 +245,12 @@ type prStatus struct {
 	HeadRepository *struct {
 		NameWithOwner string `json:"nameWithOwner"`
 	} `json:"headRepository"`
-	HeadRefOid     string `json:"headRefOid"`
-	Mergeable      string `json:"mergeable"`
-	ReviewDecision string `json:"reviewDecision"`
-	MergedAt       string `json:"mergedAt"`
-	Commits        struct {
+	HeadRefOid       string `json:"headRefOid"`
+	Mergeable        string `json:"mergeable"`
+	MergeStateStatus string `json:"mergeStateStatus"`
+	ReviewDecision   string `json:"reviewDecision"`
+	MergedAt         string `json:"mergedAt"`
+	Commits          struct {
 		Nodes []struct {
 			Commit struct {
 				StatusCheckRollup *struct {
@@ -296,7 +297,7 @@ type botPost struct {
 }
 
 const prStatusQuery = `query($u: URI!, $n: Int!) { resource(url: $u) { ... on PullRequest {
-  number url title state isDraft baseRefName headRefName headRepository { nameWithOwner } headRefOid mergeable reviewDecision mergedAt
+  number url title state isDraft baseRefName headRefName headRepository { nameWithOwner } headRefOid mergeable mergeStateStatus reviewDecision mergedAt
   commits(last: 1) { nodes { commit { statusCheckRollup { contexts(first: 100) { nodes {
     __typename
     ... on CheckRun { name status conclusion startedAt isRequired(pullRequestNumber: $n) }

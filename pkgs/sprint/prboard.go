@@ -187,6 +187,12 @@ func buildBoard(statuses []prStatus, items []Item) []*prReview {
 		if s.ReviewDecision == "REVIEW_REQUIRED" {
 			wait = append(wait, "Needs an approval")
 		}
+		// GitHub can block a PR that shows nothing wrong: a check that main
+		// started requiring after the last push never ran, or a review rule
+		// is unmet. Rebasing on main runs the new checks.
+		if s.MergeStateStatus == "BLOCKED" && len(fix) == 0 && len(wait) == 0 {
+			fix = append(fix, "GitHub blocks the merge: a required check never ran or a review rule is unmet; rebase on main")
+		}
 		p.fix, p.wait = fix, wait
 	}
 	// A stacked PR merges only after every PR below it; until then it waits.

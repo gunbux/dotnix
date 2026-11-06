@@ -125,6 +125,17 @@ func TestBoardCountsOnlyRequiredChecksWhenSomeAreRequired(t *testing.T) {
 	eq(t, boardOf([]prStatus{r})[3].Group, "fix")
 }
 
+func TestBoardShowsAMergeGitHubBlocks(t *testing.T) {
+	p := withChecks(clean(1, "a"), checkNode{Typename: "CheckRun", Name: "unit", Status: "COMPLETED", Conclusion: "SUCCESS", IsRequired: true})
+	p.MergeStateStatus = "BLOCKED"
+	r := boardOf([]prStatus{p})[1]
+	eq(t, r.Group+": "+strings.Join(r.Steps, "; "), "fix: GitHub blocks the merge: a required check never ran or a review rule is unmet; rebase on main")
+	// Another reason already explains the block, so the board shows that one.
+	q := withChecks(clean(2, "b"), checkNode{Typename: "CheckRun", Name: "unit", Status: "COMPLETED", Conclusion: "FAILURE", IsRequired: true})
+	q.MergeStateStatus = "BLOCKED"
+	eq(t, strings.Join(boardOf([]prStatus{q})[2].Steps, "; "), "Fails `unit`")
+}
+
 func TestStackedPRWaitsForThePRBelowIt(t *testing.T) {
 	base := clean(10, "base")
 	top := clean(11, "top")
