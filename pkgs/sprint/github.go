@@ -400,7 +400,8 @@ func (p prStatus) allChecksRead() bool {
 
 // checks names the failing checks and counts the running ones. A push can
 // start a check twice and GitHub cancels the older run, so only the newest
-// run of each name counts.
+// run of each name counts. Two runs can start in the same second; then a
+// cancelled run loses to the other, whatever order GitHub lists them in.
 func (p prStatus) checks() (failing []string, running int) {
 	if len(p.Commits.Nodes) == 0 || p.Commits.Nodes[0].Commit.StatusCheckRollup == nil {
 		return nil, 0
@@ -421,7 +422,8 @@ func (p prStatus) checks() (failing []string, running int) {
 		if !seen {
 			names = append(names, c.Name)
 		}
-		if !seen || c.StartedAt > old.StartedAt {
+		tieWin := c.StartedAt == old.StartedAt && old.Conclusion == "CANCELLED" && c.Conclusion != "CANCELLED"
+		if !seen || c.StartedAt > old.StartedAt || tieWin {
 			newest[c.Name] = c
 		}
 	}

@@ -99,6 +99,13 @@ func TestBoardCountsOnlyTheNewestRunOfACheck(t *testing.T) {
 		checkNode{Typename: "CheckRun", Name: "test", Status: "COMPLETED", Conclusion: "CANCELLED", StartedAt: "2026-11-04T01:00:00Z"},
 		checkNode{Typename: "CheckRun", Name: "test", Status: "COMPLETED", Conclusion: "SUCCESS", StartedAt: "2026-11-04T02:00:00Z"})
 	eq(t, boardOf([]prStatus{p})[1].Group, "merge")
+	// Two runs that start in the same second: the cancelled one loses in either order.
+	for _, order := range [][2]string{{"CANCELLED", "SUCCESS"}, {"SUCCESS", "CANCELLED"}} {
+		tie := withChecks(clean(2, "b"),
+			checkNode{Typename: "CheckRun", Name: "gate", Status: "COMPLETED", Conclusion: order[0], StartedAt: "2026-11-06T07:50:15Z"},
+			checkNode{Typename: "CheckRun", Name: "gate", Status: "COMPLETED", Conclusion: order[1], StartedAt: "2026-11-06T07:50:15Z"})
+		eq(t, boardOf([]prStatus{tie})[2].Group, "merge")
+	}
 }
 
 func TestStackedPRWaitsForThePRBelowIt(t *testing.T) {
