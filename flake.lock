@@ -170,11 +170,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793908458,
-        "narHash": "sha256-pu1iH4eDP5hwcDaLzwlq/k+/mCNUBhX1talnXPwygXQ=",
+        "lastModified": 1793926597,
+        "narHash": "sha256-GG7k8qbm6zssEsU0HlpZ7lVmnKsTYtOqGk0vgDN4IAg=",
         "owner": "anomalyco",
         "repo": "hex",
-        "rev": "86ed54728866bc3474095ead3fb5f8b179fbc576",
+        "rev": "5b548e5f0b7d4c8bb0ecf01f6900ab80d950c15e",
         "type": "github"
       },
       "original": {
@@ -254,11 +254,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1793859612,
-        "narHash": "sha256-DDsPI44qOjlRdnWbaVlcU5iwUPfadigR4oUrVWq2G0I=",
+        "lastModified": 1793924293,
+        "narHash": "sha256-63wxsZgMONe7PlnlAf7da/1pFlUdepPzMgOcUMHCOAI=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "499fb79f92064e92cdb968d12ffeb92d36243b50",
+        "rev": "fb975ebe2da5ba2ce754d3a43306a21fefa032d5",
         "type": "github"
       },
       "original": {
@@ -435,11 +435,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1793795574,
-        "narHash": "sha256-pgG/CO+txdf2sA2z6DsM+2G3F9ajfIp/3BMC4wfKMDY=",
+        "lastModified": 1793826729,
+        "narHash": "sha256-D5H7H+qMoTGI/jJtxKP4u7BdjkFnUyhOovTrf3pTOr0=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "13e53762c5afaf384d4614e94527a9ccfafe41d0",
+        "rev": "6dadaf4375be35033e1c84395adbd53ff5fded96",
         "type": "github"
       },
       "original": {
@@ -582,11 +582,11 @@
     "noctalia-community-plugins": {
       "flake": false,
       "locked": {
-        "lastModified": 1793888074,
-        "narHash": "sha256-uXQwNg+PrV06OQ2wEIUdp0gy7SnV1O4VKvwmJ3dsrpI=",
+        "lastModified": 1793926438,
+        "narHash": "sha256-E0F/gFiMSVIgFuN6G1W/tYk+nJ+y+MgMMDwCAZTvAwY=",
         "owner": "noctalia-dev",
         "repo": "community-plugins",
-        "rev": "e6281062920da3b9038cf14f49d4487b987993d9",
+        "rev": "e16b069828c44f9f7d337e020d662a2e2b31b93e",
         "type": "github"
       },
       "original": {

@@ -6,15 +6,15 @@
   stdenvNoCC,
   fetchzip,
 }: let
-  version = "2.28.0";
+  version = "2.28.4";
   assets = {
     x86_64-linux = {
       arch = "linux-amd64";
-      hash = "sha256-QFsrayZpDUDEsKD/zhtw315nPzpbWQC0x7sjVWHtyO8=";
+      hash = "sha256-kWcUERKEtz5x3EsT0OIUSb9t91CFpt3e/c5ftNjng60=";
     };
     aarch64-darwin = {
       arch = "darwin-arm64";
-      hash = "sha256-7sVaRXS9r1Fp1YmAZjDvZQWyU/ATNWnv4DXLcgKoD8U=";
+      hash = "sha256-+ISg0GWaSZ+qvSZrW2dinJyybfNUpCDqhU1HxxXNikk=";
     };
   };
   asset = assets.${stdenvNoCC.hostPlatform.system} or (throw "wakatime-cli: no release binary for ${stdenvNoCC.hostPlatform.system}");
