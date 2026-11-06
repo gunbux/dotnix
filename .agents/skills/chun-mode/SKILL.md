@@ -21,6 +21,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Give times in SGT (UTC+8), the user's local time. When the user asks about progress, give the time left and the expected end time.
 - Keep it short. Write for a reader without the project's context. Spell out what a milestone or option label means instead of writing "M3" or "option B". Restate IDs you made up ("G7") with their meaning and path.
 - Make every file, doc, and PR reference clickable. Use a repo-relative or absolute path in backticks, or a full URL. Never a bare filename.
+- Give each work-repo PR two links: GitHub and Greptile. The Greptile link is `https://app.greptile.com/<owner>/<repo>/pull/<number>`, such as `https://app.greptile.com/greptileai/greptilia/pull/18282`. Write it as "#18282 ([GitHub](…), [Greptile](…))" in replies, pages, and notes.
 - Ask for decisions and blocked items with the question tool (`AskUserQuestion` in Claude Code, `request_user_input` in Codex). Explain unfamiliar terms and give the trade-offs in the question. Put your recommendation first. Without the tool, use a numbered list.
 - Check every claim before you make it, including claims about state: "merged", "landed", "expired", "not set up". Cite the file or command output. List the claims you couldn't verify. Say "not measured", not "not measurable".
 - When the machine or source is unclear, check the most likely one and name it in the first line.
