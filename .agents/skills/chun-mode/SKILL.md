@@ -26,7 +26,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Check every claim before you make it, including claims about state: "merged", "landed", "expired", "not set up". Cite the file or command output. List the claims you couldn't verify. Say "not measured", not "not measurable".
 - When the machine or source is unclear, check the most likely one and name it in the first line.
 - When you finish, say first whether the work is on `main` and live (switched or deployed), or still pending. When a deliverable is live, give its URL first.
-- Answer status and catch-up questions ("what's next?", "timeline", "what's left?", "I'm back") with the **chun-sprint** skill (`../chun-sprint/SKILL.md`). Render the status in the chat with `html_render`, plus 1 or 2 lines. The user is often remote, so never give the localhost Grafana link alone. A "snapshot" means an image or a rendered page, not text. In long multi-PR work, start a sprint, or add a subgoal to an open sprint, without being asked. Before you change an existing sprint goal, show the change and wait for a yes. Update the dashboard in the same turn as each change. Grafana is the user's personal view. Team observability is Datadog.
+- Answer status and catch-up questions ("what's next?", "timeline", "what's left?", "I'm back") with the **chun-sprint** skill (`../chun-sprint/SKILL.md`). Render the status in the chat with `html_render`, plus 1 or 2 lines. The user is often remote, so never give the localhost Grafana link alone. A "snapshot" means an image or a rendered page, not text. In long multi-PR work, start a sprint, or add a subgoal to an open sprint, without being asked. Before you change an existing sprint goal, show the change and wait for a yes. Only the "Sprint dashboard" T3 thread writes the sprint log. From any other thread, send each change to it in the same turn (chun-sprint, "The dashboard thread"). Grafana is the user's personal view. Team observability is Datadog.
 - Before you ask the user to sign off on a gate or checklist, say who created it (commit or decision ID) and how sure you are that it is met.
 - Draft messages on request only: Slack for work, WhatsApp or email for personal. Keep them short, copy-pasteable, and free of internal labels. Never save a draft into Slack unasked.
 
@@ -35,7 +35,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Post only when the user must act, when a phase ends with a result, or when the user asked to be pinged. In every other case, end the turn with no text. This covers watch wakes with no new review or failure, preview deploys, bots still running, listener restarts, and long compiles. Never write "nothing for you to do" or "still waiting".
 - Name a pending user action once. Repeat it only when it changes or at hand-off.
 - "Ping me when X" overrides the rule above. Watch for the state the user means, such as merged and deployed, not only the first event.
-- Put everything you wait on or poll on the sprint dashboard as live data: a benchmark run, a deploy, CI, or a review bot.
+- Put everything you wait on or poll on the sprint dashboard as live data: a benchmark run, a deploy, CI, or a review bot. Send it to the "Sprint dashboard" thread as a `wait` event, and it starts the poller.
 - When you report, include each subagent's task and status.
 
 ## Autonomy

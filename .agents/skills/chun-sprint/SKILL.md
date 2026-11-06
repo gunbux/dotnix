@@ -1,11 +1,13 @@
 ---
 name: chun-sprint
-description: Track long multi-PR work as a sprint (one goal) split into subgoals (stages with their own goal and exit check), in an append-only log (the `sprint` CLI) shown on a local Grafana dashboard. The dashboard holds the goal and every change to it, progress over time, the user's next steps, PRs, benchmarks, and agent-written context such as architecture, findings, and caveats. Use for /chun-sprint, when multi-PR work starts or a new stage of it starts, or when Chun asks for the timeline, overview, "what's next", "what's left", "how far along", or status during multi-PR work. Also use when Chun asks to see the sprints of another machine, such as the Mac's sprints from legion-nix.
+description: Track long multi-PR work as a sprint (one goal) split into subgoals (stages with their own goal and exit check), in an append-only log (the `sprint` CLI) shown on a local Grafana dashboard. The dashboard holds the goal and every change to it, progress over time, the user's next steps, PRs, benchmarks, and agent-written context such as architecture, findings, and caveats. Use for /chun-sprint, when multi-PR work starts or a new stage of it starts, or when Chun asks for the timeline, overview, "what's next", "what's left", "how far along", or status during multi-PR work. Also use when Chun asks to see the sprints of another machine, such as the Mac's sprints from legion-nix. One T3 thread, "Sprint dashboard", writes the log and keeps the dashboard current; every other thread sends it updates.
 ---
 
 # Chun sprint
 
 The user must never ask for status twice, and must never lose the goal after steering. Record the work as it happens in the sprint log. The dashboard draws everything from that log, so nothing gets summarized away.
+
+One T3 thread, the **dashboard thread**, writes the log. Every other thread (a **work thread**) sends it the events as they happen. See "The dashboard thread" below. This applies to every write in this skill: the command tables below are what the dashboard thread runs.
 
 The log is `~/.local/state/sprint/sprint.db`. It is append-only: nothing is edited or deleted. The dashboard is Grafana at `http://127.0.0.1:3001`. Its "View" dropdown shows the whole sprint or one subgoal. `sprint show` prints the link for each. Run `sprint --help` and `sprint <command> --help` for every command. If `sprint` is not installed on this machine, say so and give the status in chat.
 
@@ -17,6 +19,88 @@ The log is `~/.local/state/sprint/sprint.db`. It is append-only: nothing is edit
 | Subgoal | One stage of the sprint goal. It has its own goal, a "done when" check, a plan, and its own dashboard view. One or two are active at a time. | Parity; Hot snapshotting |
 | Item | One step of the plan, in a subgoal. The user's own steps have `--owner user`. | Port the exec API |
 | Context section | Markdown that explains the work: what a reader needs without the chat. | Architecture; Findings |
+| Dashboard thread | The one T3 thread, titled `Sprint dashboard`, that runs every `sprint` command that writes. It does no other work. | |
+| Work thread | Any other thread that works on a sprint. It reads the log and sends updates to the dashboard thread. | The thread that ports the exec API |
+
+## The dashboard thread
+
+Chun runs one long-lived T3 thread whose only job is the sprint log and the dashboard. Only this thread writes. This keeps one order for Do now, one owner for each poller, and no two threads that replace the same context section.
+
+| The dashboard thread owns | Commands |
+| --- | --- |
+| Sprints, goals, subgoals, and items, with the Do now order | `start`, `goal`, `sub add\|set`, `item add\|set`, `end` |
+| PRs and the PR board | `pr add\|set\|ready\|sync\|note\|ignore` |
+| Benchmarks and the log | `bench`, `bench rm`, `log` |
+| Context sections, with the "Threads" section | `context set\|rm`, `seed.sh` |
+| The Live section and every poller | `live set\|done\|rm`, `poll`, `poll stop` |
+| Changes to the dashboard layout | `dash dev`, `dash reset`, edits to `modules/home/sprint/` |
+
+A work thread runs only commands that read: `sprint list`, `sprint show [--json]`, `sprint context ls`, `sprint live ls`, `sprint poll ls`, `sprint pr ignore` with no argument, and `sprint dash check`. It never writes, also not for a one-line fix. If it can't reach the dashboard thread, it tells Chun and keeps the events to send later.
+
+Each machine has its own log, so each machine with an open sprint has its own dashboard thread. Most sprints are on the Mac.
+
+### Find the dashboard thread
+
+1. Call `t3_thread_list` with `allProjects: true` and `titleContains: "Sprint dashboard"`. To reach the log on another machine, add that machine's `environmentId` (from `t3_environment_links`).
+2. If there is one, use its `threadId`. If there are more than one, use the newest, and tell Chun which ones to close.
+3. If there is none, start it with `t3_thread_launch`: `title: "Sprint dashboard"`, the dotnix project (`t3_project_list`), `workspaceStrategy: {"type": "root"}`, and the message "Use the chun-sprint skill. You are the dashboard thread. Run its start-up steps." Give Chun its `link`.
+
+### Send an update (work thread)
+
+Send in the same turn as the event, with `t3_thread_send`, `mode: "queue"`. Queue mode gives each update its own turn, so an update never cuts into the one before it. Put all events of one turn in one message. Use this shape, and leave out lines that don't apply:
+
+```text
+sprint-update
+sprint: <slug>    subgoal: <key, or - for the whole sprint>
+from: <your thread title>, branch <branch>, <machine>
+events:
+- item <n> doing|blocked|done|dropped: <why>
+- new item [owner user] [after <n>]: <step, condition first> | note: `<command>`
+- pr opened: <url>
+- pr ready (Greptile 5/5): <url>
+- pr next step: <url> | <step>
+- bench: <suite> <metric> <value> <unit> [baseline] | commit <sha> | link <run>
+- decision|deploy|note: <what> | link <url>
+- finding for "<context section>": <Markdown: conclusion in bold, cause, evidence link>
+- wait: <title> | every <interval> | `<probe command>` | ends about <HH:MM SGT>
+- wait over: <title>
+- subgoal done: <key> | evidence: <test, run, or deploy>
+- steer (Chun confirmed): "<Chun's words>" | changes: <goal, stage, focus, or scope>
+- new sprint or subgoal (Chun confirmed): <slug or key> | goal: <goal> | done when: <check> | plan: <items, in order>
+- thread: <what you work on now> | <working | waiting on X | done>
+```
+
+Write facts, not commands. Give item numbers from `sprint show` when you know them. The dashboard thread picks the commands, the order, and the item numbers. Don't wait for a reply: it replies only when it can't apply an event.
+
+### Run the dashboard thread
+
+At start, and when Chun restarts it:
+
+1. Rename the thread to `Sprint dashboard` with `t3_thread_update` if its title is different.
+2. Run `sprint list`, then `sprint show` for each open sprint.
+3. Make sure each open sprint has a PR board poller (`sprint poll ls`). If one is missing, start it: `sprint poll prs --every 3m --background --title "PR board sync" -- sprint pr sync`.
+4. Make sure each open sprint has a "Threads" context section (see below).
+
+For each `sprint-update` message:
+
+1. Apply each event with the commands in this skill. Use `sprint show` to find item numbers, the stage, and where a new step goes.
+2. Keep Do now in the order Chun must act. When a new user step changes the order, move it with `sprint item set <n> --first` or `--after <n>`. Follow "Shared rules" for each user step.
+3. For each `wait`, start or replace its poller with `sprint poll`, and pick a key from the title. For each `wait over`, run `sprint poll stop <key>` and `sprint live done <key>`.
+4. For each `finding`, update that context section when the finding changes its facts.
+5. After a PR event, run `sprint pr sync`.
+6. Update the "Threads" section.
+7. When you change the layout or add a kind of section, run `sprint dash check`.
+8. End the turn with one line that says what changed.
+
+If an event is not clear, names an item that doesn't exist, or changes a goal without Chun's yes, don't guess. Send a question back to the sender with `t3_thread_send` (find it with `t3_thread_search` on its title or branch), and apply the other events.
+
+At the start of each turn, check the "Threads" section. When a thread marked "working" has sent nothing for 2 hours, read its last messages with `t3_thread_read` (`limit: 5`, `maxCharsPerItem: 2000`). Record what it did not send, and mark it "done" if it finished.
+
+Chun can also talk to the dashboard thread: to steer, to ask for status, or to change the layout. Handle that as in the sections below.
+
+### The "Threads" section
+
+The dashboard thread keeps one context section, key `threads`, title "Threads on this sprint", in the whole-sprint view. It is a table with one row per work thread: thread title, machine, subgoal, task, state (working, waiting on X, or done), and the last update in SGT. Keep "done" rows for 24 hours, then remove them. This section answers "what is running" on the dashboard.
 
 ## New sprint or new subgoal
 
@@ -29,7 +113,7 @@ Before you record new work, run `sprint list` and `sprint show`. Then pick one:
 | Is one step of an active subgoal | `sprint item add`, not a subgoal |
 | Is not clear | Ask with the question tool. Recommend one option first. |
 
-Use the user's own words for each goal. Give each subgoal a "done when" check that you can verify, such as a test, a benchmark threshold, or a deploy. Confirm the goal and the subgoals with the question tool before you record them.
+Use the user's own words for each goal. Give each subgoal a "done when" check that you can verify, such as a test, a benchmark threshold, or a deploy. Confirm the goal and the subgoals with the question tool before you record them. The thread that talks with Chun asks. A work thread then sends a "new sprint or subgoal" event, and the dashboard thread runs the commands below.
 
 ### Start a sprint
 
@@ -64,13 +148,13 @@ Add an optional section with `sprint context set <key> --title "<title>" [--subg
 
 ### Shared rules
 
-Add the plan of the active subgoal as items, in order. New items, PRs, benchmarks, and log entries go to the only active subgoal. When two subgoals are active, pass `--subgoal <key>`, or set `SPRINT_SUBGOAL=<key>` for the thread. Use `--subgoal -` for work that belongs to the whole sprint. One sprint can span repos and threads. Each thread passes `--sprint <slug>` or sets `SPRINT=<slug>` when more than one sprint is open.
+Add the plan of the active subgoal as items, in order. New items, PRs, benchmarks, and log entries go to the only active subgoal. When two subgoals are active, pass `--subgoal <key>`. Use `--subgoal -` for work that belongs to the whole sprint. One sprint can span repos and threads. Each update names its sprint and subgoal, and the dashboard thread passes `--sprint <slug>` when more than one sprint is open.
 
 Give the user's own steps (merges, deploys, wizard runs, tests on a device) `--owner user`, in the order the user must do them. Put each deploy or validation after the merge it follows. Give each step one action. Put its condition first, then the action: "When #18259 scores 5/5, run the Datadog wizard", then a separate step "Merge #18259". Never join two actions in one step with "then" or "after". Put the step's copy-paste command in `--note`, in backticks, such as a rerun script or a wizard path. If the order is not obvious, say why in the note. The "Do now" panel shows it.
 
 ## Steering
 
-Each time the user steers, decide what the steer changes before you record it. If you are not sure, ask with the question tool.
+Each time the user steers, decide what the steer changes before you record it. If you are not sure, ask with the question tool. The thread where Chun steers decides and asks. A work thread then sends a "steer" event with Chun's words, and the dashboard thread runs the command.
 
 | The steer changes | Command |
 | --- | --- |
@@ -83,6 +167,8 @@ Each time the user steers, decide what the steer changes before you record it. I
 Then add, drop, or move items (`sprint item set <n> --subgoal <key>`) to match.
 
 ## Record as you go
+
+A work thread sends the event in the left column. The dashboard thread runs the command.
 
 | Event | Command |
 | --- | --- |
@@ -104,7 +190,7 @@ Never re-add an old item or subgoal to rewrite it. Change its status, and drop i
 
 The charts show the numbers. Context sections show what the numbers mean. Keep them current, so that the user can read the dashboard instead of the chat. They show in the Context panel, in the order you add them. Start a section that agents keep current with "AI-written. Updated <date> <time> SGT." Write each section in ASD-STE100 Simplified Technical English, with Markdown tables, lists, and links to code and runs.
 
-The template sets which sections each view has (see "The template" above).
+The template sets which sections each view has (see "The template" above). Work threads send what they learn as "finding" events. The dashboard thread writes the sections, so the AI-written stamp shows when it last wrote them.
 
 - Findings so far: 3 to 6 bullets. Start each with the conclusion in bold. Then give its cause, or write "cause not measured yet". Link the evidence: a run, a report, or a file.
 - Decisions waiting for Chun: each open decision with your recommendation first. Ask about it with the question tool too.
@@ -114,7 +200,7 @@ Replace a section with `sprint context set <same key>`. The old version stays in
 
 ## Live data
 
-Everything an agent waits on or polls goes in the dashboard's Live section, so the user can see it without asking: a benchmark run, CI, a review bot, a deploy. Each item is a card with a progress bar, the end time in SGT, and a "stale" tag when updates stop. A subgoal view shows its own items and the whole sprint's. Live items live in `~/.local/state/sprint/live.db`, not in the append-only log, so you can update them in place.
+Everything an agent waits on or polls goes in the dashboard's Live section, so the user can see it without asking: a benchmark run, CI, a review bot, a deploy. A work thread sends a "wait" event with the probe command from the table below. The dashboard thread starts and stops the poller. A work thread can still poll for its own use, but only the dashboard thread writes to the Live section. Each item is a card with a progress bar, the end time in SGT, and a "stale" tag when updates stop. A subgoal view shows its own items and the whole sprint's. Live items live in `~/.local/state/sprint/live.db`, not in the append-only log, so you can update them in place.
 
 | Need | Command |
 | --- | --- |
@@ -142,13 +228,15 @@ The PR board comes from the log: `sprint pr sync` records each PR's review state
 
 ### Change the dashboard
 
+The dashboard thread makes layout changes. A work thread that wants one sends a "note" event that says what to change and why.
+
 Edit `modules/home/sprint/dashboard.nix` in a dotnix worktree. Run `sprint dash dev --checkout <worktree> [--watch]`, and Grafana shows the change within 10 s, with no build or switch. The header shows "dev: <branch>@<sha>" (`+` means uncommitted) while a dev copy is live. Check it on `http://127.0.0.1:3001`. Then run `sprint dash check`, and open the PR only when it reports no problem.
 
 Grafana gives each panel a fixed height, but the data sets how tall a section is. So `page/fit.js` fits each section into its panel: it folds items marked `.fit` and adds a "Show all" bar, and no panel scrolls on its own. In a new section, mark each repeated item (a card, a table row) `.fit`. `sprint dash check` renders every view of the open sprints in headless Chrome. It fails when a section didn't render, content is wider than its box, content is cut where the panel doesn't scroll, or a Live card shows raw JSON. It notes folds, cut sections, and large gaps. Use `--width` to check another window size, and `--open` to check with every list opened (Merged, Waiting, context sections). Opening a list shows the whole panel and lets it scroll, like Show all. After you merge, `sprint dash reset` puts the built dashboard back. The next switch does the same. Data sources and Grafana settings still need a switch. To change the shape of every future sprint's context sections, edit `templates/` instead.
 
 ## Answer status questions
 
-Run `sprint pr sync`, then `sprint show`. Reply in the chat with:
+Any thread can answer. Run `sprint show`. Don't run `sprint pr sync` in a work thread: the dashboard thread's PR board poller keeps PR states current. Reply in the chat with:
 
 1. Where the work stands against the sprint goal, for a reader with no context.
 2. The active subgoals with their progress (`3 of 5 done`), the items left in each, and their "done when" checks.
@@ -156,11 +244,13 @@ Run `sprint pr sync`, then `sprint show`. Reply in the chat with:
 4. For running work, the time left and the expected end time in SGT.
 5. The dashboard link from `sprint show`: the whole-sprint link, or the subgoal link when the question is about one stage.
 
-List running agents with their task and status, because the dashboard doesn't show them.
+List the threads from the "Threads" section with their task and state, and your own subagents with theirs.
 
 ## Another machine's sprints
 
-Each machine has its own log and dashboard on `127.0.0.1`. The work Mac and legion-nix are on different tailnets, so a browser on one machine cannot open the other machine's dashboard. Chun decided to keep both dashboards off the network. Use T3 to show the other machine's sprints as a snapshot:
+Each machine has its own log, dashboard thread, and dashboard on `127.0.0.1`. To record work in another machine's sprint, send the update to that machine's dashboard thread (see "Find the dashboard thread").
+
+The work Mac and legion-nix are on different tailnets, so a browser on one machine cannot open the other machine's dashboard. Chun decided to keep both dashboards off the network. Use T3 to show the other machine's sprints as a snapshot:
 
 1. Call `t3_environment_links`. Find the other machine: "Chun's MacBook Pro" or "legion-nix". If it is missing or expired, call `t3_environment_link` with the machine name as the hint.
 2. Start one read-only child there with `delegate_task`, `mode: "wait"`, and `target.environmentId`. Tell it to run `sprint list`, then `sprint show --json --sprint <slug>` for each open sprint (or only the one Chun named), and to return the raw JSON. It must not run `sprint pr sync` or write to the log.
