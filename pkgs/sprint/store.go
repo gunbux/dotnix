@@ -13,7 +13,7 @@ import (
 )
 
 // SchemaVersion is stored in PRAGMA user_version. A bump recreates the views.
-const SchemaVersion = 8
+const SchemaVersion = 9
 
 const tablesSQL = `
 CREATE TABLE IF NOT EXISTS sprints (
@@ -259,8 +259,10 @@ CREATE VIEW subgoal_progress AS
   FROM subgoal_state g
   LEFT JOIN item_state i ON i.sprint_id = g.sprint_id AND i.subgoal = g.key
   GROUP BY g.sprint_id, g.key`, `
--- The user's open steps, in one order for the whole sprint: steps without a
--- subgoal first, then each subgoal's steps in the order the stages list shows
+-- The user's open steps, in one order for the whole sprint: blocked steps
+-- last, so the steps the user can do now come first and a fold hides the
+-- blocked ones first (6 Nov: a ready step sank to step 10 behind blocked
+-- ones). Within each part: steps without a subgoal first, then each subgoal's steps in the order the stages list shows
 -- them (active, then planned, then done, then by position), then by item
 -- position. A subgoal's view filters this list and keeps rank, so a step has
 -- the same number in every view.
@@ -268,6 +270,7 @@ CREATE VIEW do_now AS
   SELECT i.sprint_id, i.item, i.title, i.status, i.owner, i.note, i.subgoal,
          COALESCE(g.title, '') AS stage,
          ROW_NUMBER() OVER (PARTITION BY i.sprint_id ORDER BY
+           i.status = 'blocked',
            g.key IS NOT NULL,
            CASE g.status WHEN 'active' THEN 0 WHEN 'done' THEN 2 ELSE 1 END,
            g.position, i.position, i.item) AS rank,

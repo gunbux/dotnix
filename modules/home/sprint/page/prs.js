@@ -5,6 +5,8 @@
 // Clock times are SGT.
 const prs = rows('A');
 const synced = rows('B')[0];
+// C: merge-ready PRs that this view's stage filter hides.
+const away = rows('C')[0] || {};
 const nowS = Date.now() / 1000;
 const GROUPS = [
   ['merge', 'Merge now', '&#10003;', 'Every review bot scores 5/5 on the newest commit, CI is green, and no PR comes first. The numbers give the review order.'],
@@ -51,7 +53,9 @@ h += '<div class="prb"><div class="prb-tiles">'
   + GROUPS.map(([k, name]) => `<div class="prb-tile g-${k}"><b>${open.filter((p) => p.grp === k).length}</b>${name}</div>`).join('')
   + (unstaged.length ? `<div class="prb-tile g-stage" title="No stage yet. Run sprint pr set &lt;url&gt; --subgoal &lt;key&gt;.">`
     + `<b>${unstaged.length}</b>Needs a stage</div>` : '')
-  + '</div>';
+  + '</div>'
+  + (Number(away.n) ? `<p class="elsewhere"><b>+${away.n} merge-ready PR${away.n > 1 ? 's' : ''} in other stages</b>`
+    + ` · <a href="${viewLink('-')}">Whole sprint</a></p>` : '');
 for (const [k, name, mark, desc] of GROUPS) {
   const g = open.filter((p) => p.grp === k);
   if (!g.length) continue;
@@ -68,7 +72,7 @@ for (const [k, name, mark, desc] of GROUPS) {
       steps.push(p.note);
     }
     const meta = [p.stage || (Number(p.unstaged) ? '' : 'whole sprint'), p.base && p.base !== 'main' ? `base ${p.base}` : ''].filter(Boolean).join(' · ');
-    h += `<tr class="fit"><td class="n">${k === 'wait' ? '' : `<span class="rk">${i + 1}</span>`}`
+    h += `<tr class="fit"${k === 'merge' ? ' data-fit-kind="merge-ready PR"' : k === 'fix' ? ' data-fit-kind="PR to fix"' : ''}><td class="n">${k === 'wait' ? '' : `<span class="rk">${i + 1}</span>`}`
       + prLink(p.url, num(p))
       + (p.stack ? `<div class="stack">${esc(p.stack)}</div>` : '')
       + (k === 'wait' || !p.why ? '' : `<div class="stack">${esc(p.why)}</div>`) + '</td>'

@@ -7,7 +7,9 @@
 //    step, a table row, a card) from the end: rows before cards, and the
 //    longest table first. Each table or list keeps its first item.
 // 2. If it still doesn't fit, cut the content with a fade.
-// 3. Show "Show all (N more)" at the bottom. It shows everything and lets
+// 3. Show "Show all (N more)" at the bottom. An item with data-fit-kind
+//    (such as "merge-ready PR") is counted by kind, in bold, in its "⋯ N more"
+//    marker and in the bar, so a fold never hides an action without saying so. It shows everything and lets
 //    the panel scroll; "Fold to fit" goes back.
 //
 // Opening a closed list (a <details>, such as Merged or Waiting) means the
@@ -62,6 +64,8 @@ const fit = () => {
   });
 
   let hidden = 0;
+  const kinds = new Map(); // data-fit-kind -> hidden count
+  const kindText = (m) => [...m].map(([k, n]) => `${n} ${k}${n > 1 ? 's' : ''}`).join(', ');
   let state = 'ok';
   if (self.showAll || userOpen()) {
     state = 'all';
@@ -77,6 +81,8 @@ const fit = () => {
     const hide = (it) => {
       it.classList.add('fit-hide');
       hidden++;
+      const kind = it.dataset.fitKind;
+      if (kind) kinds.set(kind, (kinds.get(kind) || 0) + 1);
       const g = it.parentElement;
       if (/^(grid|flex)$/.test(getComputedStyle(g).display)) return;
       if (!marks.has(g)) {
@@ -88,11 +94,15 @@ const fit = () => {
         if (tag === 'tr') m.appendChild(document.createElement('td')).colSpan =
           Array.from(it.cells).reduce((n, c) => n + c.colSpan, 0);
         g.appendChild(m);
-        marks.set(g, { m, n: 0 });
+        marks.set(g, { m, n: 0, kinds: new Map() });
       }
       const k = marks.get(g);
       k.n++;
-      (k.m.firstChild && k.m.firstChild.nodeType === 1 ? k.m.firstChild : k.m).textContent = `⋯ ${k.n} more`;
+      if (kind) k.kinds.set(kind, (k.kinds.get(kind) || 0) + 1);
+      k.m.classList.toggle('fit-more-kind', k.kinds.size > 0);
+      (k.m.firstChild && k.m.firstChild.nodeType === 1 ? k.m.firstChild : k.m).textContent =
+        k.kinds.size ? `⋯ ${kindText(k.kinds)} hidden` + (k.n > [...k.kinds.values()].reduce((a, b) => a + b, 0)
+          ? `, ${k.n - [...k.kinds.values()].reduce((a, b) => a + b, 0)} more` : '') : `⋯ ${k.n} more`;
     };
     // Items are grouped by their parent: the rows of one table, the cards
     // of one grid. Deeper groups fold first, so cards lose rows before a
@@ -117,8 +127,9 @@ const fit = () => {
         hide(vis[vis.length - 1]);
       }
     }
-    // One marker in the whole panel only repeats the bar's count.
-    if (marks.size === 1 && hidden === [...marks.values()][0].n) [...marks.values()][0].m.remove();
+    // One marker in the whole panel only repeats the bar's count, unless it
+    // names kinds: then it shows where they are.
+    if (marks.size === 1 && hidden === [...marks.values()][0].n && !kinds.size) [...marks.values()][0].m.remove();
     state = 'folded';
     if (over() > 1) {
       // One item is taller than the panel: cut it and fade the cut edge.
@@ -133,7 +144,8 @@ const fit = () => {
     bar.type = 'button';
     bar.className = 'fit-bar';
     bar.textContent = state === 'all' ? 'Fold to fit'
-      : 'Show all' + (hidden ? ` (${hidden} more)` : '');
+      : 'Show all' + (hidden ? ` (${hidden} more${kinds.size ? ': ' + kindText(kinds) : ''})` : '');
+    bar.classList.toggle('fit-bar-kind', state !== 'all' && kinds.size > 0);
     bar.onclick = () => {
       if (state === 'all') {
         // Fold to fit: also close the lists the reader opened.
@@ -170,6 +182,7 @@ const fit = () => {
   el.dataset.spPanel = (root.className.match(/sp-p-([\w-]+)/) || [])[1] || '';
   el.dataset.spFit = state;
   el.dataset.spHidden = String(hidden);
+  el.dataset.spHiddenKinds = kindText(kinds);
   el.dataset.spGap = String(Math.max(0, Math.round(box.clientHeight - used)));
   el.dataset.spWide = String(Math.max(0, Math.round(wide)));
   el.dataset.spRaw = String(root.querySelectorAll('.lv-raw').length);

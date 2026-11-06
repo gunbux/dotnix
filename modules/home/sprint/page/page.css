@@ -151,6 +151,9 @@
 .sp .fit-hide { display: none !important; }
 .sp .fit-more, .sp .fit-more td { color: var(--mut); font-size: 12px; list-style: none; }
 .sp div.fit-more { margin: 2px 0 6px; }
+.sp .fit-more-kind, .sp .fit-more-kind td, .fit-bar-kind { color: var(--warn, #f2b84b); font-weight: 600; }
+.sp .elsewhere { margin: 4px 0 8px; font-size: 12px; }
+.sp .elsewhere b { color: var(--warn, #f2b84b); }
 .sp.fit-clip { overflow: hidden;
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); }

@@ -365,6 +365,11 @@ in {
         FROM do_now
         WHERE sprint_id = ${sid} AND (subgoal IS NULL OR ${inScope "subgoal"})
         ORDER BY rank''
+      # The steps this view hides: a stage view must say they exist (6 Nov).
+      ''
+        SELECT COUNT(*) AS n, COALESCE(SUM(status != 'blocked'), 0) AS ready
+        FROM do_now
+        WHERE sprint_id = ${sid} AND NOT COALESCE(subgoal IS NULL OR ${inScope "subgoal"}, 0)''
     ])
     (pagePanel 34 "stages" (pos 10 13 14 15) [
       ''
@@ -392,6 +397,14 @@ in {
                OR (p.state = 'merged' AND p.at > CAST(strftime('%s', 'now') AS INTEGER) - 3 * 86400))
         ORDER BY p.state = 'merged', CASE WHEN p.state != 'merged' THEN COALESCE(r.rank, 1e9) END, p.at DESC''
       "SELECT MAX(at) AS at FROM pr_syncs WHERE sprint_id = ${sid}"
+      # Merge-ready PRs this view's stage filter hides (6 Nov: #18417 was in
+      # another stage and the reader missed it).
+      ''
+        SELECT COUNT(*) AS n
+        FROM pr_state p
+        JOIN pr_review_state r ON r.sprint_id = p.sprint_id AND r.url = p.url
+        WHERE p.sprint_id = ${sid} AND p.state IN ('opened', 'ready') AND r.grp = 'merge'
+          AND NOT COALESCE(${inScope "p.subgoal"}, 0)''
     ])
     # What is left comes before the context sections: Chun reads the open
     # steps first (6 Nov).

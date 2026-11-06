@@ -220,7 +220,8 @@ func TestItemSetKeepsTitleOwnerAndPosition(t *testing.T) {
 		doNow = append(doNow, i.Title+":"+i.Status)
 	}
 	eq(t, strings.Join(titles, ","), "plug in the watch,merge,build")
-	eq(t, strings.Join(doNow, ","), "plug in the watch:blocked,merge:planned")
+	// Do now puts blocked steps last; the plan keeps item positions.
+	eq(t, strings.Join(doNow, ","), "merge:planned,plug in the watch:blocked")
 }
 
 func TestSprintResolution(t *testing.T) {
