@@ -4,7 +4,22 @@
 // panel's template is just {{{html}}}. Grafana sanitizes the result.
 const md = context.markdown;
 const esc = (s) => context.handlebars.escapeExpression(s == null ? '' : String(s));
-const inl = (s) => md.renderInline(s == null ? '' : String(s));
+
+// Greptile's review page for a github.com PR URL, or '' for any other URL.
+const greptileURL = (url) => {
+  const m = /^https:\/\/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)\/?$/.exec(String(url));
+  return m ? `https://app.greptile.com/${m[1]}/pull/${m[2]}` : '';
+};
+const greptileLink = (url) => {
+  const g = greptileURL(url);
+  return g ? ` · <a href="${esc(g)}" target="_blank">Greptile</a>` : '';
+};
+// A PR's GitHub link, then its Greptile link.
+const prLink = (url, text) => `<a href="${esc(url)}" target="_blank">${esc(text)}</a>${greptileLink(url)}`;
+// Rendered Markdown with a Greptile link after each link to a GitHub PR.
+const withGreptile = (html) => html.replace(/<a href="([^"]*)"[^>]*>[\s\S]*?<\/a>/g, (a, url) => a + greptileLink(url));
+
+const inl = (s) => withGreptile(md.renderInline(s == null ? '' : String(s)));
 const rv = (s) => context.grafana.replaceVariables(s);
 const view = rv('$subgoal');
 
@@ -31,7 +46,7 @@ const viewLink = (key) => '/d/sprint/sprint?' + rv('${sprint:queryparam}&from=${
 
 // Rendered Markdown with its table body rows and list items marked .fit,
 // so ./fit.js can fold them when the panel is full.
-const mdFit = (s) => md.render(s == null ? '' : String(s))
+const mdFit = (s) => withGreptile(md.render(s == null ? '' : String(s)))
   .replace(/<tbody>[\s\S]*?<\/tbody>/g, (b) => b.replace(/<tr>/g, '<tr class="fit">'))
   .replace(/<li>/g, '<li class="fit">');
 

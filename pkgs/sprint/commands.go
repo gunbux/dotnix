@@ -641,12 +641,12 @@ func cmdShow(c *call) {
 		c.printf("  #%d %-8s %-5s %s%s\n", i.Item, i.Status, i.Owner, i.Title, where)
 	}
 	for _, p := range d.PRs {
-		c.printf("  PR %-7s %s\n", p.State, p.URL)
+		c.printf("  PR %-7s %s\n", p.State, withGreptile(p.URL))
 	}
 	if len(d.NeedsStage) > 0 {
 		c.printf("Needs a stage (sprint pr set <url> --subgoal <key>):\n")
 		for _, p := range d.NeedsStage {
-			c.printf("  %s %s\n", p.URL, p.Title)
+			c.printf("  %s %s\n", withGreptile(p.URL), p.Title)
 		}
 	}
 	c.printf("%s\n", d.Dashboard)

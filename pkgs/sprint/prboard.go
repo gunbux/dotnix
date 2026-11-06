@@ -255,6 +255,25 @@ func repoOf(url string) string {
 	return ""
 }
 
+var prURLRE = regexp.MustCompile(`^https://github\.com/([^/]+/[^/]+)/pull/(\d+)/?$`)
+
+// greptileURL is Greptile's review page for a github.com PR URL, or "" for
+// any other URL.
+func greptileURL(url string) string {
+	if m := prURLRE.FindStringSubmatch(url); m != nil {
+		return "https://app.greptile.com/" + m[1] + "/pull/" + m[2]
+	}
+	return ""
+}
+
+// withGreptile follows a PR URL with its Greptile review page.
+func withGreptile(url string) string {
+	if g := greptileURL(url); g != "" {
+		return url + "  Greptile: " + g
+	}
+	return url
+}
+
 func jsonText(v any) string {
 	b, err := json.Marshal(v)
 	check(err)

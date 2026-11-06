@@ -69,7 +69,7 @@ for (const [k, name, mark, desc] of GROUPS) {
     }
     const meta = [p.stage || (Number(p.unstaged) ? '' : 'whole sprint'), p.base && p.base !== 'main' ? `base ${p.base}` : ''].filter(Boolean).join(' · ');
     h += `<tr class="fit"><td class="n">${k === 'wait' ? '' : `<span class="rk">${i + 1}</span>`}`
-      + `<a href="${esc(p.url)}" target="_blank">${esc(num(p))}</a>`
+      + prLink(p.url, num(p))
       + (p.stack ? `<div class="stack">${esc(p.stack)}</div>` : '')
       + (k === 'wait' || !p.why ? '' : `<div class="stack">${esc(p.why)}</div>`) + '</td>'
       + `<td><div class="t">${esc(p.title)}</div><div class="note">`
@@ -83,7 +83,7 @@ if (merged.length) {
   h += `<details class="prb-fold"><summary><h3 class="g-merged">&#8618; Merged in the last 3 days (${merged.length}) `
     + '<span class="d">Newest first. The gate shows the last sync before the merge.</span></h3></summary>'
     + '<table class="g-merged"><tr><th>Merged (SGT)</th><th>PR</th><th>What it does</th><th>Gate at merge</th></tr>'
-    + merged.map((p) => `<tr><td class="when">${sgtDay(p.at)}</td><td class="n"><a href="${esc(p.url)}" target="_blank">${esc(num(p))}</a></td>`
+    + merged.map((p) => `<tr><td class="when">${sgtDay(p.at)}</td><td class="n">${prLink(p.url, num(p))}</td>`
       + `<td><div class="t">${esc(p.title)}</div><div class="note">${esc(p.stage || 'whole sprint')}</div></td>`
       + `<td class="gate">${p.grp ? gate(p, true) : '<span class="mut sm">not synced</span>'}</td></tr>`).join('')
     + '</table></details>';

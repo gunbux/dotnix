@@ -251,3 +251,12 @@ func TestPRNoteIsKeptAndCanBeRemoved(t *testing.T) {
 	eq(t, h.query("SELECT COUNT(*) FROM pr_note_state"), "(0)")
 	contains_(t, h.fails("pr", "note", prURL(9), "x"), "not in this sprint")
 }
+
+func TestGreptileURLIsOnlyForGitHubPRs(t *testing.T) {
+	eq(t, greptileURL("https://github.com/greptileai/greptilia/pull/18282"), "https://app.greptile.com/greptileai/greptilia/pull/18282")
+	eq(t, greptileURL("https://github.com/o/r/pull/7/"), "https://app.greptile.com/o/r/pull/7")
+	eq(t, greptileURL("https://github.com/o/r/pull/7/files"), "")
+	eq(t, greptileURL("https://gitlab.com/o/r/-/merge_requests/7"), "")
+	eq(t, withGreptile(prURL(3)), prURL(3)+"  Greptile: https://app.greptile.com/o/r/pull/3")
+	eq(t, withGreptile("https://gitlab.com/o/r/-/merge_requests/7"), "https://gitlab.com/o/r/-/merge_requests/7")
+}
