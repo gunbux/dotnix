@@ -25,7 +25,9 @@
   networking.hostName = "fw12";
   networking.networkmanager = {
     enable = true;
-    wifi.powersave = true;
+    # Wi-Fi power save delays inbound frames until the card wakes, and the
+    # T3 Connect relay times out waiting for this host to answer.
+    wifi.powersave = false;
   };
 
   # Kernel
@@ -39,7 +41,15 @@
   # Power Mangement
   powerManagement = {
     enable = true;
-    powertop.enable = true;
+    powertop = {
+      enable = true;
+      # powertop --auto-tune turns Wi-Fi power save back on; undo only that.
+      postStart = ''
+        for dev in /sys/class/net/*/wireless; do
+          ${lib.getExe pkgs.iw} dev "$(basename "$(dirname "$dev")")" set power_save off || true
+        done
+      '';
+    };
   };
 
   # Auto CPU-Freq config
@@ -49,6 +59,12 @@
 
   # TLP Config, use one or the other but not both
   services.power-profiles-daemon.enable = false; # Defaults to true in Gnome 44
+  # nixos-hardware's laptop profile enables TLP, which defaults to Wi-Fi power
+  # save on battery.
+  services.tlp.settings = {
+    WIFI_PWR_ON_AC = "off";
+    WIFI_PWR_ON_BAT = "off";
+  };
 
   # Steam/Gaming Configs
   programs.steam = {
