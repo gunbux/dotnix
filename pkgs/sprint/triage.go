@@ -9,13 +9,15 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // PR triage: `sprint pr sync` finds the user's open PRs that no one added,
 // and keeps the Do now list covering the PRs that need the user: one to
 // merge, or one with no stage. The items it adds carry a note that starts
-// with syncNote, on their first event, so a later sync can find and close
-// them however the user edits them.
+// with syncNote, on their first event, so a later sync can find them however
+// the user edits them. A user step that merges a PR names it in merges, and
+// sync closes the step when the PR merges or closes.
 
 const syncNote = "Added by sprint pr sync: "
 
@@ -143,49 +145,87 @@ func (s Store) syncItems(sprintID int64) []syncItem {
 
 func closed(status string) bool { return status == "done" || status == "dropped" }
 
-// triageItems keeps Do now covering the open PRs: a "Merge" step for each
-// PR on the board's Merge now list that no open step of the user's names,
-// and a "Pick a stage" step for each open PR with no subgoal while the
-// sprint has stages. Each is added once per PR. When the PR merges or
-// closes, or gets a stage, sync marks its own step done. board is nil when
+// triageItems keeps Do now in step with the PRs. It links each open user
+// step that says to merge one tracked PR to that PR, and closes each linked
+// step when its PR merges (done) or closes unmerged (dropped). It adds a
+// linked "Merge" step for each PR on the board's Merge now list that no open
+// user step names or merges, and a "Pick a stage" step for each open PR with
+// no subgoal while the sprint has stages. Each is added once per PR. A stage
+// step is done when its PR merges, closes, or gets a stage. board is nil when
 // this sync dropped its board.
 func triageItems(c *call, sprintID int64, board []*prReview, key map[string]string) {
 	s := c.store
 	items := s.syncItems(sprintID)
 	had := map[string]bool{} // kind + " " + url
-	auto := map[int64]bool{}
+	auto := map[int64]syncItem{}
 	for _, it := range items {
 		had[it.kind+" "+it.url] = true
-		auto[it.item] = true
+		auto[it.item] = it
 	}
-	setStatus := func(it syncItem, note string) {
-		cur := s.latestItem(sprintID, it.item)
-		cur.At, cur.Status, cur.Note = now(), "done", note
-		s.addItemEvent(sprintID, cur)
-		c.printf("item %d: done (%s)\n", cur.Item, note)
+	save := func(it Item) {
+		it.At = now()
+		s.addItemEvent(sprintID, it)
 	}
 	for _, it := range items {
-		if closed(it.status) {
+		if it.kind != "stage" || closed(it.status) {
 			continue
 		}
 		pr, ok := s.prLatest(sprintID, it.url)
+		cur := s.latestItem(sprintID, it.item)
 		switch {
 		case !ok:
+			continue
 		case pr.State == "merged" || pr.State == "closed":
-			setStatus(it, "PR "+pr.State)
-		case it.kind == "stage" && pr.Subgoal != "":
-			setStatus(it, "PR moved to "+pr.Subgoal)
+			cur.Note = "PR " + pr.State
+		case pr.Subgoal != "":
+			cur.Note = "PR moved to " + pr.Subgoal
+		default:
+			continue
+		}
+		cur.Status = "done"
+		save(cur)
+		c.printf("item %d: done (%s)\n", cur.Item, cur.Note)
+	}
+	tracked := s.trackedPRs(sprintID)
+	for _, i := range s.openItems(sprintID) {
+		if i.Owner != "user" || i.Merges != "" || auto[i.Item].kind == "stage" {
+			continue
+		}
+		url := mergedPR(i.Title, tracked)
+		if a, ok := auto[i.Item]; ok {
+			url = a.url // a merge step from before sync linked its steps
+		}
+		if url != "" {
+			i.Merges = url
+			save(i)
+			c.printf("item %d: merges #%d\n", i.Item, prNumber(url))
 		}
 	}
-	add := func(kind, url, title, subgoal string) {
+	for _, i := range s.openItems(sprintID) {
+		if i.Owner != "user" || i.Merges == "" {
+			continue
+		}
+		switch pr, _ := s.prLatest(sprintID, i.Merges); pr.State {
+		case "merged":
+			i.Status, i.Note = "done", "Merged "+time.Unix(pr.At, 0).In(sgt).Format("Mon 2 Jan 15:04 MST")+" (pr sync)"
+		case "closed":
+			i.Status, i.Note = "dropped", fmt.Sprintf("#%d closed without merging (pr sync)", prNumber(i.Merges))
+		default:
+			continue
+		}
+		save(i)
+		c.printf("item %d: %s: %s\n", i.Item, i.Status, i.Note)
+	}
+	add := func(kind, url, title, subgoal, merges string) {
 		item := s.int("SELECT COALESCE(MAX(item), 0) + 1 FROM item_events WHERE sprint_id = ?", sprintID)
 		s.addItemEvent(sprintID, Item{Item: item, At: now(), Title: title, Status: "planned", Owner: "user",
-			Position: s.positionAfter("item_state", sprintID, nil), Note: syncNote + kind + " " + url, Subgoal: subgoal})
+			Position: s.positionAfter("item_state", sprintID, nil), Note: syncNote + kind + " " + url, Subgoal: subgoal,
+			Merges: merges})
 		c.printf("item %d: %s\n", item, title)
 	}
 	var userItems []Item
 	for _, i := range s.openItems(sprintID) {
-		if i.Owner == "user" && !auto[i.Item] {
+		if _, ok := auto[i.Item]; i.Owner == "user" && !ok {
 			userItems = append(userItems, i)
 		}
 	}
@@ -200,22 +240,59 @@ func triageItems(c *call, sprintID int64, board []*prReview, key map[string]stri
 		named := false
 		re := mentionRE(p.URL, p.Number)
 		for _, i := range userItems {
-			named = named || re.MatchString(i.Title+" "+i.Note)
+			named = named || i.Merges == url || re.MatchString(i.Title+" "+i.Note)
 		}
 		pr, ok := s.prLatest(sprintID, url)
 		if named || !ok {
 			continue
 		}
-		add("merge", url, fmt.Sprintf("Merge #%d: %s", p.Number, pr.Title), pr.Subgoal)
+		add("merge", url, fmt.Sprintf("Merge #%d: %s", p.Number, pr.Title), pr.Subgoal, url)
 	}
 	if s.int("SELECT COUNT(*) FROM subgoal_state WHERE sprint_id = ? AND status != 'dropped'", sprintID) == 0 {
 		return
 	}
 	for _, pr := range s.unstagedPRs(sprintID) {
 		if !had["stage "+pr.URL] {
-			add("stage", pr.URL, fmt.Sprintf("Pick a stage for #%d: %s", prNumber(pr.URL), pr.Title), "")
+			add("stage", pr.URL, fmt.Sprintf("Pick a stage for #%d: %s", prNumber(pr.URL), pr.Title), "", "")
 		}
 	}
+}
+
+// trackedPR is a PR the sprint tracks, with the pattern for text that names it.
+type trackedPR struct {
+	url string
+	re  *regexp.Regexp
+}
+
+func (s Store) trackedPRs(sprintID int64) []trackedPR {
+	var out []trackedPR
+	for _, u := range s.strings("SELECT url FROM pr_state WHERE sprint_id = ? ORDER BY url", sprintID) {
+		out = append(out, trackedPR{u, mentionRE(u, prNumber(u))})
+	}
+	return out
+}
+
+var mergeWordRE = regexp.MustCompile(`(?i)\bmerge\b`)
+
+// mergedPR is the tracked PR a step's title says to merge: the only tracked
+// PR the title names after its last word "merge". So "After #12 merges:
+// merge #13" merges #13, and "Merge #13 after #12" or "Merge #12, #13 in
+// order" merges no single PR.
+func mergedPR(title string, prs []trackedPR) string {
+	at := mergeWordRE.FindAllStringIndex(title, -1)
+	if at == nil {
+		return ""
+	}
+	rest, found := title[at[len(at)-1][1]:], ""
+	for _, p := range prs {
+		if p.re.MatchString(rest) {
+			if found != "" {
+				return ""
+			}
+			found = p.url
+		}
+	}
+	return found
 }
 
 // unstagedPRs are the open PRs with no subgoal, in a sprint that has stages.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -189,16 +190,21 @@ func TestPRSyncKeepsDoNowCoveringPRs(t *testing.T) {
 	w.set(clean(2, "feat: not ready"))
 	contains_(t, h.ok("pr", "sync"), "Merge #2: feat: not ready")
 
+	// The Merge steps sync adds merge their PR.
+	eq(t, h.query("SELECT item, merges FROM item_state WHERE merges IS NOT NULL ORDER BY item"),
+		"(2, "+prURL(1)+") (4, "+prURL(2)+")")
+
 	// A merge, a close, and a stage close the steps sync added.
 	w.state(1, "MERGED")
 	w.state(2, "CLOSED")
 	h.ok("pr", "set", prURL(4), "--subgoal", "b")
 	out = h.ok("pr", "sync")
-	contains_(t, out, "done (PR merged)")
-	contains_(t, out, "done (PR closed)")
-	contains_(t, out, "done (PR moved to b)")
+	contains_(t, out, "item 2: done: Merged Wed 4 Nov 09:00 SGT (pr sync)")
+	contains_(t, out, "item 4: dropped: #2 closed without merging (pr sync)")
+	contains_(t, out, "item 3: done (PR moved to b)")
 	eq(t, doNow(), "(Land #3 after the deploy, a)")
-	eq(t, h.query("SELECT COUNT(*) FROM item_state WHERE status = 'done'"), "(3)")
+	eq(t, h.query("SELECT item, status FROM item_state WHERE item IN (2, 3, 4) ORDER BY item"),
+		"(2, done) (3, done) (4, dropped)")
 
 	// Steps the user closed stay closed, and none come back.
 	n = h.query("SELECT COUNT(*) FROM item_events")
@@ -228,4 +234,108 @@ func TestPickAStageNeedsStages(t *testing.T) {
 	h.ok("item", "set", "1", "dropped")
 	h.ok("pr", "sync")
 	eq(t, h.query("SELECT COUNT(*) FROM do_now"), "(0)")
+}
+
+func TestPRSyncLinksEachStepThatMergesOnePR(t *testing.T) {
+	h := newHarness(t)
+	w := newWorld(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	w.set(clean(1, "feat: one"))
+	w.set(waiting(2, "feat: two"))
+	w.set(waiting(3, "feat: three"))
+	w.set(clean(4, "fix: hotfix"))
+	h.ok("pr", "add", prURL(1), prURL(2), prURL(3), prURL(4))
+	steps := []struct{ title, want string }{
+		{"Merge #1 (feat: one; both bots 5/5)", prURL(1)},
+		{"After a code owner approves #2: merge #2 (ships off)", prURL(2)},
+		{"After #1 merges: merge #3", prURL(3)},
+		{"After #1 merges: ask James to pin the image", "-"},
+		{"Merge #1, #2, #3 in order, one at a time", "-"},
+		{"Merge #3 after #2", "-"},
+		{"Merge https://github.com/o/r/pull/2 once #99 lands", prURL(2)},
+		{"Apply the plan before merging #3", "-"},
+	}
+	for _, st := range steps {
+		h.ok("item", "add", st.title, "--owner", "user")
+	}
+	h.ok("item", "set", "1", "--note", "`gh pr merge 1`")
+	h.ok("item", "add", "Merge #1 (the agent's own check)")
+	h.ok("item", "add", "Merge #1 when the deploy ends", "--owner", "user", "--merges", "#3", "--note", "keep me")
+	h.ok("item", "add", "Land the hotfix", "--owner", "user", "--merges", "#4")
+	merges := func() string {
+		return h.query("SELECT item, COALESCE(merges, '-') FROM item_state ORDER BY item")
+	}
+
+	out := h.ok("pr", "sync")
+	var want []string
+	for k, st := range steps {
+		want = append(want, fmt.Sprintf("(%d, %s)", k+1, st.want))
+	}
+	eq(t, merges(), strings.Join(want, " ")+" (9, -) (10, "+prURL(3)+") (11, "+prURL(4)+")")
+	contains_(t, out, "item 3: merges #3\n")
+	// A link keeps the step's note.
+	eq(t, h.query("SELECT note FROM item_state WHERE item IN (1, 10) ORDER BY item"), "(`gh pr merge 1`) (keep me)")
+	// #1 and #4 are ready to merge, and steps 1 and 11 merge them: sync
+	// adds no Merge step.
+	if strings.Contains(out, "Merge #1:") || strings.Contains(out, "Merge #4:") {
+		t.Fatalf("added a second Merge step:\n%s", out)
+	}
+
+	n := h.query("SELECT COUNT(*) FROM item_events")
+	h.ok("pr", "sync")
+	eq(t, h.query("SELECT COUNT(*) FROM item_events"), n)
+}
+
+func TestPRSyncClosesALinkedStepOnceItsPRMergesOrCloses(t *testing.T) {
+	h := newHarness(t)
+	w := newWorld(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	for n := 1; n <= 3; n++ {
+		w.set(waiting(n, fmt.Sprintf("feat: %d", n)))
+		h.ok("pr", "add", prURL(n))
+	}
+	h.ok("item", "add", "Merge #1", "--owner", "user")
+	h.ok("item", "add", "Land the second one", "--owner", "user", "--merges", "#2", "--waits-on", "James")
+	h.ok("item", "add", "Merge #3", "--owner", "user")
+	h.ok("pr", "sync")
+	state := func() string {
+		return h.query("SELECT item, status, COALESCE(note, '-') FROM item_state ORDER BY item")
+	}
+	eq(t, state(), "(1, planned, -) (2, planned, -) (3, planned, -)")
+
+	w.state(1, "MERGED")
+	w.state(2, "CLOSED")
+	h.clock(2000)
+	out := h.ok("pr", "sync")
+	contains_(t, out, "item 1: done: Merged Wed 4 Nov 09:00 SGT (pr sync)\n")
+	contains_(t, out, "item 2: dropped: #2 closed without merging (pr sync)\n")
+	eq(t, state(), "(1, done, Merged Wed 4 Nov 09:00 SGT (pr sync)) "+
+		"(2, dropped, #2 closed without merging (pr sync)) (3, planned, -)")
+	eq(t, h.query("SELECT COUNT(*) FROM do_now"), "(1)")
+
+	n := h.query("SELECT COUNT(*) FROM item_events")
+	h.ok("pr", "sync")
+	eq(t, h.query("SELECT COUNT(*) FROM item_events"), n)
+
+	// A step that names a PR merged before the step was linked closes in the
+	// same sync.
+	h.ok("item", "add", "Merge #1 again", "--owner", "user")
+	out = h.ok("pr", "sync")
+	contains_(t, out, "item 4: merges #1\nitem 4: done: Merged")
+}
+
+func TestPRSyncLinksAMergeStepItAddedBeforeLinks(t *testing.T) {
+	h := newHarness(t)
+	w := newWorld(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	// The PR's title names another PR after the word "merge", so the title
+	// alone would not link the step.
+	w.set(clean(1, "fix: merge rules after #2"))
+	w.set(waiting(2, "feat: two"))
+	h.ok("pr", "add", prURL(1), prURL(2))
+	h.ok("item", "add", "Merge #1: fix: merge rules after #2", "--owner", "user",
+		"--note", syncNote+"merge "+prURL(1))
+	contains_(t, h.ok("pr", "sync"), "item 1: merges #1")
+	w.state(1, "MERGED")
+	contains_(t, h.ok("pr", "sync"), "item 1: done: Merged")
 }
