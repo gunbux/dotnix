@@ -58,6 +58,7 @@ events:
 - item <n> waits on: <person or outside event, in words> | <why>
 - item <n> waits on nothing: <why>
 - item <n> needs: <item n> | nothing
+- item <n> merges: <pr url or #N> | nothing
 - new item [owner user] [after <n>] [needs <n>] [waits on <who or what>]: <step, condition first> | note: `<command>`
 - pr opened: <url>
 - pr ready (Greptile 5/5): <url>
@@ -73,7 +74,7 @@ events:
 - thread: <what you work on now> | <working | waiting on X | done>
 ```
 
-Write facts, not commands. Give item numbers from `sprint show` when you know them. The dashboard thread picks the commands, the order, and the item numbers. Don't wait for a reply: it replies only when it can't apply an event.
+Write facts, not commands. Give item numbers from `sprint show` when you know them. Don't send `item <n> done` for a step that merges a PR: `sprint pr sync` closes it when the PR merges (see "Merge steps follow GitHub"). The dashboard thread picks the commands, the order, and the item numbers. Don't wait for a reply: it replies only when it can't apply an event.
 
 ### Run the dashboard thread
 
@@ -90,7 +91,7 @@ For each `sprint-update` message:
 2. Keep Do now in the order Chun must act. When a new user step changes the order, move it with `sprint item set <n> --first` or `--after <n>`. Follow "Shared rules" for each user step.
 3. For each `wait`, start or replace its poller with `sprint poll`, and pick a key from the title. For each `wait over`, run `sprint poll stop <key>` and `sprint live done <key>`.
 4. For each `finding`, update that context section when the finding changes its facts.
-5. After a PR event, run `sprint pr sync`.
+5. After a PR event, run `sprint pr sync`. Don't mark a merge step done or dropped by hand: sync does it from GitHub.
 6. Update the "Threads" section.
 7. When you change the layout or add a kind of section, run `sprint dash check`.
 8. End the turn with one line that says what changed.
@@ -161,8 +162,9 @@ Record what a user step waits for, not only in its title, so Do now shows only t
 | --- | --- |
 | A person or an outside event: James, a code owner's approval, a reviewer, the next staging release | `--waits-on "<who or what, in words>"`, such as `--waits-on "a code owner's approval on #18620"` |
 | An earlier step is done or dropped | `--needs <item number>` |
+| GitHub lets its PR merge (the PR board puts it in Merge now) | `--merges <pr url or #N>`; `pr sync` sets it for "merge #N" titles |
 
-`sprint item set` keeps both until you clear them with `--waits-on -` or `--needs -`. Clear `--waits-on` when the person acts. `--needs` clears itself in effect: the step is ready once the needed item is done or dropped. `--needs` must name an item of the sprint and must not make a loop. Use `--waits-on` instead of the old `blocked` status; a step still marked `blocked` counts as waiting, with its reason in its note.
+`sprint item set` keeps all three until you clear them with `--waits-on -`, `--needs -`, or `--merges -`. Clear `--waits-on` when the person acts. `--needs` clears itself in effect: the step is ready once the needed item is done or dropped. `--needs` must name an item of the sprint and must not make a loop. Use `--waits-on` instead of the old `blocked` status; a step still marked `blocked` counts as waiting, with its reason in its note.
 
 The `do_now` view gives each open user step a state, and `sprint show` prints it:
 
@@ -171,6 +173,9 @@ The `do_now` view gives each open user step a state, and `sprint show` prints it
 | `ready` | Nothing below applies | A numbered card in Do now, and the Timeline when it is part of a chain |
 | `waiting` | `waits_on` is set, or the status is `blocked` | The Timeline, orange, with what it waits on and since when: `[waiting on James]` |
 | `later` | `needs` names an item that is not done or dropped | The Timeline, dashed, after the step it needs: `[after #260]` |
+| `waiting` | The step merges a PR, and the PR board does not put the PR in Merge now | The Timeline, orange, with the board's reasons and a link to the PR: `[waiting: GitHub: Needs an approval]` |
+
+The rows apply in this order: a person or event the step waits on, then `needs`, then GitHub. A merge step whose PR has no board row yet is `ready`.
 
 Do now ranks ready steps first, then waiting, then later, and a step keeps its number in every view. Under its cards, Do now counts the steps that wait on others or come later. The Timeline panel draws each chain of `needs` links as one track, left to right: the last two done steps with their done times, then the open steps. A lone waiting step is a track of its own.
 
@@ -197,11 +202,12 @@ A work thread sends the event in the left column. The dashboard thread runs the 
 | Work on an item starts or ends | `sprint item set <n> doing\|done\|dropped --note "<why>"` |
 | A step starts or stops waiting on someone | `sprint item set <n> --waits-on "<who or what>"`, or `--waits-on -` |
 | A step can start only after another | `sprint item set <n> --needs <item>`, or `--needs -` |
-| New work appears | `sprint item add "<title>" [--owner user] [--after <n>] [--needs <n>] [--waits-on "<who or what>"]` |
+| A step merges a PR that sync did not link | `sprint item set <n> --merges <pr url or #N>`, or `--merges -` |
+| New work appears | `sprint item add "<title>" [--owner user] [--after <n>] [--needs <n>] [--waits-on "<who or what>"] [--merges <pr url or #N>]` |
 | You open a PR | `sprint pr add <url>` |
 | A PR belongs to another stage, or has none | `sprint pr set <url> --subgoal <key>` (`-` for the whole sprint) |
 | A PR passes the review gate (Greptile 5/5) | `sprint pr ready <url>` |
-| A PR merges or closes | `sprint pr sync` |
+| A PR merges or closes | `sprint pr sync`; it closes the steps that merge the PR |
 | A benchmark run finishes | `sprint bench <suite> <metric> <value> <unit> [--baseline] [--commit <sha>] [--link <run>]` |
 | A decision, deploy, or note | `sprint log decision\|deploy\|note "<what>" [--link <url>]` |
 | You learn something a reader needs | `sprint context set <key> [--subgoal <key>] --file -` (see below) |
@@ -248,7 +254,17 @@ The PR board comes from the log: `sprint pr sync` records each PR's review state
 
 - It lists your open PRs in each GitHub repository the sprint already tracks a PR in, and adds each one new to the log with no stage. It skips a PR that another open sprint tracks, and a PR whose head branch, title, or URL matches one of the sprint's ignore patterns (`sprint pr ignore '<regexp>'`; `--rm` removes one; no argument lists them).
 - While the sprint has stages, a PR with no stage shows "Needs a stage" on the PR board and in `sprint show`. Give it one with `sprint pr set <url> --subgoal <key>`.
-- It adds your steps to Do now: "Merge #N: <title>" on the PR's stage when the board puts the PR in Merge now and no open step of yours names `#N`, and "Pick a stage for #N: <title>" for a PR with no stage. It adds each step once per PR. When the PR merges or closes, or gets a stage, it marks its own step done. Its steps carry the note "Added by sprint pr sync: ...". Drop a step you don't want; sync does not add it again.
+- It adds your steps to Do now: "Merge #N: <title>" on the PR's stage when the board puts the PR in Merge now and no open step of yours names `#N` or merges it, and "Pick a stage for #N: <title>" for a PR with no stage. It adds each step once per PR. It marks a "Pick a stage" step done when the PR merges, closes, or gets a stage. Its steps carry the note "Added by sprint pr sync: ...". Drop a step you don't want; sync does not add it again.
+
+### Merge steps follow GitHub
+
+A user step that merges a PR records the PR in `merges`. Each `sprint pr sync` keeps these steps in step with GitHub, so Do now and the Timeline never show a merged PR as a step:
+
+- It links each open step of yours that has no `merges` and says to merge one tracked PR: the title names exactly one tracked PR after its last word "merge". "Merge #18624 (pins the AMI)" and "After #18620 merges: merge #18621" link. "Merge #18132, #18139 in order" and "Merge #18479 after #18232" name two PRs and stay unlinked: set `--merges` by hand if one of them is the step's PR. The link keeps the step's note. The "Merge #N" steps sync adds are linked when it adds them.
+- When the PR merges, it marks the step done with the note "Merged <time> SGT (pr sync)". When the PR closes without a merge, it drops the step with the note "#N closed without merging (pr sync)". It writes each change once. To keep a step open after its PR merges, clear its link with `--merges -`.
+- While the board does not put the PR in Merge now, the step is `waiting`, and the Timeline and `sprint show` say why: "GitHub: 1 check still running; Needs an approval".
+
+The PR board poller runs `sprint pr sync` every 3 minutes, so a merge shows in Do now within about 3 minutes. There is no GitHub webhook: a laptop has no public address that GitHub can call, and the poller already reads GitHub.
 
 ### Change the dashboard
 
