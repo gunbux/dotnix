@@ -37,16 +37,21 @@ const after = (s) => {
   return n && n.rank != null ? `step ${n.rank}` : `#${s.needs}`;
 };
 const needsOpen = (s) => s.needs != null && (!byItem.has(Number(s.needs)) || byItem.get(Number(s.needs)).state !== 'done');
-// Why the step can't be done yet, then when and after what.
+// The PR a merge step merges, as a link.
+const prRef = (s) => (s.merges ? prLink(s.merges, `#${s.pr}`) : '');
+const line = (...parts) => `<div class="tl-m">${parts.filter(Boolean).join(' · ')}</div>`;
+// Why the step can't be done yet, then when and after what. A merge step
+// waits on GitHub while the PR board does not put its PR in Merge now.
 const meta = (s) => {
   switch (s.state) {
-    case 'done': return `<div class="tl-m">done ${sgt(s.at)}</div>`;
-    case 'ready': return '<div class="tl-m"><b>now</b> · in Do now</div>';
-    case 'later': return `<div class="tl-m">after ${after(s)}</div>`;
+    case 'done': return line(`done ${sgt(s.at)}`, prRef(s));
+    case 'ready': return line('<b>now</b>', 'in Do now', prRef(s));
+    case 'later': return line(`after ${after(s)}`, prRef(s));
   }
-  const why = s.waits_on ? `waiting on ${inl(s.waits_on)}` : s.note ? `blocked: ${inl(s.note)}` : 'blocked';
-  const when = [s.at != null && `since ${ago(s.at)}`, needsOpen(s) && `after ${after(s)}`].filter(Boolean).join(' · ');
-  return `<div class="tl-m tl-why">${why}</div>` + (when ? `<div class="tl-m">${when}</div>` : '');
+  const why = s.waits_on ? `waiting on ${inl(s.waits_on)}` : s.gate ? `GitHub: ${inl(s.gate)}`
+    : s.note ? `blocked: ${inl(s.note)}` : 'blocked';
+  const when = [s.at != null && `since ${ago(s.at)}`, needsOpen(s) && `after ${after(s)}`, prRef(s)];
+  return `<div class="tl-m tl-why">${why}</div>` + (when.some(Boolean) ? line(...when) : '');
 };
 const node = (s) => `<li class="tl-n tl-${esc(s.state)}"><div class="tl-rail"><span class="tl-dot">`
   + `${s.state === 'done' ? '✓' : esc(s.rank)}</span></div>`
@@ -62,7 +67,7 @@ const track = (c) => {
 };
 const key = (cls, text) => `<span><span class="sw tl-sw-${cls}"></span>${text}</span>`;
 render('<div class="sh"><h2>Timeline</h2><div class="legend">'
-  + key('ready', 'now') + key('waiting', 'waiting on someone') + key('later', 'after an earlier step') + key('done', 'done')
+  + key('ready', 'now') + key('waiting', 'waiting on someone or GitHub') + key('later', 'after an earlier step') + key('done', 'done')
   + '</div></div>'
   + (chains.length ? '<div class="tl">' + chains.map(track).join('') + '</div>'
     : '<p class="mut">No step of yours waits on someone or on an earlier step.</p>'));

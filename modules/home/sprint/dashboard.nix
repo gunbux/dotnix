@@ -382,7 +382,7 @@ in {
     # out because the user can't act on them yet. Same scope as Do now.
     (pagePanel 46 "timeline" (pos 0 28 24 24) [
       ''
-        SELECT item, title, stage, waits_on, needs, note, state, rank, at
+        SELECT item, title, stage, waits_on, needs, note, state, rank, at, merges, pr, gate
         FROM timeline
         WHERE sprint_id = ${sid} AND (subgoal IS NULL OR ${inScope "subgoal"})
         ORDER BY item''
