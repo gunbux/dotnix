@@ -33,6 +33,7 @@
 .sp .todo { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 10px 12px; margin: 0 0 8px;
   border-radius: 8px; background: var(--card); border-left: 3px solid transparent; }
 .sp .todo.next { border-left-color: var(--you); }
+.sp .todo > div:last-child { min-width: 0; overflow-wrap: anywhere; }
 .sp .num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
   font-size: 12px; font-weight: 600; background: var(--bd); }
 .sp .todo.next .num { background: var(--you); color: #fff; }
