@@ -609,6 +609,8 @@ type summaryItem struct {
 	// (ready, waiting, or later; see the do_now view).
 	Rank  int64  `json:"rank,omitempty"`
 	State string `json:"state,omitempty"`
+	// Why GitHub blocks the PR a waiting step merges, from the PR board.
+	Gate any `json:"gate,omitempty"`
 }
 
 // stateText says why a Do now step can't be done now, or gives its status.
@@ -616,6 +618,8 @@ func (i summaryItem) stateText() string {
 	switch {
 	case i.State == "waiting" && i.WaitsOn != nil:
 		return fmt.Sprintf("waiting on %s", i.WaitsOn)
+	case i.State == "waiting" && i.Gate != nil:
+		return fmt.Sprintf("waiting: GitHub: %s", i.Gate)
 	case i.State == "later":
 		return fmt.Sprintf("after #%d", i.Needs)
 	}
@@ -687,13 +691,15 @@ func makeSummary(s Store, sp Sprint) summary {
 			Subgoal: orNil(i.Subgoal), WaitsOn: orNil(i.WaitsOn), Needs: orZero(i.Needs), Merges: orNil(i.Merges)})
 	})
 	s.each("SELECT item, title, status, owner, COALESCE(subgoal, ''), COALESCE(waits_on, ''), COALESCE(needs, 0), "+
-		"rank, state FROM do_now WHERE sprint_id = ? ORDER BY rank",
+		"COALESCE(merges, ''), rank, state, COALESCE(gate, '') FROM do_now WHERE sprint_id = ? ORDER BY rank",
 		[]any{sp.ID}, func(r *sql.Rows) {
 			var si summaryItem
-			var subgoal, waitsOn string
+			var subgoal, waitsOn, merges, gate string
 			var needs int64
-			check(r.Scan(&si.Item, &si.Title, &si.Status, &si.Owner, &subgoal, &waitsOn, &needs, &si.Rank, &si.State))
-			si.Subgoal, si.WaitsOn, si.Needs = orNil(subgoal), orNil(waitsOn), orZero(needs)
+			check(r.Scan(&si.Item, &si.Title, &si.Status, &si.Owner, &subgoal, &waitsOn, &needs, &merges, &si.Rank,
+				&si.State, &gate))
+			si.Subgoal, si.WaitsOn, si.Needs, si.Merges, si.Gate = orNil(subgoal), orNil(waitsOn), orZero(needs),
+				orNil(merges), orNil(gate)
 			out.DoNow = append(out.DoNow, si)
 		})
 	s.each("SELECT "+prCols+" FROM pr_state WHERE sprint_id = ? ORDER BY at", []any{sp.ID}, func(r *sql.Rows) {

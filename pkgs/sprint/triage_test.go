@@ -339,3 +339,59 @@ func TestPRSyncLinksAMergeStepItAddedBeforeLinks(t *testing.T) {
 	w.state(1, "MERGED")
 	contains_(t, h.ok("pr", "sync"), "item 1: done: Merged")
 }
+
+func TestAMergeStepWaitsWhileGitHubBlocksTheMerge(t *testing.T) {
+	h := newHarness(t)
+	w := newWorld(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	blocked := withChecks(clean(1, "feat: one"), checkNode{Typename: "StatusContext", Context: "ci", State: "PENDING"})
+	blocked.ReviewDecision = "REVIEW_REQUIRED"
+	w.set(blocked)
+	w.set(clean(2, "feat: two"))
+	h.ok("pr", "add", prURL(1), prURL(2))
+	h.ok("item", "add", "ask James to review", "--owner", "user")
+	h.ok("item", "add", "Merge #1", "--owner", "user")
+	h.ok("item", "add", "Land #2", "--owner", "user", "--merges", "#2")
+	h.ok("item", "add", "Land #1 when James is back", "--owner", "user", "--merges", "#1", "--waits-on", "James")
+	h.ok("item", "add", "Land #1 after the review", "--owner", "user", "--merges", "#1", "--needs", "1")
+	doNow := func() string {
+		return h.query("SELECT rank, item, state, COALESCE(pr, '-'), COALESCE(gate, '-'), COALESCE(since, '-') " +
+			"FROM do_now ORDER BY rank")
+	}
+	// No board row yet: a merge step is ready.
+	eq(t, h.query("SELECT item, state, COALESCE(pr, '-') FROM do_now WHERE item IN (2, 3) ORDER BY item"),
+		"(2, ready, -) (3, ready, 2)")
+
+	h.clock(2000)
+	h.ok("pr", "sync")
+	gate := "1 check still running; Needs an approval"
+	eq(t, doNow(), "(1, 1, ready, -, -, -) (2, 3, ready, 2, -, -) "+
+		"(3, 2, waiting, 1, "+gate+", 2000) (4, 4, waiting, 1, -, 1000) (5, 5, later, 1, -, -)")
+	out := h.ok("show")
+	contains_(t, out, "  3. Merge #1 [waiting: GitHub: "+gate+"]\n")
+	contains_(t, out, "  4. Land #1 when James is back [waiting on James]\n")
+	contains_(t, out, "  5. Land #1 after the review [after #1]\n")
+	eq(t, h.show().DoNow[2].Gate, any(gate))
+	eq(t, h.query("SELECT item, state, merges, pr, gate, at FROM timeline WHERE item = 2"),
+		"(2, waiting, "+prURL(1)+", 1, "+gate+", 2000)")
+
+	// Still blocked, for another reason: it has waited since the first.
+	w.set(withChecks(blocked))
+	h.clock(3000)
+	h.ok("pr", "sync")
+	eq(t, h.query("SELECT gate, since FROM do_now WHERE item = 2"), "(Needs an approval, 2000)")
+
+	// Merge now, then blocked again: it waits from then.
+	w.set(clean(1, "feat: one"))
+	h.clock(4000)
+	h.ok("pr", "sync")
+	eq(t, h.query("SELECT state, gate, since FROM do_now WHERE item = 2"), "(ready, <nil>, <nil>)")
+	w.set(blocked)
+	h.clock(5000)
+	h.ok("pr", "sync")
+	eq(t, h.query("SELECT state, since FROM do_now WHERE item = 2"), "(waiting, 5000)")
+
+	// The needed step done, the GitHub gate decides.
+	h.ok("item", "set", "1", "done")
+	eq(t, h.query("SELECT state, gate FROM do_now WHERE item = 5"), "(waiting, "+gate+")")
+}

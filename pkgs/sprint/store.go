@@ -270,9 +270,12 @@ CREATE VIEW subgoal_progress AS
   GROUP BY g.sprint_id, g.key`, `
 -- The user's open steps, in one order for the whole sprint. state says
 -- whether the user can act now:
---   waiting  waits_on is set, or the legacy status blocked (why in its note)
+--   waiting  waits_on is set, or the legacy status blocked (why in its note);
+--            or the step merges a PR that the PR board does not put in
+--            Merge now (gate says why, from the board's steps)
 --   later    needs an item that is not done or dropped yet
---   ready    otherwise
+--   ready    otherwise, also for a merge step whose PR has no board row yet
+-- A person the step waits on comes before needs, and needs before GitHub.
 -- Ready steps come first, then waiting, then later, so a fold hides the
 -- steps the user can't act on first (6 Nov: a ready step sank to step 10
 -- behind blocked ones). Within each part: steps without a subgoal first,
@@ -280,18 +283,29 @@ CREATE VIEW subgoal_progress AS
 -- (active, then planned, then done, then by position), then by item
 -- position. A subgoal's view filters this list and keeps rank, so a step has
 -- the same number in every view. since is when a waiting step started to
--- wait on what it waits on now.
+-- wait on what it waits on now; for GitHub, when the board last took the PR
+-- out of Merge now. pr is the number of the PR the step merges.
 CREATE VIEW do_now AS
   WITH open AS (
     SELECT i.*,
-           CASE WHEN i.waits_on IS NOT NULL OR i.status = 'blocked' THEN 'waiting'
+           CASE WHEN i.waits_on IS NOT NULL OR i.status = 'blocked' THEN 'person'
                 WHEN n.status NOT IN ('done', 'dropped') THEN 'later'
-                ELSE 'ready' END AS state
+                WHEN r.grp != 'merge' THEN 'github'
+                ELSE 'ready' END AS cause,
+           r.steps AS board_steps
     FROM item_state i
     LEFT JOIN item_state n ON n.sprint_id = i.sprint_id AND n.item = i.needs
+    LEFT JOIN pr_review_state r ON r.sprint_id = i.sprint_id AND r.url = i.merges
     WHERE i.owner = 'user' AND i.status NOT IN ('done', 'dropped')
+  ),
+  steps AS (
+    SELECT o.*, CASE WHEN o.cause IN ('person', 'github') THEN 'waiting' ELSE o.cause END AS state,
+           CASE WHEN o.cause = 'github' THEN
+             (SELECT group_concat(value, '; ') FROM json_each(o.board_steps)) END AS gate
+    FROM open o
   )
   SELECT o.sprint_id, o.item, o.title, o.status, o.owner, o.note, o.subgoal, o.waits_on, o.needs, o.state,
+         o.merges, CAST(replace(o.merges, rtrim(o.merges, '0123456789'), '') AS INTEGER) AS pr, o.gate,
          COALESCE(g.title, '') AS stage,
          ROW_NUMBER() OVER (PARTITION BY o.sprint_id ORDER BY
            CASE o.state WHEN 'ready' THEN 0 WHEN 'waiting' THEN 1 ELSE 2 END,
@@ -299,25 +313,32 @@ CREATE VIEW do_now AS
            CASE g.status WHEN 'active' THEN 0 WHEN 'done' THEN 2 ELSE 1 END,
            g.position, o.position, o.item) AS rank,
          COUNT(*) OVER (PARTITION BY o.sprint_id) AS total,
-         CASE WHEN o.state = 'waiting' THEN
-           (SELECT MIN(e.at) FROM item_events e
-            WHERE e.sprint_id = o.sprint_id AND e.item = o.item
-              AND e.id > COALESCE((SELECT MAX(e2.id) FROM item_events e2
-                                   WHERE e2.sprint_id = o.sprint_id AND e2.item = o.item
-                                     AND NOT (e2.waits_on IS o.waits_on
-                                              AND (e2.status = 'blocked') = (o.status = 'blocked'))), 0))
+         CASE o.cause
+           WHEN 'person' THEN
+             (SELECT MIN(e.at) FROM item_events e
+              WHERE e.sprint_id = o.sprint_id AND e.item = o.item
+                AND e.id > COALESCE((SELECT MAX(e2.id) FROM item_events e2
+                                     WHERE e2.sprint_id = o.sprint_id AND e2.item = o.item
+                                       AND NOT (e2.waits_on IS o.waits_on
+                                                AND (e2.status = 'blocked') = (o.status = 'blocked'))), 0))
+           WHEN 'github' THEN
+             (SELECT MIN(r.at) FROM pr_reviews r
+              WHERE r.sprint_id = o.sprint_id AND r.url = o.merges
+                AND r.id > COALESCE((SELECT MAX(r2.id) FROM pr_reviews r2
+                                     WHERE r2.sprint_id = o.sprint_id AND r2.url = o.merges
+                                       AND r2.grp = 'merge'), 0))
          END AS since
-  FROM open o
+  FROM steps o
   LEFT JOIN subgoal_state g ON g.sprint_id = o.sprint_id AND g.key = o.subgoal`, `
 -- The user's steps the Timeline panel draws as chains of needs links: every
 -- open step from do_now, and each done step that a needs link touches. at is
 -- when a done step was done, and when a waiting step started to wait.
 CREATE VIEW timeline AS
-  SELECT sprint_id, item, title, subgoal, stage, waits_on, needs, note, state, rank, since AS at
+  SELECT sprint_id, item, title, subgoal, stage, waits_on, needs, note, state, rank, since AS at, merges, pr, gate
   FROM do_now
   UNION ALL
   SELECT i.sprint_id, i.item, i.title, i.subgoal, COALESCE(g.title, ''), i.waits_on, i.needs, i.note,
-         'done', NULL, i.at
+         'done', NULL, i.at, i.merges, CAST(replace(i.merges, rtrim(i.merges, '0123456789'), '') AS INTEGER), NULL
   FROM item_state i
   LEFT JOIN subgoal_state g ON g.sprint_id = i.sprint_id AND g.key = i.subgoal
   WHERE i.owner = 'user' AND i.status = 'done'
