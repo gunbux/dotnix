@@ -314,8 +314,8 @@ func TestAddedColumnsAreAddedToAnOldLog(t *testing.T) {
 	db.Exec("PRAGMA user_version = 2")
 	db.Close()
 	h.ok("item", "add", "b")
-	eq(t, h.query("SELECT title, subgoal, waits_on, needs FROM item_state ORDER BY item"),
-		"(a, <nil>, <nil>, <nil>) (b, <nil>, <nil>, <nil>)")
+	eq(t, h.query("SELECT title, subgoal, waits_on, needs, merges FROM item_state ORDER BY item"),
+		"(a, <nil>, <nil>, <nil>, <nil>) (b, <nil>, <nil>, <nil>, <nil>)")
 	h.ok("item", "set", "2", "--needs", "1", "--waits-on", "James")
 	eq(t, h.query("SELECT waits_on, needs FROM item_state WHERE item = 2"), "(James, 1)")
 }
@@ -715,6 +715,39 @@ func TestItemSetKeepsWaitsOnAndNeedsUntilCleared(t *testing.T) {
 	eq(t, state(), "(merge #7, doing, <nil>, 1)")
 	h.ok("item", "set", "2", "--needs", "-", "--waits-on", "James")
 	eq(t, state(), "(merge #7, doing, James, <nil>)")
+}
+
+func TestMergesNamesATrackedPRAndCarriesForward(t *testing.T) {
+	h := newHarness(t)
+	w := newWorld(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	other := waiting(5, "elsewhere")
+	other.URL = "https://github.com/o/other/pull/5"
+	for _, p := range []prStatus{waiting(1, "one"), waiting(2, "two"), waiting(5, "five"), other} {
+		w.set(p)
+		h.ok("pr", "add", p.URL)
+	}
+	merges := func() string { return h.query("SELECT COALESCE(merges, '-') FROM item_state WHERE item = 1") }
+
+	h.ok("item", "add", "land the first one", "--owner", "user", "--merges", "#1")
+	eq(t, merges(), "("+prURL(1)+")")
+	eq(t, h.show().Items[0].Merges, any(prURL(1)))
+	// Other edits keep it.
+	h.ok("item", "set", "1", "doing", "--title", "land it", "--note", "after lunch")
+	eq(t, merges(), "("+prURL(1)+")")
+	h.ok("item", "set", "1", "--merges", prURL(2))
+	eq(t, merges(), "("+prURL(2)+")")
+	h.ok("item", "set", "1", "--merges", other.URL)
+	eq(t, merges(), "("+other.URL+")")
+	h.ok("item", "set", "1", "--merges", "-")
+	eq(t, merges(), "(-)")
+
+	n := h.query("SELECT COUNT(*) FROM item_events")
+	contains_(t, h.fails("item", "set", "1", "--merges", "#9"), "tracks no PR #9")
+	contains_(t, h.fails("item", "set", "1", "--merges", "#5"), "several PRs #5")
+	contains_(t, h.fails("item", "set", "1", "--merges", prURL(9)), "does not track "+prURL(9))
+	contains_(t, h.fails("item", "add", "x", "--merges", "1"), "does not track 1")
+	eq(t, h.query("SELECT COUNT(*) FROM item_events"), n)
 }
 
 func TestNeedsMustNameAnEarlierStepOfTheSprint(t *testing.T) {

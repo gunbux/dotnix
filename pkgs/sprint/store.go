@@ -13,7 +13,7 @@ import (
 )
 
 // SchemaVersion is stored in PRAGMA user_version. A bump recreates the views.
-const SchemaVersion = 10
+const SchemaVersion = 11
 
 const tablesSQL = `
 CREATE TABLE IF NOT EXISTS sprints (
@@ -44,7 +44,9 @@ CREATE TABLE IF NOT EXISTS item_events (
   -- A person or outside event the step waits on, in words.
   waits_on TEXT,
   -- The item that must be done or dropped before this step.
-  needs INTEGER
+  needs INTEGER,
+  -- The URL of the tracked PR this step merges.
+  merges TEXT
 );
 CREATE TABLE IF NOT EXISTS pr_events (
   id INTEGER PRIMARY KEY,
@@ -174,10 +176,11 @@ CREATE INDEX IF NOT EXISTS context_versions_latest ON context_versions (sprint_i
 
 // Columns added after the first release: table, column, type. ADD COLUMN is
 // not an UPDATE, so the append-only triggers allow it, and old rows read as
-// NULL (no subgoal, waits on nothing, needs nothing).
+// NULL (no subgoal, waits on nothing, needs nothing, merges no PR).
 var addedColumns = [][3]string{
 	{"item_events", "subgoal", "TEXT"}, {"pr_events", "subgoal", "TEXT"}, {"bench_results", "subgoal", "TEXT"},
 	{"log", "subgoal", "TEXT"}, {"item_events", "waits_on", "TEXT"}, {"item_events", "needs", "INTEGER"},
+	{"item_events", "merges", "TEXT"},
 }
 
 var tables = []string{"sprints", "goal_versions", "item_events", "pr_events", "bench_results", "log",

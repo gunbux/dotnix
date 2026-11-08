@@ -22,6 +22,7 @@ var (
 	subgoalHelp = "subgoal key; default $SPRINT_SUBGOAL or the only active subgoal; - for the whole sprint"
 	waitsOnHelp = "the person or outside event the step waits on, in words, such as \"James\""
 	needsHelp   = "the item number that must be done or dropped first"
+	mergesHelp  = "the tracked PR the step merges: its URL, or #N; pr sync closes the step when the PR merges or closes"
 )
 
 var commands []command
@@ -70,7 +71,8 @@ func init() {
 				"note":     {help: "why"},
 				"subgoal":  {help: subgoalHelp},
 				"waits-on": {help: waitsOnHelp},
-				"needs":    {help: needsHelp}}},
+				"needs":    {help: needsHelp},
+				"merges":   {help: mergesHelp}}},
 		{path: "item set", help: "change an item's status, owner, title, or subgoal", run: cmdItemSet,
 			args: []argDef{{name: "item"}, {name: "status", opt: true, choices: itemStates}},
 			flags: map[string]flagDef{
@@ -81,7 +83,8 @@ func init() {
 				"after":    {help: "move the item after this item number"},
 				"first":    {isBool: true, help: "move the item before every other item"},
 				"waits-on": {help: waitsOnHelp + "; - clears it"},
-				"needs":    {help: needsHelp + "; - clears it"}}},
+				"needs":    {help: needsHelp + "; - clears it"},
+				"merges":   {help: mergesHelp + "; - clears it"}}},
 		{path: "pr add", help: "track PRs; records their GitHub history", run: cmdPRAdd, prefetch: fetchPRAdd,
 			args:  []argDef{{name: "url", many: true}},
 			flags: map[string]flagDef{"subgoal": {help: subgoalHelp + " (new PRs only)"}}},
@@ -323,6 +326,7 @@ func cmdItemAdd(c *call) {
 	}
 	it.WaitsOn = waitsOn(c, "")
 	it.Needs = s.needs(c, sp.ID, item, 0)
+	it.Merges = s.merges(c, sp.ID, "")
 	s.addItemEvent(sp.ID, it)
 	c.printf("%d\n", item)
 }
@@ -361,6 +365,38 @@ func (s Store) needs(c *call, sprintID, item, cur int64) int64 {
 	return n
 }
 
+// merges is --merges, or cur when it is not given. "-" clears it. It takes
+// the URL of a PR the sprint tracks, or #N for the one tracked PR numbered N.
+func (s Store) merges(c *call, sprintID int64, cur string) string {
+	if !c.has("merges") {
+		return cur
+	}
+	v := c.flag("merges")
+	if v == "-" {
+		return ""
+	}
+	urls := s.strings("SELECT url FROM pr_state WHERE sprint_id = ? ORDER BY url", sprintID)
+	if n, err := strconv.Atoi(strings.TrimPrefix(v, "#")); err == nil && strings.HasPrefix(v, "#") {
+		var hits []string
+		for _, u := range urls {
+			if prNumber(u) == n {
+				hits = append(hits, u)
+			}
+		}
+		switch len(hits) {
+		case 0:
+			fail("--merges: this sprint tracks no PR #%d; run `sprint pr add` first", n)
+		case 1:
+			return hits[0]
+		}
+		fail("--merges: this sprint tracks several PRs #%d (%s); pass the URL", n, strings.Join(hits, ", "))
+	}
+	if !contains(urls, v) {
+		fail("--merges: this sprint does not track %s; pass #N or the URL of a PR `sprint pr add` added", v)
+	}
+	return v
+}
+
 func cmdItemSet(c *call) {
 	s := c.store
 	sp := s.resolve(c.flag("sprint"))
@@ -380,6 +416,7 @@ func cmdItemSet(c *call) {
 	}
 	it.WaitsOn = waitsOn(c, it.WaitsOn)
 	it.Needs = s.needs(c, sp.ID, it.Item, it.Needs)
+	it.Merges = s.merges(c, sp.ID, it.Merges)
 	switch {
 	case c.has("first") && c.has("after"):
 		fail("pass --first or --after, not both")
@@ -567,6 +604,7 @@ type summaryItem struct {
 	Subgoal any    `json:"subgoal"`
 	WaitsOn any    `json:"waits_on"`
 	Needs   any    `json:"needs"`
+	Merges  any    `json:"merges"`
 	// Do now only: the step's number and whether the user can act now
 	// (ready, waiting, or later; see the do_now view).
 	Rank  int64  `json:"rank,omitempty"`
@@ -646,7 +684,7 @@ func makeSummary(s Store, sp Sprint) summary {
 	s.each("SELECT "+itemCols+" FROM item_state WHERE sprint_id = ? ORDER BY position", []any{sp.ID}, func(r *sql.Rows) {
 		i := scanItem(r)
 		out.Items = append(out.Items, summaryItem{Item: i.Item, Title: i.Title, Status: i.Status, Owner: i.Owner,
-			Subgoal: orNil(i.Subgoal), WaitsOn: orNil(i.WaitsOn), Needs: orZero(i.Needs)})
+			Subgoal: orNil(i.Subgoal), WaitsOn: orNil(i.WaitsOn), Needs: orZero(i.Needs), Merges: orNil(i.Merges)})
 	})
 	s.each("SELECT item, title, status, owner, COALESCE(subgoal, ''), COALESCE(waits_on, ''), COALESCE(needs, 0), "+
 		"rank, state FROM do_now WHERE sprint_id = ? ORDER BY rank",

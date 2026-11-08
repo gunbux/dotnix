@@ -94,17 +94,18 @@ type Item struct {
 	Note, Subgoal        string
 	WaitsOn              string // "" when it waits on no one
 	Needs                int64  // 0 when it needs no earlier item
+	Merges               string // the URL of the tracked PR the step merges; "" for none
 	// Step is the item's number in Do now (the do_now view's rank), or 0
 	// when it is not an open user step. Only the PR board sets it.
 	Step int
 }
 
 const itemCols = "item, at, title, status, owner, position, COALESCE(note, ''), COALESCE(subgoal, ''), " +
-	"COALESCE(waits_on, ''), COALESCE(needs, 0)"
+	"COALESCE(waits_on, ''), COALESCE(needs, 0), COALESCE(merges, '')"
 
 func scanItem(r interface{ Scan(...any) error }) Item {
 	var i Item
-	check(r.Scan(&i.Item, &i.At, &i.Title, &i.Status, &i.Owner, &i.Position, &i.Note, &i.Subgoal, &i.WaitsOn, &i.Needs))
+	check(r.Scan(&i.Item, &i.At, &i.Title, &i.Status, &i.Owner, &i.Position, &i.Note, &i.Subgoal, &i.WaitsOn, &i.Needs, &i.Merges))
 	return i
 }
 
@@ -114,10 +115,10 @@ func (s Store) addItemEvent(sprintID int64, it Item) {
 	if it.Needs != 0 {
 		needs = it.Needs
 	}
-	s.exec("INSERT INTO item_events (sprint_id, item, at, title, status, owner, position, note, subgoal, waits_on, needs) "+
-		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+	s.exec("INSERT INTO item_events (sprint_id, item, at, title, status, owner, position, note, subgoal, waits_on, needs, merges) "+
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		sprintID, it.Item, it.At, it.Title, it.Status, it.Owner, it.Position, null(it.Note), null(it.Subgoal),
-		null(it.WaitsOn), needs)
+		null(it.WaitsOn), needs, null(it.Merges))
 }
 
 type PR struct {
