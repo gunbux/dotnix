@@ -54,8 +54,11 @@ sprint-update
 sprint: <slug>    subgoal: <key, or - for the whole sprint>
 from: <your thread title>, branch <branch>, <machine>
 events:
-- item <n> doing|blocked|done|dropped: <why>
-- new item [owner user] [after <n>]: <step, condition first> | note: `<command>`
+- item <n> doing|done|dropped: <why>
+- item <n> waits on: <person or outside event, in words> | <why>
+- item <n> waits on nothing: <why>
+- item <n> needs: <item n> | nothing
+- new item [owner user] [after <n>] [needs <n>] [waits on <who or what>]: <step, condition first> | note: `<command>`
 - pr opened: <url>
 - pr ready (Greptile 5/5): <url>
 - pr next step: <url> | <step>
@@ -152,6 +155,25 @@ Add the plan of the active subgoal as items, in order. New items, PRs, benchmark
 
 Give the user's own steps (merges, deploys, wizard runs, tests on a device) `--owner user`, in the order the user must do them. Put each deploy or validation after the merge it follows. Give each step one action. Put its condition first, then the action: "When #18259 scores 5/5, run the Datadog wizard", then a separate step "Merge #18259". Never join two actions in one step with "then" or "after". Put the step's copy-paste command in `--note`, in backticks, such as a rerun script or a wizard path. If the order is not obvious, say why in the note. The "Do now" panel shows it.
 
+Record what a user step waits for, not only in its title, so Do now shows only the steps Chun can do now:
+
+| The step can't start until | Flag |
+| --- | --- |
+| A person or an outside event: James, a code owner's approval, a reviewer, the next staging release | `--waits-on "<who or what, in words>"`, such as `--waits-on "a code owner's approval on #18620"` |
+| An earlier step is done or dropped | `--needs <item number>` |
+
+`sprint item set` keeps both until you clear them with `--waits-on -` or `--needs -`. Clear `--waits-on` when the person acts. `--needs` clears itself in effect: the step is ready once the needed item is done or dropped. `--needs` must name an item of the sprint and must not make a loop. Use `--waits-on` instead of the old `blocked` status; a step still marked `blocked` counts as waiting, with its reason in its note.
+
+The `do_now` view gives each open user step a state, and `sprint show` prints it:
+
+| State | When | Where it shows |
+| --- | --- | --- |
+| `ready` | Nothing below applies | A numbered card in Do now, and the Timeline when it is part of a chain |
+| `waiting` | `waits_on` is set, or the status is `blocked` | The Timeline, orange, with what it waits on and since when: `[waiting on James]` |
+| `later` | `needs` names an item that is not done or dropped | The Timeline, dashed, after the step it needs: `[after #260]` |
+
+Do now ranks ready steps first, then waiting, then later, and a step keeps its number in every view. Under its cards, Do now counts the steps that wait on others or come later. The Timeline panel draws each chain of `needs` links as one track, left to right: the last two done steps with their done times, then the open steps. A lone waiting step is a track of its own.
+
 ## Steering
 
 Each time the user steers, decide what the steer changes before you record it. If you are not sure, ask with the question tool. The thread where Chun steers decides and asks. A work thread then sends a "steer" event with Chun's words, and the dashboard thread runs the command.
@@ -172,8 +194,10 @@ A work thread sends the event in the left column. The dashboard thread runs the 
 
 | Event | Command |
 | --- | --- |
-| Work on an item starts, is blocked, or ends | `sprint item set <n> doing\|blocked\|done\|dropped --note "<why>"` |
-| New work appears | `sprint item add "<title>" [--owner user] [--after <n>]` |
+| Work on an item starts or ends | `sprint item set <n> doing\|done\|dropped --note "<why>"` |
+| A step starts or stops waiting on someone | `sprint item set <n> --waits-on "<who or what>"`, or `--waits-on -` |
+| A step can start only after another | `sprint item set <n> --needs <item>`, or `--needs -` |
+| New work appears | `sprint item add "<title>" [--owner user] [--after <n>] [--needs <n>] [--waits-on "<who or what>"]` |
 | You open a PR | `sprint pr add <url>` |
 | A PR belongs to another stage, or has none | `sprint pr set <url> --subgoal <key>` (`-` for the whole sprint) |
 | A PR passes the review gate (Greptile 5/5) | `sprint pr ready <url>` |
@@ -240,7 +264,7 @@ Any thread can answer. Run `sprint show`. Don't run `sprint pr sync` in a work t
 
 1. Where the work stands against the sprint goal, for a reader with no context.
 2. The active subgoals with their progress (`3 of 5 done`), the items left in each, and their "done when" checks.
-3. The "Do now" steps for the user, with their commands.
+3. The "Do now" steps the user can do now (state `ready`), with their commands. Then, in one line each, the steps that wait on someone (and on whom) or come after another step.
 4. For running work, the time left and the expected end time in SGT.
 5. The dashboard link from `sprint show`: the whole-sprint link, or the subgoal link when the question is about one stage.
 
