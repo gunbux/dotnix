@@ -164,3 +164,37 @@
   font: 12px/1.5 system-ui, sans-serif; color: #6e9fff; background: transparent;
   border: 1px dashed rgba(128, 128, 128, .45); border-radius: 6px; }
 .fit-bar:hover { border-color: #6e9fff; }
+/* Timeline (page/timeline.js): one track per chain of needs links. A node
+   draws the rail to its right, so a track that wraps keeps its line. */
+.sp .tl { display: flex; flex-wrap: wrap; column-gap: 24px; }
+.sp .tl-chain { flex: 1 1 100%; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px 0;
+  border-top: 1px solid var(--bd); }
+.sp .tl-chain.tl-one { flex: 0 1 380px; }
+.sp .tl-one .tl-track { flex-basis: 200px; }
+.sp .tl-lab { flex: 0 0 120px; min-width: 0; padding-top: 2px; }
+.sp .tl-lab .chip { display: inline-block; max-width: 100%; white-space: normal; }
+.sp .tl-track { flex: 1 1 320px; min-width: 0; display: flex; flex-wrap: wrap; row-gap: 8px; list-style: none; margin: 0; padding: 0; }
+.sp .tl-n { flex: 0 1 210px; min-width: 150px; margin: 0; padding-right: 12px; font-size: 12px; }
+.sp .tl-rail { position: relative; height: 24px; margin-bottom: 4px; }
+.sp .tl-rail::before { content: ''; position: absolute; left: 0; right: 0; top: 11px; border-top: 2px dashed var(--bd); }
+.sp .tl-n:first-child .tl-rail::before { left: 12px; }
+.sp .tl-n:last-child .tl-rail::before { display: none; }
+.sp .tl-done .tl-rail::before, .sp .tl-more .tl-rail::before { border-top-style: solid; border-color: var(--mut); }
+.sp .tl-dot { position: relative; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  font-size: 11px; font-weight: 600; background: var(--card); border: 2px solid var(--bd); color: var(--mut); }
+.sp .tl-done .tl-dot { background: var(--bd); color: var(--ok); }
+.sp .tl-ready .tl-dot { background: var(--you); border-color: var(--you); color: #fff; }
+.sp .tl-waiting .tl-dot { background: color-mix(in srgb, var(--warn) 20%, var(--card)); border-color: var(--warn); color: var(--warn); }
+.sp .tl-later .tl-dot { border-style: dashed; border-color: var(--mut); }
+.sp .tl-t { font-size: 13px; font-weight: 550; line-height: 1.35; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.sp .tl-done .tl-t, .sp .tl-later .tl-t { color: var(--mut); font-weight: 400; }
+.sp .tl-m { color: var(--mut); margin-top: 2px; overflow-wrap: anywhere; }
+.sp .tl-m p { display: inline; margin: 0; }
+.sp .tl-why { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sp .tl-ready .tl-m b { color: var(--you); }
+.sp .tl-waiting .tl-m { color: var(--warn); }
+.sp .tl-sw-ready { background: var(--you); }
+.sp .tl-sw-waiting { background: var(--warn); }
+.sp .tl-sw-later { border: 1px dashed var(--mut); }
+.sp .tl-sw-done { background: var(--ok); }

@@ -192,7 +192,7 @@ func cmdDashReset(c *call) {
 
 // The page panels of modules/home/sprint/dashboard.nix. Each one runs
 // page/fit.js, which writes data-sp-* attributes that dashCheck reads.
-var pagePanels = []string{"header", "progress", "live", "donow", "stages", "prs", "context", "left", "bench"}
+var pagePanels = []string{"header", "progress", "live", "donow", "stages", "timeline", "prs", "context", "left", "bench"}
 
 // Thresholds for `dash check`, in CSS pixels.
 const (
