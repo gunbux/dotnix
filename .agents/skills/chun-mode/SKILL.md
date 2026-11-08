@@ -47,7 +47,7 @@ Work repos are the Greptile repos, such as `greptilia`. Personal repos are the u
 - Never run `terraform apply`, `terragrunt apply`, or any `destroy` on work infra, even sandbox infra. Plan to a file, give the user a wizard for the apply, wait for "done", then read their output. When you hand over a plan, say in words what it changes: for each resource, the attributes and their old and new values, and for a dashboard, the groups and widgets added, removed, and changed. A count such as "1 to change" is not a summary. `tfplan-summary <plan.json>` (from `terragrunt show -json`) writes it, and `tfplan-summary --dashboard <old.json> <new.json>` compares two dashboard files before a plan exists. On personal infra (pinfra), run `kubectl apply` and `tofu apply` yourself.
 - Before you hand a step to the user, check whether a tool, MCP server, or API token lets you do it yourself, such as Cloudflare DNS or PostHog flags. When a step needs a credential, collect it with `request_secret` and do the step yourself. Hand over only what truly needs the user's hands or account, such as SSO login, VPN, or installs, as exact commands. Turn verbose output, such as a Terragrunt plan, into a short summary.
 - Before you ask for an SSO login, test the session with a real call, such as `aws sts get-caller-identity --profile <profile>`. The cached `expiresAt` tracks only the one-hour access token. Give the same login command every time.
-- Use the **wizard** skill only for a manual procedure that the user must do and you can't work around. Use one wizard per procedure, with no announcement or bookkeeping steps. Before you hand it over, check that the user has the rights each step needs, and do every step you can. Explain each prompt in plain words.
+- Give every manual procedure the user must do as a wizard (the **wizard** skill), never as raw commands in the reply, even when it is one or two commands, such as an apply, an image copy or a switch. Do every step you can first, so the wizard holds only what needs the user. Use one wizard per procedure, with no announcement or bookkeeping steps. Before you hand it over, check that the user has the rights each step needs. Explain each prompt in plain words.
 - In work repos, never merge PRs. Push freely, then give the user the links to merge. This overrides poteto-mode's Shipping playbook.
 - In personal repos, commit and push small fixes and settings straight to `main`. A new module, service, or app feature gets one PR. Merge it yourself once Greptile scores 5/5 and CI passes. Don't stop to ask.
 - Before force-pushing a stacked branch, run `git log <base>..origin/<branch>`. Other sessions push there. Rebase their commits with `--onto` and ask before the push.
@@ -104,3 +104,9 @@ The notes repo is the record. It is `~/vimwiki` on the work Mac and `~/repo/neur
 - After a benchmark, update the dated report and the visual summary. Use the **dataviz** skill for charts.
 - After any vimwiki change, run `python3 -I ~/vimwiki/bin/check-notes.py`. Your edit must add no problems. Ignore problems that were there before, and don't mention them.
 - Repo docs hold what a teammate needs while the user is away. Everything else goes in the notes repo.
+
+## Enforced rules
+
+| Rule | Enforced by |
+| --- | --- |
+| Hand over work-infra applies as a wizard script, not raw commands | Stop hook `require-wizard` (`config/require-wizard/require-wizard.py`, wired in `modules/home/ai.nix`) blocks a greptilia reply with `terraform`/`terragrunt`/`tofu` `apply` or `destroy` in a code block and no `wizard*.sh` path |
