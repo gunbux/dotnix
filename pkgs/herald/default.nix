@@ -3,20 +3,20 @@
   buildGoModule,
   fetchFromGitHub,
 }: let
-  commit = "c9130b084007"; # short=12, matches upstream Makefile's COMMIT format
+  commit = "b026be29eed4"; # short=12, matches upstream Makefile's COMMIT format
 in
   buildGoModule (finalAttrs: {
     pname = "herald";
-    version = "0.9.0-beta.1";
+    version = "0.10.0-beta.1";
 
     src = fetchFromGitHub {
       owner = "herald-email";
       repo = "herald-mail-app";
       tag = "v${finalAttrs.version}";
-      hash = "sha256-uomcAuX2T8SfCTIy3XpPSb/MvY/TJ2haivNCdNl1YfU=";
+      hash = "sha256-9rYKB5S0JDP1tWiACrtmaB2Nff9q7osX6BprKRvoowo=";
     };
 
-    vendorHash = "sha256-keK9JVcLMriE4/0bi2JKvXcgcM1UH6XqdoQ8chwoPwI=";
+    vendorHash = "sha256-gvyA5Uyfz+k5FVTFWhFS5PX1ArJHPN8eScE46l9yndk=";
 
     # mattn/go-sqlite3 needs cgo
     env.CGO_ENABLED = "1";

@@ -4,7 +4,11 @@
   ...
 }: let
   packages = inputs.muesli.packages.${pkgs.stdenv.hostPlatform.system};
-  muesli = packages.default;
+  # cargoUseSystemLibs now requires the system libs aws-lc-sys and libsqlite3-sys probe.
+  muesli = packages.default.overrideAttrs (previous: {
+    nativeBuildInputs = (previous.nativeBuildInputs or []) ++ [pkgs.pkg-config];
+    buildInputs = (previous.buildInputs or []) ++ [pkgs.aws-lc pkgs.sqlite];
+  });
   overlay = packages.overlay;
   # hex, opencode, pw-play, wl-copy, and gdbus come from the user profile
   # and the system.

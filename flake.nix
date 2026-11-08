@@ -135,6 +135,19 @@
         greptile-cli = prev.callPackage ./pkgs/greptile-cli/default.nix {};
         ## Garmin Connect MCP server (not in nixpkgs)
         garmin-mcp = prev.callPackage ./pkgs/garmin-mcp/default.nix {};
+        # cargoUseSystemLibs now requires the system libs these crates probe.
+        tectonic-unwrapped = prev.tectonic-unwrapped.overrideAttrs (previous: {
+          buildInputs =
+            (previous.buildInputs or [])
+            ++ [
+              prev.aws-lc
+              prev.zlib
+            ];
+        });
+        presenterm = prev.presenterm.overrideAttrs (previous: {
+          nativeBuildInputs = (previous.nativeBuildInputs or []) ++ [prev.pkg-config];
+          buildInputs = (previous.buildInputs or []) ++ [prev.oniguruma];
+        });
       };
     };
 
