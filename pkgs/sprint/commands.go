@@ -20,6 +20,8 @@ var (
 	itemStates  = []string{"planned", "doing", "blocked", "done", "dropped"}
 	subStates   = []string{"planned", "active", "done", "dropped"}
 	subgoalHelp = "subgoal key; default $SPRINT_SUBGOAL or the only active subgoal; - for the whole sprint"
+	waitsOnHelp = "the person or outside event the step waits on, in words, such as \"James\""
+	needsHelp   = "the item number that must be done or dropped first"
 )
 
 var commands []command
@@ -62,20 +64,24 @@ func init() {
 		{path: "item add", help: "add a plan item", run: cmdItemAdd,
 			args: []argDef{{name: "title"}},
 			flags: map[string]flagDef{
-				"owner":   {choices: owners, help: "default agent; user for the user's own steps"},
-				"status":  {choices: itemStates[:4], help: "default planned"},
-				"after":   {help: "place after this item number"},
-				"note":    {help: "why"},
-				"subgoal": {help: subgoalHelp}}},
+				"owner":    {choices: owners, help: "default agent; user for the user's own steps"},
+				"status":   {choices: itemStates[:4], help: "default planned"},
+				"after":    {help: "place after this item number"},
+				"note":     {help: "why"},
+				"subgoal":  {help: subgoalHelp},
+				"waits-on": {help: waitsOnHelp},
+				"needs":    {help: needsHelp}}},
 		{path: "item set", help: "change an item's status, owner, title, or subgoal", run: cmdItemSet,
 			args: []argDef{{name: "item"}, {name: "status", opt: true, choices: itemStates}},
 			flags: map[string]flagDef{
-				"owner":   {choices: owners},
-				"title":   {help: "new title"},
-				"note":    {help: "why"},
-				"subgoal": {help: "move the item to this subgoal; - for the whole sprint"},
-				"after":   {help: "move the item after this item number"},
-				"first":   {isBool: true, help: "move the item before every other item"}}},
+				"owner":    {choices: owners},
+				"title":    {help: "new title"},
+				"note":     {help: "why"},
+				"subgoal":  {help: "move the item to this subgoal; - for the whole sprint"},
+				"after":    {help: "move the item after this item number"},
+				"first":    {isBool: true, help: "move the item before every other item"},
+				"waits-on": {help: waitsOnHelp + "; - clears it"},
+				"needs":    {help: needsHelp + "; - clears it"}}},
 		{path: "pr add", help: "track PRs; records their GitHub history", run: cmdPRAdd, prefetch: fetchPRAdd,
 			args:  []argDef{{name: "url", many: true}},
 			flags: map[string]flagDef{"subgoal": {help: subgoalHelp + " (new PRs only)"}}},
@@ -307,51 +313,84 @@ func cmdItemAdd(c *call) {
 		p := s.latestItem(sp.ID, itemNumber(c.flag("after"))).Position
 		before = &p
 	}
-	status, owner := "planned", "agent"
+	it := Item{Item: item, At: now(), Title: c.pos["title"], Status: "planned", Owner: "agent",
+		Position: s.positionAfter("item_state", sp.ID, before), Note: c.flag("note"), Subgoal: subgoal}
 	if c.has("status") {
-		status = c.flag("status")
+		it.Status = c.flag("status")
 	}
 	if c.has("owner") {
-		owner = c.flag("owner")
+		it.Owner = c.flag("owner")
 	}
-	s.exec("INSERT INTO item_events (sprint_id, item, at, title, status, owner, position, note, subgoal) "+
-		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		sp.ID, item, now(), c.pos["title"], status, owner, s.positionAfter("item_state", sp.ID, before),
-		null(c.flag("note")), null(subgoal))
+	it.WaitsOn = waitsOn(c, "")
+	it.Needs = s.needs(c, sp.ID, item, 0)
+	s.addItemEvent(sp.ID, it)
 	c.printf("%d\n", item)
+}
+
+// waitsOn is --waits-on, or cur when it is not given. "-" clears it.
+func waitsOn(c *call, cur string) string {
+	if !c.has("waits-on") {
+		return cur
+	}
+	if v := c.flag("waits-on"); v != "-" {
+		return v
+	}
+	return ""
+}
+
+// needs is --needs for item, or cur when it is not given. "-" clears it. It
+// must name another item of the sprint and make no loop: a step that needs
+// itself through other steps would never come up.
+func (s Store) needs(c *call, sprintID, item, cur int64) int64 {
+	if !c.has("needs") {
+		return cur
+	}
+	if c.flag("needs") == "-" {
+		return 0
+	}
+	n := itemNumber(c.flag("needs"))
+	for next, seen := n, 0; next != 0; seen++ {
+		if s.int("SELECT COUNT(*) FROM item_state WHERE sprint_id = ? AND item = ?", sprintID, next) == 0 {
+			fail("--needs: no item %d in this sprint", next)
+		}
+		if next == item || seen > 10000 {
+			fail("--needs %d makes a loop: #%d would need itself", n, item)
+		}
+		next = s.int("SELECT COALESCE(needs, 0) FROM item_state WHERE sprint_id = ? AND item = ?", sprintID, next)
+	}
+	return n
 }
 
 func cmdItemSet(c *call) {
 	s := c.store
 	sp := s.resolve(c.flag("sprint"))
-	cur := s.latestItem(sp.ID, itemNumber(c.pos["item"]))
-	title, status, owner, subgoal := cur.Title, cur.Status, cur.Owner, cur.Subgoal
+	it := s.latestItem(sp.ID, itemNumber(c.pos["item"]))
+	it.At, it.Note = now(), c.flag("note")
 	if c.has("title") {
-		title = c.flag("title")
+		it.Title = c.flag("title")
 	}
 	if v, ok := c.pos["status"]; ok {
-		status = v
+		it.Status = v
 	}
 	if c.has("owner") {
-		owner = c.flag("owner")
+		it.Owner = c.flag("owner")
 	}
 	if c.has("subgoal") {
-		subgoal = s.pickSubgoal(sp.ID, c.flag("subgoal"), true, false)
+		it.Subgoal = s.pickSubgoal(sp.ID, c.flag("subgoal"), true, false)
 	}
-	position := cur.Position
+	it.WaitsOn = waitsOn(c, it.WaitsOn)
+	it.Needs = s.needs(c, sp.ID, it.Item, it.Needs)
 	switch {
 	case c.has("first") && c.has("after"):
 		fail("pass --first or --after, not both")
 	case c.has("first"):
-		position, _ = s.float("SELECT MIN(position) - 1 FROM item_state WHERE sprint_id = ?", sp.ID)
+		it.Position, _ = s.float("SELECT MIN(position) - 1 FROM item_state WHERE sprint_id = ?", sp.ID)
 	case c.has("after"):
 		p := s.latestItem(sp.ID, itemNumber(c.flag("after"))).Position
-		position = s.positionAfter("item_state", sp.ID, &p)
+		it.Position = s.positionAfter("item_state", sp.ID, &p)
 	}
-	s.exec("INSERT INTO item_events (sprint_id, item, at, title, status, owner, position, note, subgoal) "+
-		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		sp.ID, cur.Item, now(), title, status, owner, position, null(c.flag("note")), null(subgoal))
-	c.printf("item %d: %s\n", cur.Item, status)
+	s.addItemEvent(sp.ID, it)
+	c.printf("item %d: %s\n", it.Item, it.Status)
 }
 
 func cmdBench(c *call) {

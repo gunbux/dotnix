@@ -40,7 +40,11 @@ CREATE TABLE IF NOT EXISTS item_events (
   owner TEXT NOT NULL CHECK (owner IN ('agent', 'user')),
   position REAL NOT NULL,
   note TEXT,
-  subgoal TEXT
+  subgoal TEXT,
+  -- A person or outside event the step waits on, in words.
+  waits_on TEXT,
+  -- The item that must be done or dropped before this step.
+  needs INTEGER
 );
 CREATE TABLE IF NOT EXISTS pr_events (
   id INTEGER PRIMARY KEY,
@@ -168,10 +172,12 @@ CREATE INDEX IF NOT EXISTS subgoal_events_latest ON subgoal_events (sprint_id, k
 CREATE INDEX IF NOT EXISTS context_versions_latest ON context_versions (sprint_id, subgoal, key, id);
 `
 
-// Columns added after the first release. ADD COLUMN is not an UPDATE, so the
-// append-only triggers allow it, and old rows read as NULL (no subgoal).
-var addedColumns = [][2]string{
-	{"item_events", "subgoal"}, {"pr_events", "subgoal"}, {"bench_results", "subgoal"}, {"log", "subgoal"},
+// Columns added after the first release: table, column, type. ADD COLUMN is
+// not an UPDATE, so the append-only triggers allow it, and old rows read as
+// NULL (no subgoal, waits on nothing, needs nothing).
+var addedColumns = [][3]string{
+	{"item_events", "subgoal", "TEXT"}, {"pr_events", "subgoal", "TEXT"}, {"bench_results", "subgoal", "TEXT"},
+	{"log", "subgoal", "TEXT"}, {"item_events", "waits_on", "TEXT"}, {"item_events", "needs", "INTEGER"},
 }
 
 var tables = []string{"sprints", "goal_versions", "item_events", "pr_events", "bench_results", "log",
@@ -525,7 +531,7 @@ func openWrite(path string) (s Store, close func()) {
 		}
 		for _, tc := range addedColumns {
 			if s.int(fmt.Sprintf("SELECT COUNT(*) FROM pragma_table_info('%s') WHERE name = ?", tc[0]), tc[1]) == 0 {
-				s.exec(fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s TEXT", tc[0], tc[1]))
+				s.exec(fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", tc[0], tc[1], tc[2]))
 			}
 		}
 		if s.int("PRAGMA user_version") < SchemaVersion {

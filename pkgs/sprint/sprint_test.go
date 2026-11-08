@@ -298,7 +298,7 @@ func TestOldViewsAreReplacedOnUpgrade(t *testing.T) {
 	eq(t, h.query("SELECT time, in_scope, done FROM burnup"), "(1000, 1, 0)")
 }
 
-func TestSubgoalColumnsAreAddedToAnOldLog(t *testing.T) {
+func TestAddedColumnsAreAddedToAnOldLog(t *testing.T) {
 	h := newHarness(t)
 	h.ok("start", "s1", "One", "--goal", "g")
 	h.ok("item", "add", "a")
@@ -314,7 +314,10 @@ func TestSubgoalColumnsAreAddedToAnOldLog(t *testing.T) {
 	db.Exec("PRAGMA user_version = 2")
 	db.Close()
 	h.ok("item", "add", "b")
-	eq(t, h.query("SELECT title, subgoal FROM item_state ORDER BY item"), "(a, <nil>) (b, <nil>)")
+	eq(t, h.query("SELECT title, subgoal, waits_on, needs FROM item_state ORDER BY item"),
+		"(a, <nil>, <nil>, <nil>) (b, <nil>, <nil>, <nil>)")
+	h.ok("item", "set", "2", "--needs", "1", "--waits-on", "James")
+	eq(t, h.query("SELECT waits_on, needs FROM item_state WHERE item = 2"), "(James, 1)")
 }
 
 func TestPRHistoryComesFromGitHubTimes(t *testing.T) {
@@ -698,4 +701,37 @@ func TestSubSetMovesASubgoal(t *testing.T) {
 	h.ok("sub", "set", "hot-snap", "--after", "parity")
 	eq(t, h.query("SELECT key FROM subgoal_state ORDER BY position"), "(parity) (hot-snap)")
 	h.fails("sub", "set", "parity", "--first", "--after", "hot-snap")
+}
+
+func TestItemSetKeepsWaitsOnAndNeedsUntilCleared(t *testing.T) {
+	h := newHarness(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	h.ok("item", "add", "ask James to review", "--owner", "user")
+	h.ok("item", "add", "merge", "--owner", "user", "--needs", "1", "--waits-on", "a code owner's approval")
+	state := func() string { return h.query("SELECT title, status, waits_on, needs FROM item_state WHERE item = 2") }
+	h.ok("item", "set", "2", "doing", "--title", "merge #7", "--note", "approved soon")
+	eq(t, state(), "(merge #7, doing, a code owner's approval, 1)")
+	h.ok("item", "set", "2", "--waits-on", "-")
+	eq(t, state(), "(merge #7, doing, <nil>, 1)")
+	h.ok("item", "set", "2", "--needs", "-", "--waits-on", "James")
+	eq(t, state(), "(merge #7, doing, James, <nil>)")
+}
+
+func TestNeedsMustNameAnEarlierStepOfTheSprint(t *testing.T) {
+	h := newHarness(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	h.ok("item", "add", "a", "--owner", "user")
+	h.ok("item", "add", "b", "--owner", "user", "--needs", "1")
+	h.ok("start", "s2", "Two", "--goal", "g")
+	h.ok("--sprint", "s2", "item", "add", "c")
+	h.ok("--sprint", "s2", "item", "add", "d")
+	n := h.query("SELECT COUNT(*) FROM item_events")
+	contains_(t, h.fails("--sprint", "s1", "item", "add", "c", "--needs", "9"), "no item 9 in this sprint")
+	contains_(t, h.fails("--sprint", "s1", "item", "set", "1", "--needs", "1"), "loop")
+	contains_(t, h.fails("--sprint", "s1", "item", "set", "1", "--needs", "2"), "loop")
+	contains_(t, h.fails("--sprint", "s1", "item", "set", "2", "--needs", "x"), "not an item number")
+	eq(t, h.query("SELECT COUNT(*) FROM item_events"), n)
+	// Item 2 of another sprint is not item 2 of this one.
+	h.ok("--sprint", "s2", "item", "set", "1", "--needs", "2")
+	contains_(t, h.fails("--sprint", "s2", "item", "add", "e", "--needs", "3"), "no item 3 in this sprint")
 }

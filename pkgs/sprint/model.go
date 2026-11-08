@@ -92,17 +92,32 @@ type Item struct {
 	Title, Status, Owner string
 	Position             float64
 	Note, Subgoal        string
+	WaitsOn              string // "" when it waits on no one
+	Needs                int64  // 0 when it needs no earlier item
 	// Step is the item's number in Do now (the do_now view's rank), or 0
 	// when it is not an open user step. Only the PR board sets it.
 	Step int
 }
 
-const itemCols = "item, at, title, status, owner, position, COALESCE(note, ''), COALESCE(subgoal, '')"
+const itemCols = "item, at, title, status, owner, position, COALESCE(note, ''), COALESCE(subgoal, ''), " +
+	"COALESCE(waits_on, ''), COALESCE(needs, 0)"
 
 func scanItem(r interface{ Scan(...any) error }) Item {
 	var i Item
-	check(r.Scan(&i.Item, &i.At, &i.Title, &i.Status, &i.Owner, &i.Position, &i.Note, &i.Subgoal))
+	check(r.Scan(&i.Item, &i.At, &i.Title, &i.Status, &i.Owner, &i.Position, &i.Note, &i.Subgoal, &i.WaitsOn, &i.Needs))
 	return i
+}
+
+// addItemEvent appends the item's whole state as one event.
+func (s Store) addItemEvent(sprintID int64, it Item) {
+	var needs any
+	if it.Needs != 0 {
+		needs = it.Needs
+	}
+	s.exec("INSERT INTO item_events (sprint_id, item, at, title, status, owner, position, note, subgoal, waits_on, needs) "+
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		sprintID, it.Item, it.At, it.Title, it.Status, it.Owner, it.Position, null(it.Note), null(it.Subgoal),
+		null(it.WaitsOn), needs)
 }
 
 type PR struct {
@@ -207,13 +222,13 @@ func (s Store) resolve(slug string) Sprint {
 }
 
 func (s Store) latestItem(sprintID, item int64) Item {
-	var it Item
-	ok := s.one("SELECT "+itemCols+" FROM item_state WHERE sprint_id = ? AND item = ?", []any{sprintID, item},
-		&it.Item, &it.At, &it.Title, &it.Status, &it.Owner, &it.Position, &it.Note, &it.Subgoal)
-	if !ok {
+	var it *Item
+	s.each("SELECT "+itemCols+" FROM item_state WHERE sprint_id = ? AND item = ?", []any{sprintID, item},
+		func(r *sql.Rows) { i := scanItem(r); it = &i })
+	if it == nil {
 		fail("no item %d in this sprint", item)
 	}
-	return it
+	return *it
 }
 
 func (s Store) latestSubgoal(sprintID int64, key string) Subgoal {

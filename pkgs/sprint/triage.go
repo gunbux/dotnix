@@ -160,9 +160,8 @@ func triageItems(c *call, sprintID int64, board []*prReview, key map[string]stri
 	}
 	setStatus := func(it syncItem, note string) {
 		cur := s.latestItem(sprintID, it.item)
-		s.exec("INSERT INTO item_events (sprint_id, item, at, title, status, owner, position, note, subgoal) "+
-			"VALUES (?, ?, ?, ?, 'done', ?, ?, ?, ?)",
-			sprintID, cur.Item, now(), cur.Title, cur.Owner, cur.Position, note, null(cur.Subgoal))
+		cur.At, cur.Status, cur.Note = now(), "done", note
+		s.addItemEvent(sprintID, cur)
 		c.printf("item %d: done (%s)\n", cur.Item, note)
 	}
 	for _, it := range items {
@@ -180,9 +179,8 @@ func triageItems(c *call, sprintID int64, board []*prReview, key map[string]stri
 	}
 	add := func(kind, url, title, subgoal string) {
 		item := s.int("SELECT COALESCE(MAX(item), 0) + 1 FROM item_events WHERE sprint_id = ?", sprintID)
-		s.exec("INSERT INTO item_events (sprint_id, item, at, title, status, owner, position, note, subgoal) "+
-			"VALUES (?, ?, ?, ?, 'planned', 'user', ?, ?, ?)",
-			sprintID, item, now(), title, s.positionAfter("item_state", sprintID, nil), syncNote+kind+" "+url, null(subgoal))
+		s.addItemEvent(sprintID, Item{Item: item, At: now(), Title: title, Status: "planned", Owner: "user",
+			Position: s.positionAfter("item_state", sprintID, nil), Note: syncNote + kind + " " + url, Subgoal: subgoal})
 		c.printf("item %d: %s\n", item, title)
 	}
 	var userItems []Item
