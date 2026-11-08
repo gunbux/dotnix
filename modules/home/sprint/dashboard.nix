@@ -361,13 +361,13 @@ in {
     # step numbers and shows the steps without a subgoal too.
     (pagePanel 33 "donow" (pos 0 13 10 15) [
       ''
-        SELECT item, title, status, note, stage, rank, total, '$subgoal' != '-' AS filtered
+        SELECT item, title, status, note, stage, state, rank, total, '$subgoal' != '-' AS filtered
         FROM do_now
         WHERE sprint_id = ${sid} AND (subgoal IS NULL OR ${inScope "subgoal"})
         ORDER BY rank''
       # The steps this view hides: a stage view must say they exist (6 Nov).
       ''
-        SELECT COUNT(*) AS n, COALESCE(SUM(status != 'blocked'), 0) AS ready
+        SELECT COUNT(*) AS n, COALESCE(SUM(state = 'ready'), 0) AS ready
         FROM do_now
         WHERE sprint_id = ${sid} AND NOT COALESCE(subgoal IS NULL OR ${inScope "subgoal"}, 0)''
     ])
