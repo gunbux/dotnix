@@ -735,3 +735,57 @@ func TestNeedsMustNameAnEarlierStepOfTheSprint(t *testing.T) {
 	h.ok("--sprint", "s2", "item", "set", "1", "--needs", "2")
 	contains_(t, h.fails("--sprint", "s2", "item", "add", "e", "--needs", "3"), "no item 3 in this sprint")
 }
+
+func TestDoNowPutsReadyStepsFirstAndSaysWhyTheOthersWait(t *testing.T) {
+	h := newHarness(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	h.ok("item", "add", "ask James to review", "--owner", "user")
+	h.ok("item", "add", "merge", "--owner", "user", "--needs", "1", "--waits-on", "a code owner")
+	h.ok("item", "add", "apply", "--owner", "user", "--needs", "2")
+	h.ok("item", "add", "plug in the watch", "--owner", "user", "--status", "blocked", "--note", "watch at home")
+	h.ok("item", "add", "build the image")
+	h.ok("item", "add", "deploy", "--owner", "user", "--needs", "5")
+	doNow := func() string { return h.query("SELECT rank, item, state FROM do_now ORDER BY rank") }
+	eq(t, doNow(), "(1, 1, ready) (2, 2, waiting) (3, 4, waiting) (4, 3, later) (5, 6, later)")
+	out := h.ok("show")
+	contains_(t, out, "  2. merge [waiting on a code owner]\n")
+	contains_(t, out, "  3. plug in the watch [blocked]\n")
+	contains_(t, out, "  4. apply [after #2]\n")
+
+	h.ok("item", "set", "5", "done")
+	eq(t, doNow(), "(1, 1, ready) (2, 6, ready) (3, 2, waiting) (4, 4, waiting) (5, 3, later)")
+	h.ok("item", "set", "2", "dropped")
+	eq(t, doNow(), "(1, 1, ready) (2, 3, ready) (3, 6, ready) (4, 4, waiting)")
+	var d summary
+	check(json.Unmarshal([]byte(h.ok("show", "--json")), &d))
+	last := d.DoNow[3]
+	eq(t, fmt.Sprintf("%d %d %s %v", last.Rank, last.Item, last.State, last.WaitsOn), "4 4 waiting <nil>")
+}
+
+func TestWaitingSinceIsWhenTheStepStartedToWaitOnItsCurrentCause(t *testing.T) {
+	h := newHarness(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	h.ok("item", "add", "merge", "--owner", "user", "--waits-on", "a code owner")
+	h.ok("item", "add", "apply", "--owner", "user")
+	since := func() string { return h.query("SELECT item, since FROM do_now ORDER BY item") }
+	h.clock(2000)
+	h.ok("item", "set", "1", "doing", "--note", "pinged")
+	eq(t, since(), "(1, 1000) (2, <nil>)")
+	h.clock(3000)
+	h.ok("item", "set", "1", "--waits-on", "James")
+	h.ok("item", "set", "2", "blocked")
+	eq(t, since(), "(1, 3000) (2, 3000)")
+}
+
+func TestTimelineHoldsOpenStepsAndTheDoneStepsTheyLinkTo(t *testing.T) {
+	h := newHarness(t)
+	h.ok("start", "s1", "One", "--goal", "g")
+	h.ok("item", "add", "ask James to review", "--owner", "user")
+	h.ok("item", "add", "merge", "--owner", "user", "--needs", "1")
+	h.ok("item", "add", "an unlinked step", "--owner", "user")
+	h.clock(5000)
+	h.ok("item", "set", "1", "done")
+	h.ok("item", "set", "3", "done")
+	eq(t, h.query("SELECT item, state, rank, needs, at FROM timeline ORDER BY item"),
+		"(1, done, <nil>, <nil>, 5000) (2, ready, 1, 1, <nil>)")
+}

@@ -565,6 +565,30 @@ type summaryItem struct {
 	Status  string `json:"status"`
 	Owner   string `json:"owner"`
 	Subgoal any    `json:"subgoal"`
+	WaitsOn any    `json:"waits_on"`
+	Needs   any    `json:"needs"`
+	// Do now only: the step's number and whether the user can act now
+	// (ready, waiting, or later; see the do_now view).
+	Rank  int64  `json:"rank,omitempty"`
+	State string `json:"state,omitempty"`
+}
+
+// stateText says why a Do now step can't be done now, or gives its status.
+func (i summaryItem) stateText() string {
+	switch {
+	case i.State == "waiting" && i.WaitsOn != nil:
+		return fmt.Sprintf("waiting on %s", i.WaitsOn)
+	case i.State == "later":
+		return fmt.Sprintf("after #%d", i.Needs)
+	}
+	return i.Status
+}
+
+func orZero(n int64) any {
+	if n == 0 {
+		return nil
+	}
+	return n
 }
 
 type summaryPR struct {
@@ -621,15 +645,17 @@ func makeSummary(s Store, sp Sprint) summary {
 	out.Percent = int64(pct)
 	s.each("SELECT "+itemCols+" FROM item_state WHERE sprint_id = ? ORDER BY position", []any{sp.ID}, func(r *sql.Rows) {
 		i := scanItem(r)
-		si := summaryItem{i.Item, i.Title, i.Status, i.Owner, orNil(i.Subgoal)}
-		out.Items = append(out.Items, si)
+		out.Items = append(out.Items, summaryItem{Item: i.Item, Title: i.Title, Status: i.Status, Owner: i.Owner,
+			Subgoal: orNil(i.Subgoal), WaitsOn: orNil(i.WaitsOn), Needs: orZero(i.Needs)})
 	})
-	s.each("SELECT item, title, status, owner, COALESCE(subgoal, '') FROM do_now WHERE sprint_id = ? ORDER BY rank",
+	s.each("SELECT item, title, status, owner, COALESCE(subgoal, ''), COALESCE(waits_on, ''), COALESCE(needs, 0), "+
+		"rank, state FROM do_now WHERE sprint_id = ? ORDER BY rank",
 		[]any{sp.ID}, func(r *sql.Rows) {
 			var si summaryItem
-			var subgoal string
-			check(r.Scan(&si.Item, &si.Title, &si.Status, &si.Owner, &subgoal))
-			si.Subgoal = orNil(subgoal)
+			var subgoal, waitsOn string
+			var needs int64
+			check(r.Scan(&si.Item, &si.Title, &si.Status, &si.Owner, &subgoal, &waitsOn, &needs, &si.Rank, &si.State))
+			si.Subgoal, si.WaitsOn, si.Needs = orNil(subgoal), orNil(waitsOn), orZero(needs)
 			out.DoNow = append(out.DoNow, si)
 		})
 	s.each("SELECT "+prCols+" FROM pr_state WHERE sprint_id = ? ORDER BY at", []any{sp.ID}, func(r *sql.Rows) {
@@ -668,8 +694,8 @@ func cmdShow(c *call) {
 	}
 	if len(d.DoNow) > 0 {
 		c.printf("Do now:\n")
-		for n, i := range d.DoNow {
-			c.printf("  %d. %s [%s]\n", n+1, i.Title, i.Status)
+		for _, i := range d.DoNow {
+			c.printf("  %d. %s [%s]\n", i.Rank, i.Title, i.stateText())
 		}
 	}
 	for _, i := range d.Items {

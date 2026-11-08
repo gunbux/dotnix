@@ -13,7 +13,7 @@ import (
 )
 
 // SchemaVersion is stored in PRAGMA user_version. A bump recreates the views.
-const SchemaVersion = 9
+const SchemaVersion = 10
 
 const tablesSQL = `
 CREATE TABLE IF NOT EXISTS sprints (
@@ -186,7 +186,7 @@ var tables = []string{"sprints", "goal_versions", "item_events", "pr_events", "b
 
 // Views hold no data, so a schema bump drops and recreates them.
 var views = []string{"item_state", "pr_state", "goal_current", "progress", "burnup",
-	"subgoal_state", "subgoal_progress", "do_now", "context_state", "scoped_burnup", "bench_live", "bench_summary", "activity",
+	"subgoal_state", "subgoal_progress", "do_now", "timeline", "context_state", "scoped_burnup", "bench_live", "bench_summary", "activity",
 	"pr_review_state", "pr_note_state", "pr_ignore_state"}
 
 var viewsSQL = []string{`
@@ -265,25 +265,61 @@ CREATE VIEW subgoal_progress AS
   FROM subgoal_state g
   LEFT JOIN item_state i ON i.sprint_id = g.sprint_id AND i.subgoal = g.key
   GROUP BY g.sprint_id, g.key`, `
--- The user's open steps, in one order for the whole sprint: blocked steps
--- last, so the steps the user can do now come first and a fold hides the
--- blocked ones first (6 Nov: a ready step sank to step 10 behind blocked
--- ones). Within each part: steps without a subgoal first, then each subgoal's steps in the order the stages list shows
--- them (active, then planned, then done, then by position), then by item
+-- The user's open steps, in one order for the whole sprint. state says
+-- whether the user can act now:
+--   waiting  waits_on is set, or the legacy status blocked (why in its note)
+--   later    needs an item that is not done or dropped yet
+--   ready    otherwise
+-- Ready steps come first, then waiting, then later, so a fold hides the
+-- steps the user can't act on first (6 Nov: a ready step sank to step 10
+-- behind blocked ones). Within each part: steps without a subgoal first,
+-- then each subgoal's steps in the order the stages list shows them
+-- (active, then planned, then done, then by position), then by item
 -- position. A subgoal's view filters this list and keeps rank, so a step has
--- the same number in every view.
+-- the same number in every view. since is when a waiting step started to
+-- wait on what it waits on now.
 CREATE VIEW do_now AS
-  SELECT i.sprint_id, i.item, i.title, i.status, i.owner, i.note, i.subgoal,
+  WITH open AS (
+    SELECT i.*,
+           CASE WHEN i.waits_on IS NOT NULL OR i.status = 'blocked' THEN 'waiting'
+                WHEN n.status NOT IN ('done', 'dropped') THEN 'later'
+                ELSE 'ready' END AS state
+    FROM item_state i
+    LEFT JOIN item_state n ON n.sprint_id = i.sprint_id AND n.item = i.needs
+    WHERE i.owner = 'user' AND i.status NOT IN ('done', 'dropped')
+  )
+  SELECT o.sprint_id, o.item, o.title, o.status, o.owner, o.note, o.subgoal, o.waits_on, o.needs, o.state,
          COALESCE(g.title, '') AS stage,
-         ROW_NUMBER() OVER (PARTITION BY i.sprint_id ORDER BY
-           i.status = 'blocked',
+         ROW_NUMBER() OVER (PARTITION BY o.sprint_id ORDER BY
+           CASE o.state WHEN 'ready' THEN 0 WHEN 'waiting' THEN 1 ELSE 2 END,
            g.key IS NOT NULL,
            CASE g.status WHEN 'active' THEN 0 WHEN 'done' THEN 2 ELSE 1 END,
-           g.position, i.position, i.item) AS rank,
-         COUNT(*) OVER (PARTITION BY i.sprint_id) AS total
+           g.position, o.position, o.item) AS rank,
+         COUNT(*) OVER (PARTITION BY o.sprint_id) AS total,
+         CASE WHEN o.state = 'waiting' THEN
+           (SELECT MIN(e.at) FROM item_events e
+            WHERE e.sprint_id = o.sprint_id AND e.item = o.item
+              AND e.id > COALESCE((SELECT MAX(e2.id) FROM item_events e2
+                                   WHERE e2.sprint_id = o.sprint_id AND e2.item = o.item
+                                     AND NOT (e2.waits_on IS o.waits_on
+                                              AND (e2.status = 'blocked') = (o.status = 'blocked'))), 0))
+         END AS since
+  FROM open o
+  LEFT JOIN subgoal_state g ON g.sprint_id = o.sprint_id AND g.key = o.subgoal`, `
+-- The user's steps the Timeline panel draws as chains of needs links: every
+-- open step from do_now, and each done step that a needs link touches. at is
+-- when a done step was done, and when a waiting step started to wait.
+CREATE VIEW timeline AS
+  SELECT sprint_id, item, title, subgoal, stage, waits_on, needs, note, state, rank, since AS at
+  FROM do_now
+  UNION ALL
+  SELECT i.sprint_id, i.item, i.title, i.subgoal, COALESCE(g.title, ''), i.waits_on, i.needs, i.note,
+         'done', NULL, i.at
   FROM item_state i
   LEFT JOIN subgoal_state g ON g.sprint_id = i.sprint_id AND g.key = i.subgoal
-  WHERE i.owner = 'user' AND i.status NOT IN ('done', 'dropped')`, `
+  WHERE i.owner = 'user' AND i.status = 'done'
+    AND (i.needs IS NOT NULL
+         OR EXISTS (SELECT 1 FROM item_state x WHERE x.sprint_id = i.sprint_id AND x.needs = i.item))`, `
 CREATE VIEW context_state AS
   SELECT c.* FROM context_versions c
   WHERE c.id = (SELECT MAX(c2.id) FROM context_versions c2
