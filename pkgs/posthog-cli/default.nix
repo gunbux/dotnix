@@ -4,6 +4,10 @@
   fetchCrate,
   makeBinaryWrapper,
   nodejs,
+  pkg-config,
+  aws-lc,
+  zlib,
+  zstd,
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "posthog-cli";
@@ -18,7 +22,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   cargoHash = "sha256-LecRLbo76DcytbGG1HJpn/aOQrm1ax/9ca9SEOB1cgM=";
 
-  nativeBuildInputs = [makeBinaryWrapper];
+  nativeBuildInputs = [makeBinaryWrapper pkg-config];
+  buildInputs = [aws-lc zlib zstd];
 
   # Upload tests serve a fake object store on a loopback port
   __darwinAllowLocalNetworking = true;

@@ -136,6 +136,10 @@
         ## Garmin Connect MCP server (not in nixpkgs)
         garmin-mcp = prev.callPackage ./pkgs/garmin-mcp/default.nix {};
         # cargoUseSystemLibs now requires the system libs these crates probe.
+        cargo-bundle = prev.cargo-bundle.overrideAttrs (previous: {
+          nativeBuildInputs = (previous.nativeBuildInputs or []) ++ [prev.pkg-config];
+          buildInputs = (previous.buildInputs or []) ++ [prev.aws-lc];
+        });
         tectonic-unwrapped = prev.tectonic-unwrapped.overrideAttrs (previous: {
           buildInputs =
             (previous.buildInputs or [])
