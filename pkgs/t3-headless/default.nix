@@ -6,11 +6,11 @@
 }:
 stdenv.mkDerivation {
   pname = "t3-headless";
-  version = "0.1.7";
+  version = "0.1.8";
 
   src = fetchurl {
-    url = "https://github.com/pingdotgg/t3code/releases/download/v0.1.7/t3-0.1.7-linux-x64.tar.gz";
-    hash = "sha256-wImJK/eSLi5zxvRKXR6hJcmfcON4wYNhy77S+6GSDmw=";
+    url = "https://github.com/pingdotgg/t3code/releases/download/v0.1.8/t3-0.1.8-linux-x64.tar.gz";
+    hash = "sha256-ucSdwAwj+7xZYb2v8tiOVW2WyNvWOMRQHik3xwZQqeU=";
   };
 
   nativeBuildInputs = [autoPatchelfHook];
