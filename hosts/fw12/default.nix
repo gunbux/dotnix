@@ -57,6 +57,8 @@
     dedicatedServer.openFirewall = true;
     localNetworkGameTransfers.openFirewall = true;
     gamescopeSession.enable = true;
+    # Shows in Steam as "GE-Proton"; tracks the nixpkgs pin.
+    extraCompatPackages = [pkgs.proton-ge-bin];
   };
 
   programs.gamemode.enable = true;

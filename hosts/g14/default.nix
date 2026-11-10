@@ -89,6 +89,8 @@
   # Steam Configs
   programs.steam = {
     enable = true;
+    # Shows in Steam as "GE-Proton"; tracks the nixpkgs pin.
+    extraCompatPackages = [pkgs.proton-ge-bin];
   };
 
   # bcc
