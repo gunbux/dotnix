@@ -6,20 +6,20 @@
   upstreamT3code,
   upstreamDesktop,
 }: let
-  # Keep the release's Electron major and apply its latest patch release.
-  electronVersion = "44.10.2";
+  # Keep the release's Electron major and use its latest stable release.
+  electronVersion = "44.11.0";
   electronPlatforms = {
     x86_64-linux = {
       target = "linux-x64";
-      hash = "sha256-0vkxncgdZ4bGhKgPY9coQhdh9Vono64703MlDw9A/co=";
+      hash = "sha256-ULiwmiBkL774dEuD7d+IdPJCuETlFnqRDaEwb0HCLTo=";
     };
     aarch64-linux = {
       target = "linux-arm64";
-      hash = "sha256-F8fidAw5eVclXS7aFvj5BCIw+E/7RYQAqcwU+eDdaHk=";
+      hash = "sha256-cIHLpjRoiBAEzRhQjH/636Z8ENVRHfHZoKnvhMvchjg=";
     };
     aarch64-darwin = {
       target = "darwin-arm64";
-      hash = "sha256-HvYUJUkWD+hXLKmJISy1/D79X63kRbWsJWOb+pQIqA0=";
+      hash = "sha256-7X6XWHjpdn3kjXt7wG/dPTM9TVdHFVySuHRHfq97/sM=";
     };
   };
   electronPlatform = electronPlatforms.${stdenv.hostPlatform.system};
