@@ -3,6 +3,7 @@
   stdenv,
   fetchurl,
   autoPatchelfHook,
+  vulkan-loader,
 }:
 stdenv.mkDerivation {
   pname = "t3-headless";
@@ -14,7 +15,7 @@ stdenv.mkDerivation {
   };
 
   nativeBuildInputs = [autoPatchelfHook];
-  buildInputs = [stdenv.cc.cc.lib];
+  buildInputs = [stdenv.cc.cc.lib vulkan-loader];
   # Upstream ships both GNU and musl optional addons. This glibc runtime
   # selects GNU; retain the unused musl files without adding a second libc.
   autoPatchelfIgnoreMissingDeps = ["libc.musl-x86_64.so.1"];
