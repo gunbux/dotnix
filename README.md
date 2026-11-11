@@ -10,13 +10,24 @@
 nh os switch . (-H chun-lappy)
 ```
 
-## Installing the Eevee cursor
+## Cursors
 
-The niri hosts use the paid Eevee Chunky Cursor, which is not in this repo. Without it, the cursor falls back to Banana.
+The niri hosts use paid "Chunky" cursors by alllenski. They live in the private repo `gunbux/cursors`, which the `cursors` flake input fetches over SSH, so the machine needs SSH access to that repo.
 
-1. Unzip `Eevee_linux.zip` from the "Eevee Chunky Cursor.zip" purchase.
-2. Copy its `scm-eevee-c16f477d` folder to `~/.local/share/icons/`.
-3. Run `nh os switch . -H <host>`. Activation picks the cursor, so switch again after adding or removing the folder.
+Pick a cursor per host in its `home.nix`:
+
+```nix
+chun.cursor.theme = "mudkip"; # eevee (default), poliwag, mudkip or banana
+```
+
+The size defaults to 64 for the chunky cursors and 32 for Banana; set `chun.cursor.size` to change it.
+
+To add a cursor:
+
+1. Unzip the purchase's `*_linux.zip`.
+2. Copy its `scm-*` folder into the `cursors` repo under a new name, such as `Pikachu-Chunky`, and push.
+3. Add the name to `themes` in `modules/home/cursor.nix`.
+4. Run `nix flake update cursors`.
 
 ## Running wireguard
 

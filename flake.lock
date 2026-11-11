@@ -55,6 +55,22 @@
         "type": "github"
       }
     },
+    "cursors": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794395368,
+        "narHash": "sha256-shAbwyzGuVfRQbleQAwacaLqPc7uzQgC8mtZS7hoAGI=",
+        "ref": "refs/heads/main",
+        "rev": "c82c96918434acd0e23b678f6074a1872bd130f6",
+        "revCount": 1,
+        "type": "git",
+        "url": "ssh://git@github.com/gunbux/cursors"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/gunbux/cursors"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -651,6 +667,7 @@
     "root": {
       "inputs": {
         "chaotic": "chaotic",
+        "cursors": "cursors",
         "glance": "glance",
         "greptile-skills": "greptile-skills",
         "hex": "hex",
