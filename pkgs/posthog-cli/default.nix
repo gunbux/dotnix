@@ -11,16 +11,16 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "posthog-cli";
-  version = "0.19.2";
+  version = "0.19.3";
 
   # The crates.io tarball ships Cargo.lock and the prebuilt API CLI bundle
   # (lib/posthog-api-cli.mjs) that the monorepo otherwise generates.
   src = fetchCrate {
     inherit (finalAttrs) pname version;
-    hash = "sha256-eP8mYP7lgEJZxrGn5vvxRbXfgW/9O52B7auHeP1mM9E=";
+    hash = "sha256-GqvsTkDRu2aZVkypw1DVf4BuxtlIEWmlcYH4UufbXpE=";
   };
 
-  cargoHash = "sha256-Au0eCuQJd04MMXKK/9cz5VPIe69XVRrQMmjeao7gcWM=";
+  cargoHash = "sha256-hodfBifl5kzr6JqJiVLAGbWqzCdB/tkWcllWWwF/oEQ=";
 
   nativeBuildInputs = [makeBinaryWrapper pkg-config];
   buildInputs = [aws-lc zlib zstd];
