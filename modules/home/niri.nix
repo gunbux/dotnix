@@ -1,8 +1,20 @@
 {
   config,
+  lib,
   pkgs,
   ...
-}: {
+}: let
+  # Eevee Chunky Cursor is paid, so it stays out of this public repo. Unzip its
+  # Linux theme to ~/.local/share/icons/scm-eevee-c16f477d by hand. Activation
+  # points chun-cursor at it, or at Banana when it is missing.
+  eeveeTheme = "${config.xdg.dataHome}/icons/scm-eevee-c16f477d";
+  bananaTheme = "${pkgs.banana-cursor-dreams}/share/icons/Banana-Catppuccin-Mocha";
+  cursorLink = "${config.xdg.stateHome}/chun-cursor";
+  chunCursor = pkgs.runCommand "chun-cursor" {} ''
+    mkdir -p $out/share/icons
+    ln -s ${lib.escapeShellArg cursorLink} $out/share/icons/chun-cursor
+  '';
+in {
   imports = [
     ./noctalia.nix
     ./vicinae.nix
@@ -16,15 +28,25 @@
     xwayland-satellite
   ];
 
-  # Banana Cursor
+  # Eevee when installed, otherwise Banana (see the let block)
   home.pointerCursor = {
     enable = true;
     x11.enable = true;
     gtk.enable = true;
-    package = pkgs.banana-cursor-dreams;
-    size = 32;
-    name = "Banana-Catppuccin-Mocha";
+    package = chunCursor;
+    size = 64;
+    name = "chun-cursor";
   };
+
+  home.activation.selectCursorTheme = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    if [ -f ${lib.escapeShellArg eeveeTheme}/index.theme ]; then
+      cursorSource=${lib.escapeShellArg eeveeTheme}
+    else
+      cursorSource=${lib.escapeShellArg bananaTheme}
+    fi
+    run mkdir -p ${lib.escapeShellArg (dirOf cursorLink)}
+    run ln -sfn "$cursorSource" ${lib.escapeShellArg cursorLink}
+  '';
 
   # adw-gtk3 is the base Noctalia's gtk3/gtk4 templates recolor. Each gtk.css
   # imports noctalia.css first: Noctalia's apply.sh leaves a gtk.css that
