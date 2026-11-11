@@ -111,10 +111,8 @@ spawn-at-startup "kitty" "-e" "/home/chun/.config/tmux/start-session.sh"
 spawn-at-startup "zen-beta"
 spawn-at-startup "t3code-desktop"
 
-cursor {
-    xcursor-theme "chun-cursor"
-    xcursor-size 64
-}
+// cursor {} is generated from chun.cursor in modules/home/cursor.nix.
+include "cursor.kdl"
 
 environment {
     XDG_CURRENT_DESKTOP "niri"

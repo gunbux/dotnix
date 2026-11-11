@@ -74,6 +74,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
+    # Paid cursor themes (private repo; fetched over SSH as the user).
+    cursors = {
+      url = "git+ssh://git@github.com/gunbux/cursors";
+      flake = false;
+    };
     # Screenshots, OCR and ask-about-screen (private repo; fetched over SSH as the user).
     glance = {
       url = "git+ssh://git@github.com/gunbux/glance";
@@ -113,6 +118,8 @@
         pokego = prev.callPackage ./pkgs/pokego/default.nix {};
         ## Fun cursor
         banana-cursor-dreams = prev.callPackage ./pkgs/banana-cursor-dreams/default.nix {};
+        ## Paid cursors from the private `cursors` input (modules/home/cursor.nix)
+        chunky-cursors = prev.callPackage ./pkgs/chunky-cursors/default.nix {src = inputs.cursors;};
         ## Herald - terminal-based email client
         herald = prev.callPackage ./pkgs/herald/default.nix {};
         ## Delta - AI-native code editor from Zed (binary release)
