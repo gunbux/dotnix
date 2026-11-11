@@ -110,3 +110,4 @@ The notes repo is the record. It is `~/vimwiki` on the work Mac and `~/repo/neur
 | Rule | Enforced by |
 | --- | --- |
 | Hand over work-infra applies as a wizard script, not raw commands | Stop hook `require-wizard` (`config/require-wizard/require-wizard.py`, wired in `modules/home/ai.nix`) blocks a greptilia reply with `terraform`/`terragrunt`/`tofu` `apply` or `destroy` in a code block and no `wizard*.sh` path |
+| Tell Chun explicitly before a command reads his macOS keychain, which opens a dialog he must approve | PreToolUse hook `announce-keychain` (`config/announce-keychain/announce-keychain.py`, wired in `modules/home/ai.nix`) denies a Bash `security find-generic-password` (and similar) until the turn's visible text mentions the keychain |

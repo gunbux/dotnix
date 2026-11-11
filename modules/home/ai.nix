@@ -39,6 +39,8 @@
   mcpServers = import ../mcp-servers.nix {inherit lib pkgs;};
   # Stop hook: a greptilia reply that hands over Terraform/Terragrunt apply commands must come as a wizard script.
   require-wizard = pkgs.writers.writePython3Bin "require-wizard" {doCheck = false;} (builtins.readFile ../../config/require-wizard/require-wizard.py);
+  # PreToolUse hook: a Bash command that reads the macOS keychain waits until the agent has told Chun it needs it.
+  announce-keychain = pkgs.writers.writePython3Bin "announce-keychain" {doCheck = false;} (builtins.readFile ../../config/announce-keychain/announce-keychain.py);
   # Agent CLIs come from numtide/llm-agents.nix (updated daily, binary cached)
   # rather than nixpkgs. GUI counterparts live in applications.nix.
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
@@ -118,6 +120,17 @@ in {
           {
             type = "command";
             command = "${require-wizard}/bin/require-wizard";
+          }
+        ];
+      }
+    ];
+    settings.hooks.PreToolUse = [
+      {
+        matcher = "Bash";
+        hooks = [
+          {
+            type = "command";
+            command = "${announce-keychain}/bin/announce-keychain";
           }
         ];
       }
