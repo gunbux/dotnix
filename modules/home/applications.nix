@@ -54,7 +54,6 @@ in {
       saber # Handwriting
       solaar # Mouse Utilities
       spotify # Music
-      steam # Games
       tailscale # VPN/Wireguard
       telegram-desktop # Telegram
       thunderbird # Email Client
