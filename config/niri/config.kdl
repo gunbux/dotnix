@@ -112,8 +112,8 @@ spawn-at-startup "zen-beta"
 spawn-at-startup "t3code-desktop"
 
 cursor {
-    xcursor-theme "Banana-Catppuccin-Mocha"
-    xcursor-size 32
+    xcursor-theme "chun-cursor"
+    xcursor-size 64
 }
 
 environment {
