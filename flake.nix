@@ -47,7 +47,7 @@
     minegrub-theme.url = "github:Lxtharia/minegrub-theme";
     minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
     noctalia = {
-      url = "github:noctalia-dev/noctalia/v5.4.1";
+      url = "github:noctalia-dev/noctalia/v5.5.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # Pinned Noctalia plugin sources, exposed to Noctalia as read-only path sources.
