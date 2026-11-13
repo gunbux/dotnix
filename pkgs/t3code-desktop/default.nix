@@ -7,19 +7,19 @@
   upstreamDesktop,
 }: let
   # Keep the release's Electron major and use its latest stable release.
-  electronVersion = "44.11.2";
+  electronVersion = "44.11.3";
   electronPlatforms = {
     x86_64-linux = {
       target = "linux-x64";
-      hash = "sha256-kQz0q9kQ4GXJs2henADWH5/vGnS6tEC94/oN6GMx8QM=";
+      hash = "sha256-8jkMHngD5fTVnUapL9cGfQsTwjfQ3siGsA5j0AeAeNQ=";
     };
     aarch64-linux = {
       target = "linux-arm64";
-      hash = "sha256-dreCzSTvPelzR8Aw48WQXOS76P76zb1y30oWUt2l+Ls=";
+      hash = "sha256-hxyAVqeMuNP+awmELN2lRVJiOBgmTupHyC6TwY5JYeQ=";
     };
     aarch64-darwin = {
       target = "darwin-arm64";
-      hash = "sha256-EA+unMkRInO4iA6xjDJMgBZDf5Z7HDWEBKL+ofLpg20=";
+      hash = "sha256-JYAHE3Tc0WkUdNRAKp4UWuSNGUGIMKv5uR5jlOp60JM=";
     };
   };
   electronPlatform = electronPlatforms.${stdenv.hostPlatform.system};

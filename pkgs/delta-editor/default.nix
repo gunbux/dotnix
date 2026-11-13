@@ -13,7 +13,7 @@
   vulkan-loader,
   wayland,
 }: let
-  version = "0.26.0";
+  version = "0.26.1";
 
   # delta.dev only hands out short-lived presigned R2 URLs, so resolve one
   # through the versioned release API inside a fixed-output derivation.
@@ -26,7 +26,7 @@
     '';
     outputHashMode = "flat";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-TnxHgLi+BqoAAWlaszfdZalH/JF5b1TJWB5hj5fNjMM=";
+    outputHash = "sha256-5JFdgf0wPtt9Wb6/9EYPj6i+wmDeFKZ0EYfQQ3T5Ym4=";
   };
 in
   stdenv.mkDerivation {
