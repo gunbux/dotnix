@@ -9,6 +9,8 @@
   wsl.enable = true;
   wsl.defaultUser = "chun";
   programs.zsh.enable = true;
+  # Capy Dock ships a glibc binary that must stay unpatched (pkgs/capy-dock).
+  programs.nix-ld.enable = true;
   users.users.chun = {
     isNormalUser = true;
     uid = 1000;

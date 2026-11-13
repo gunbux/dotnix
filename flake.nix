@@ -142,6 +142,8 @@
         sprint = prev.callPackage ./pkgs/sprint/default.nix {};
         ## Greptile CLI (npm package, not in nixpkgs)
         greptile-cli = prev.callPackage ./pkgs/greptile-cli/default.nix {};
+        ## Capy Dock release binary, kept unmodified (modules/home/capy.nix)
+        capy-dock = prev.callPackage ./pkgs/capy-dock/default.nix {};
         ## Garmin Connect MCP server (not in nixpkgs)
         garmin-mcp = prev.callPackage ./pkgs/garmin-mcp/default.nix {};
       };

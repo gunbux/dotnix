@@ -45,6 +45,8 @@
   # rather than nixpkgs. GUI counterparts live in applications.nix.
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
 in {
+  imports = [./capy.nix];
+
   home.packages =
     (with llmAgents; [
       crush
