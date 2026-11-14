@@ -7,6 +7,9 @@
 }: let
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
 in {
+  # The Capy desktop app is this machine's Capy device (modules/home/capy.nix).
+  capy.app.enable = true;
+
   home.packages = with pkgs;
     [
       # davinci-resolve # Video Editor

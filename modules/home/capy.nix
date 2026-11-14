@@ -1,7 +1,11 @@
-# Capy Dock: makes this machine a device that Capy cloud-agent threads run on.
-# Pair once per machine by running `capy dock` in a terminal and approving the
-# code at https://capy.ai/settings/devices, then stop it and restart the
-# service (`systemctl --user restart capy-dock` or
+# Capy: makes this machine a device that Capy cloud-agent threads run on.
+# Capy allows one device per user per machine, so a machine runs either the
+# desktop app (capy.app.enable, set on machines with a desktop) or the Dock
+# service. The `capy` Dock CLI is installed everywhere.
+#
+# Dock: pair once by running `capy dock` in a terminal and approving the code
+# at https://capy.ai/settings/devices, then stop it and restart the service
+# (`systemctl --user restart capy-dock` or
 # `launchctl kickstart -k gui/$UID/org.nix-community.home.capy-dock`).
 # Until then the service sees "not paired" and exits cleanly.
 {
@@ -41,11 +45,22 @@
     fi
     exec ${capy} dock
   '';
-in
-  lib.mkMerge [
-    {home.packages = [pkgs.capy-dock];}
+  cfg = config.capy;
+in {
+  options.capy = {
+    app.enable = lib.mkEnableOption "the Capy desktop app as this machine's Capy device";
+    dock.service.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = !cfg.app.enable;
+      defaultText = lib.literalExpression "!config.capy.app.enable";
+      description = "Run `capy dock` as a user service. Off where the desktop app is the device.";
+    };
+  };
 
-    (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+  config = lib.mkMerge [
+    {home.packages = [pkgs.capy-dock] ++ lib.optional cfg.app.enable pkgs.capy-desktop;}
+
+    (lib.mkIf (cfg.dock.service.enable && pkgs.stdenv.hostPlatform.isLinux) {
       systemd.user.services.capy-dock = {
         Unit.Description = "Capy Dock device daemon";
         Service = {
@@ -57,7 +72,7 @@ in
       };
     })
 
-    (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+    (lib.mkIf (cfg.dock.service.enable && pkgs.stdenv.hostPlatform.isDarwin) {
       launchd.agents.capy-dock = {
         enable = true;
         config = {
@@ -71,4 +86,5 @@ in
         };
       };
     })
-  ]
+  ];
+}
