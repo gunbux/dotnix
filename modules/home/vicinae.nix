@@ -55,6 +55,12 @@ in {
         dark.name = "catppuccin-mocha";
         light.name = "catppuccin-latte";
       };
+      # The file indexer grew a 27G SQLite DB under ~/.cache/vicinae;
+      # file search is rarely used, so keep the provider off.
+      providers.files = {
+        enabled = false;
+        preferences.autoIndexing = false;
+      };
     };
   };
 
