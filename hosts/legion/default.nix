@@ -51,19 +51,12 @@
     text = "[Scope]\nMemoryLow=8G\n";
   };
 
-  # scx
-  # services.scx_loader = {
-  #   enable = true;
-  #   default_sched = "scx_lavd";
-  #   scheduler_config = ''
-  #     [scheds.scx_lavd]
-  #     auto_mode = []
-  #     gaming_mode = ["--performance"]
-  #     lowlatency_mode = ["--performance"]
-  #     powersave_mode = ["--powersave"]
-  #     server_mode = []
-  #   '';
-  # };
+  # sched_ext: scx_lavd in its auto mode, which picks power or performance
+  # itself. Recommended by the Deadlock Linux guide for better 1% lows.
+  services.scx-loader = {
+    enable = true;
+    config.default_sched = "scx_lavd";
+  };
 
   # Networking
   networking.hostName = "legion-nix";
