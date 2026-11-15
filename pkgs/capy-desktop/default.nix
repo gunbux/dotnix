@@ -11,25 +11,25 @@
 # bump the version and hashes here instead.
 let
   pname = "capy-desktop";
-  version = "0.8.0";
+  version = "0.9.0";
   base = "https://downloads.capy.ai/stable";
   # sha512 values from latest-mac.yml, latest-linux.yml and latest-linux-arm64.yml.
   sources = {
     aarch64-darwin = {
       url = "${base}/Capy-${version}-arm64.zip";
-      hash = "sha512-X7+VSwBojehnF/Qoo5kWV8sGAcUVHIrdLIwvgcHlKaRfPuZQLy2uqrXyKvEl6aH+26214S0U2nPQvbgFBfwPcQ==";
+      hash = "sha512-JiMP97CG4BHNcLSS3Niyx+Q3Lhuchrbpu6C/8ONHbVRGgLW9J/AlMYXpWMQDBp3JoWUfz/YwY1kCXqo/z4paRA==";
     };
     x86_64-darwin = {
       url = "${base}/Capy-${version}-x64.zip";
-      hash = "sha512-hRlw0RDDhN9rgMjIms9ADS1ichTLLzgKJRzCgvuH6BKCjB36/5Zdvmjk8djSGPwdgS7OQ/bURjf9unKK6IdcRA==";
+      hash = "sha512-RwifvPSyJON3Nk8MNoWv7Tgzv/fSTUgcLfWAdeX+7oCCMSccgPNquCE6MXgpmz774Akbhs/LhJJSGTfI7QKJxw==";
     };
     x86_64-linux = {
       url = "${base}/capy-${version}-x86_64.AppImage";
-      hash = "sha512-B4LuvQCmmNb1ih05zGRm4O+GMU5kupR7t2/LtuLu8JS8KFiJiZCDWDyiG9P42UeYzo+Thw0WtZB6lb2CkoDgrw==";
+      hash = "sha512-pYCaRH8HBgQbhmxplnv7vGGnA5P7Yuo5g2V0yMe/sZAooo92IEhAJcwZVzClNcastreybssGLHlEhdilP7msXQ==";
     };
     aarch64-linux = {
       url = "${base}/capy-${version}-arm64.AppImage";
-      hash = "sha512-CrX5n6e/7qfWAdi6Y3/eBiUcWl+USMdfuFjj9KC45AoCHHRK6Mpr9V4PtKaFBtNPxzOxgPY/zInyLyu7Cw/NJg==";
+      hash = "sha512-7mPvNJYnfRu7CHY4khGpUC6Z73mRpYXM4OiBRXIx9Y5SDSJqv8anedmuuB/0vJ4cZwiCWSvSU3jrsbktuBVp0w==";
     };
   };
   system = stdenvNoCC.hostPlatform.system;
