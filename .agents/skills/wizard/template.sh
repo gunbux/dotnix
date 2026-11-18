@@ -27,6 +27,9 @@ ENV_FILE="${ENV_FILE:-.env}"
 WRITTEN_ENV=()    # KEYs written to ENV_FILE this run
 WRITTEN_SECRET=() # secret NAMEs set this run
 SKIPPED=()        # things we couldn't do (e.g. gh missing)
+# One line per finished stage name. A re-run skips those stages, so a run that fails partway continues at the
+# stage that failed; never finish a wizard's stages by hand. `--restart` forgets them.
+STATE_FILE="${STATE_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/wizards/$(basename "$0" .sh).done}"
 
 # _clear wipes the terminal so only the current step is on screen. No-op when
 # output isn't a terminal, so piped logs stay readable.
@@ -42,8 +45,8 @@ banner() {
   printf '\n%s%s  %s%s\n' "$BOLD" "$BLUE" "$1" "$RESET"
   printf '%s  %s stages%s\n\n' "$DIM" "$TOTAL_STAGES" "$RESET"
   printf '%s  You drive the browser; this wizard tells you exactly what to do and\n' "$DIM"
-  printf '  captures the values you copy back. Stop any time with Ctrl-C and re-run\n'
-  printf '  later, since it remembers values already saved.%s\n' "$RESET"
+  printf '  captures the values you copy back. Stop any time with Ctrl-C, or let a\n'
+  printf '  stage fail, and re-run: it continues at the first stage not done yet.%s\n' "$RESET"
   pause "Ready to start?"
 }
 
@@ -54,6 +57,36 @@ stage() {
   _STAGE_INDEX=$((_STAGE_INDEX + 1))
   printf '\n%s%s▸ Stage %s/%s · %s%s\n' \
     "$BOLD" "$BLUE" "$_STAGE_INDEX" "$TOTAL_STAGES" "$1" "$RESET"
+}
+
+# wizard_args "$@" handles the library's own flags. Each mode (--rollback, or none) keeps its own finished stages,
+# and --restart forgets the ones of this mode.
+wizard_args() {
+  local arg
+  for arg in "$@"; do [[ "$arg" == --* && "$arg" != --restart ]] && STATE_FILE="${STATE_FILE%.done}.${arg#--}.done"; done
+  for arg in "$@"; do [[ "$arg" == --restart ]] && rm -f "$STATE_FILE"; done
+  mkdir -p "$(dirname "$STATE_FILE")"
+  touch "$STATE_FILE"
+}
+
+# run_stage "Name" FN [DONE_FN] runs stage FN and records it as done. It skips FN when an earlier run finished it,
+# or when DONE_FN succeeds: the work is already done, for example by hand. FN must be safe to run again after it
+# fails partway: check before you create, push or open anything. A value a later stage needs goes through write_env,
+# because a skipped stage sets no variables.
+run_stage() {
+  local name="$1" fn="$2" done_fn="${3:-}"
+  stage "$name"
+  if grep -qxF "$name" "$STATE_FILE" 2>/dev/null; then
+    note "Done in an earlier run. Skipping."
+  elif [[ -n "$done_fn" ]] && "$done_fn"; then
+    note "Already done. Skipping."
+    printf '%s\n' "$name" >>"$STATE_FILE"
+  else
+    "$fn"
+    printf '%s\n' "$name" >>"$STATE_FILE"
+    return 0
+  fi
+  sleep 1
 }
 
 # say "..." prints a plain instruction line.
@@ -223,20 +256,14 @@ finish() {
 }
 
 # ──────────────────────────────────────────────────────────────────────────
-# STAGES: author this section. One stage() per step the human takes.
-# Replace the example below. Set TOTAL_STAGES to match the stages you write.
-# Keep every stage inside run_wizard and the last line as is: bash then parses
+# STAGES: author this section. One function and one run_stage per step the human takes.
+# Replace the example below. Set TOTAL_STAGES to match the stages you write. Never call stage directly.
+# Keep every stage function above run_wizard, and the last line as is: bash then parses
 # the whole file before the first prompt, so an edit mid-run can't break it.
 # ──────────────────────────────────────────────────────────────────────────
 
-run_wizard() {
-
-TOTAL_STAGES=1
-
-banner "Stripe setup"
-
 # ── Example stage: replace with your real steps ───────────────────────────
-stage "Stripe: API keys"
+stripe_keys() {
 say "We'll grab your Stripe test keys and store them for local dev + CI."
 open_url "https://dashboard.stripe.com/test/apikeys"
 step "On the API keys page, copy the Publishable key (starts pk_test_)."
@@ -246,7 +273,17 @@ ask_secret STRIPE_SECRET_KEY "Paste the secret key:"
 write_env STRIPE_PUBLISHABLE_KEY "$STRIPE_PUBLISHABLE_KEY"
 write_env STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"
 set_secret STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"   # CI needs this one
+}
+stripe_keys_done() { [[ -n "$(_existing STRIPE_SECRET_KEY || true)" ]] && [[ -n "$(_existing STRIPE_PUBLISHABLE_KEY || true)" ]]; }
 # ──────────────────────────────────────────────────────────────────────────
+
+run_wizard() {
+wizard_args "$@"
+
+TOTAL_STAGES=1
+
+banner "Stripe setup"
+run_stage "Stripe: API keys" stripe_keys stripe_keys_done
 
 finish
 }

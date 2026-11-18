@@ -43,7 +43,7 @@
   require-wizard = pkgs.runCommand "require-wizard" {nativeBuildInputs = [pkgs.python3];} ''
     cp ${../../config/require-wizard/require-wizard.py} require-wizard.py
     cp ${../../config/require-wizard/test_require_wizard.py} test_require_wizard.py
-    python3 -I test_require_wizard.py ${../../.agents/skills/wizard/template.sh}
+    python3 -I test_require_wizard.py ${../../.agents/skills/wizard}/template.sh
     mkdir -p $out/bin
     ln -s ${require-wizard-bin}/bin/require-wizard $out/bin/require-wizard
   '';

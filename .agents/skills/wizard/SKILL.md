@@ -32,7 +32,7 @@ For each stage, write the precise path a human follows: which URL to open, what 
 
 ### 3. Author the wizard
 
-Copy `template.sh` to the target path. Replace the example stage with one `stage` per step, in dependency order. Use the library helpers: `stage`, `say`/`step`, `open_url`, `ask`/`ask_secret`, `write_env`, `set_secret`/`set_var`, `pause`/`confirm`. Set `TOTAL_STAGES` to the number of stages you wrote.
+Copy `template.sh` to the target path. Replace the example stage with one function per step, in dependency order, and run each with `run_stage "Name" fn [done_fn]` inside `run_wizard`. Never call `stage` directly. Use the library helpers: `run_stage`, `say`/`step`, `open_url`, `ask`/`ask_secret`, `write_env`, `set_secret`/`set_var`, `pause`/`confirm`. Set `TOTAL_STAGES` to the number of stages you wrote.
 
 Hold the bar the template sets: open the URL before asking for its value, use `ask_secret` for anything secret, `write_env` every persisted value, `set_secret` only the values CI actually needs, and `confirm` before any irreversible action.
 
@@ -42,6 +42,10 @@ A wizard applies Terraform only by calling the library's `tf_apply_reviewed UNIT
 2. Read every change with `tfplan-summary`. Each one must come from the PR. A deletion, or a change to someone else's resource, means the branch is behind or someone's work is unapplied: stop and report it.
 3. Write the scope with `tfplan-guard record <plan.json> > <scope.json>` next to the wizard.
 
+A wizard resumes. `run_stage` records each finished stage, and a re-run skips it, so a run that fails partway continues at the failed stage. Write each stage so it is safe to run again after a partial run: check before you create, commit, push or open anything. Give a stage a `done_fn` when its work can be done another way, so a re-run sees it is done: an apply whose plan is now empty, a PR that exists. A value a later stage needs goes through `write_env`, because a skipped stage sets no variables.
+
+A wizard runs its own checks. A smoke check or a verification is a stage that runs the commands and says what passing looks like, never a pointer to a README or "run this in another terminal".
+
 Keep recovery out of the main path. A rollback or undo is its own mode (`--rollback`), never a stage of the normal run: a human reads every stage as a step to do. End the normal run with a closing summary that says how to tell it worked, which signs call for a rollback, and the exact rollback command, labelled "only if something is wrong". Each `stage` clears the screen so only the current step is visible: keep a stage to one focused task so nothing the human needs scrolls away. Don't touch the library above the marker.
 
 ### 4. Verify and hand off
@@ -49,4 +53,9 @@ Keep recovery out of the main path. A rollback or undo is its own mode (`--rollb
 - `bash -n <script>`; run `shellcheck` if available.
 - `chmod +x <script>`.
 - Don't run it end-to-end yourself: it opens browsers and blocks on human input. Trace it statically instead: every value from step 1 is captured and lands where step 1 said, and every `set_secret` name exactly matches a `secrets.*` reference in CI.
+- Run `lint.sh <script>` from this skill's directory. It must pass. The `require-wizard` Stop hook runs it on every wizard a reply hands over.
 - Tell the user how to run it. If it's a repeatable setup path, commit it and link it from the README so the next person runs the script instead of asking an AI.
+
+### When a run fails
+
+Fix the cause in the wizard, or in what it runs, and tell the user to run the same wizard again. It continues where it stopped. Never finish its remaining stages by hand, and never hand over another wizard's script or check in their place: each gate has its own checks.
