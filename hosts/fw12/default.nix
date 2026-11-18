@@ -67,6 +67,36 @@
   };
 
   programs.gamemode.enable = true;
+  # NT sync primitives in the kernel. Proton uses /dev/ntsync when it exists,
+  # instead of emulating Windows sync objects in wineserver.
+  boot.kernelModules = ["ntsync"];
+
+  # Same game memory floor as legion-nix. Steam runs each game in an
+  # app-steam-app<ID>-<pid>.scope; the kernel never reclaims its first 8G and
+  # swaps other apps instead. The iGPU uses system RAM too, so 8G of 16G is
+  # the floor, not more. Every parent cgroup needs the floor for it to apply.
+  systemd.slices."user".sliceConfig.MemoryMin = "8G";
+  systemd.slices."user-" = {
+    overrideStrategy = "asDropin";
+    sliceConfig.MemoryMin = "8G";
+  };
+  systemd.services."user@".serviceConfig.MemoryMin = "8G";
+  systemd.user.slices."app".sliceConfig.MemoryMin = "8G";
+  systemd.user.units."app-steam-.scope" = {
+    overrideStrategy = "asDropin";
+    text = "[Scope]\nMemoryMin=8G\n";
+  };
+  # With a hard floor, the kernel OOM killer would pick the biggest process:
+  # the game. systemd-oomd acts first, at 90% swap, and kills the cgroup with
+  # the most swap. Swap only: the pressure trigger could pick a stuttering game.
+  systemd.slices."-".sliceConfig.ManagedOOMSwap = "kill";
+
+  # sched_ext: scx_lavd in its auto mode, which picks power or performance
+  # itself. Recommended by the Deadlock Linux guide for better 1% lows.
+  services.scx-loader = {
+    enable = true;
+    config.default_sched = "scx_lavd";
+  };
 
   programs.gamescope = {
     enable = true;
