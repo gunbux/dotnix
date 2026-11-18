@@ -38,7 +38,15 @@
     // vendoredSkillFilesFor ".claude/skills";
   mcpServers = import ../mcp-servers.nix {inherit lib pkgs;};
   # Stop hook: a greptilia reply that hands over Terraform/Terragrunt apply commands must come as a wizard script.
-  require-wizard = pkgs.writers.writePython3Bin "require-wizard" {doCheck = false;} (builtins.readFile ../../config/require-wizard/require-wizard.py);
+  # It also rejects a wizard that applies Terraform outside tf_apply_reviewed. The build fails when its tests fail.
+  require-wizard-bin = pkgs.writers.writePython3Bin "require-wizard" {doCheck = false;} (builtins.readFile ../../config/require-wizard/require-wizard.py);
+  require-wizard = pkgs.runCommand "require-wizard" {nativeBuildInputs = [pkgs.python3];} ''
+    cp ${../../config/require-wizard/require-wizard.py} require-wizard.py
+    cp ${../../config/require-wizard/test_require_wizard.py} test_require_wizard.py
+    python3 -I test_require_wizard.py ${../../.agents/skills/wizard}/template.sh
+    mkdir -p $out/bin
+    ln -s ${require-wizard-bin}/bin/require-wizard $out/bin/require-wizard
+  '';
   # PreToolUse hook: a Bash command that reads the macOS keychain waits until the agent has told Chun it needs it.
   announce-keychain = pkgs.writers.writePython3Bin "announce-keychain" {doCheck = false;} (builtins.readFile ../../config/announce-keychain/announce-keychain.py);
   # Agent CLIs come from numtide/llm-agents.nix (updated daily, binary cached)

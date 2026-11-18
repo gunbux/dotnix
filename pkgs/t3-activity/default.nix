@@ -12,7 +12,7 @@ buildGoModule {
     fileset = lib.fileset.unions [./go.mod ./go.sum ./main.go ./relay.go];
   };
 
-  vendorHash = "sha256-d1ysZ2yECRowJKRZ0H8SAtV4FgeUzs6SdXSo3tUa1GE=";
+  vendorHash = "sha256-WV6J1XQbuiyMBttQxfPKMsVxhW+kvPmIZGG0Z7DnhIw=";
 
   # modernc.org/sqlite is pure Go
   env.CGO_ENABLED = "0";
