@@ -124,6 +124,12 @@
         herald = prev.callPackage ./pkgs/herald/default.nix {};
         ## Delta - AI-native code editor from Zed (binary release)
         delta-editor = prev.callPackage ./pkgs/delta-editor/default.nix {};
+        devin-cli = prev.callPackage ./pkgs/devin-cli/default.nix {
+          upstreamDevin = prev.devin-cli;
+        };
+        devin-desktop = prev.callPackage ./pkgs/devin-desktop/default.nix {
+          upstreamDevin = prev.devin-desktop;
+        };
         ## Patched llm-agents source build with T3 Connect enabled.
         t3code-desktop = prev.callPackage ./pkgs/t3code-desktop/default.nix {
           upstreamT3code = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system}.t3code;
