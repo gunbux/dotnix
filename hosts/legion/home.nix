@@ -7,7 +7,6 @@
 
     ../../modules/home/amd.nix
     ../../modules/home/linux.nix
-    ../../modules/home/muesli.nix
     ../../modules/home/niri.nix
     ../../modules/home/applications.nix
     ../../modules/home/mpv.nix

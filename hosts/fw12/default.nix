@@ -28,6 +28,11 @@
     wifi.powersave = true;
   };
 
+  # Keep the RTC in UTC. No Windows on this machine, and a local-time RTC is
+  # never updated by timesyncd, so it drifts by whole time-zone offsets when
+  # tzupdate changes zones while traveling.
+  time.hardwareClockInLocalTime = lib.mkForce false;
+
   # Kernel
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
 

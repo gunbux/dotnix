@@ -4,7 +4,8 @@
   inputs,
   ...
 }: {
-  imports = [./hex.nix];
+  # muesli builds on Hex and provides the meeting capsule hex.nix relies on.
+  imports = [./hex.nix ./muesli.nix];
 
   home.packages = with pkgs; [
     # Linux-related System Utils
