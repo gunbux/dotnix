@@ -178,6 +178,37 @@ set_var() {
   warn "skipped GitHub variable $name, gh not ready; set it later"
 }
 
+# tf_apply_reviewed UNIT_DIR AWS_PROFILE SCOPE_JSON PLAN plans the unit to PLAN, says what it changes, and applies
+# exactly that file. It stops, deletes PLAN, and offers no way on when the plan differs from SCOPE_JSON in any way
+# (`tfplan-guard check`): an unreviewed resource, an extra attribute, a new value, or a missing change. The agent
+# writes SCOPE_JSON with `tfplan-guard record` from its own reviewed plan. This is the only Terraform apply a
+# wizard may run; the require-wizard hook rejects any other.
+tf_apply_reviewed() {
+  local dir="$1" profile="$2" scope="$3" plan="$4" json="$4.json" problems
+  command -v tfplan-guard >/dev/null || { warn "tfplan-guard is not installed. Don't apply."; exit 1; }
+  [[ -s "$scope" ]] || { warn "The reviewed scope $scope is missing. Don't apply."; exit 1; }
+  note "Planning $dir as $profile..."
+  (cd "$dir" && AWS_PROFILE="$profile" terragrunt plan -out="$plan" >"$plan.log" 2>&1) || {
+    warn "The plan failed. Its log: $plan.log"
+    exit 1
+  }
+  (cd "$dir" && AWS_PROFILE="$profile" terragrunt show -json "$plan" 2>/dev/null) >"$json"
+  say "${BOLD}What the plan changes:${RESET}"
+  tfplan-summary "$json" | sed 's/^/    /'
+  if ! problems=$(tfplan-guard check "$scope" "$json"); then
+    rm -f "$plan"
+    warn "Stop. The plan differs from the plan Claude reviewed:"
+    printf '%s\n' "$problems" | sed 's/^/    /'
+    warn "This is probably someone else's merged or applied work. Don't apply it."
+    warn "The plan file is deleted, so nothing can apply it. Send the list above to Claude."
+    exit 1
+  fi
+  say "${GREEN}✓${RESET} The plan matches the reviewed plan exactly."
+  note "To read the full plan: cd $dir && AWS_PROFILE=$profile terragrunt show $plan"
+  confirm "Apply exactly this plan?" || { rm -f "$plan"; exit 1; }
+  (cd "$dir" && AWS_PROFILE="$profile" terragrunt apply "$plan")
+}
+
 # finish clears, then shows a closing summary of everything configured.
 finish() {
   _clear
