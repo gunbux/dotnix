@@ -1,11 +1,11 @@
 --- a/apps/web/src/localApi.ts
 +++ b/apps/web/src/localApi.ts
-@@ -44,16 +44,11 @@
-         items: readonly ContextMenuItem<T>[],
+@@ -52,16 +52,11 @@
          position?: { x: number; y: number },
+         source?: ContextMenuSource,
        ): Promise<T | null> => {
 -        if (window.desktopBridge) {
--          return window.desktopBridge.showContextMenu(items, position) as Promise<T | null>;
+-          return window.desktopBridge.showContextMenu(items, position, source) as Promise<T | null>;
 -        }
          return showContextMenuFallback(items, position);
        },

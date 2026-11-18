@@ -1,11 +1,8 @@
 {
   lib,
   stdenv,
-  stdenvNoCC,
+  fetchurl,
   autoPatchelfHook,
-  cacert,
-  curl,
-  jq,
   libGL,
   llvmPackages,
   libxcb,
@@ -13,20 +10,13 @@
   vulkan-loader,
   wayland,
 }: let
-  version = "0.26.1";
+  version = "0.27.2";
 
-  # delta.dev only hands out short-lived presigned R2 URLs, so resolve one
-  # through the versioned release API inside a fixed-output derivation.
-  src = stdenvNoCC.mkDerivation {
-    name = "delta-linux-x86_64-${version}.tar.gz";
-    nativeBuildInputs = [cacert curl jq];
-    buildCommand = ''
-      url=$(curl -fsSL "https://delta.dev/api/releases/stable/${version}/asset?asset=delta&os=linux&arch=x86_64" | jq -r .url)
-      curl -fsSL "$url" -o "$out"
-    '';
-    outputHashMode = "flat";
-    outputHashAlgo = "sha256";
-    outputHash = "sha256-5JFdgf0wPtt9Wb6/9EYPj6i+wmDeFKZ0EYfQQ3T5Ym4=";
+  # The release API (delta.dev/api/releases/stable/<version>/asset) now
+  # resolves to this fixed, unsigned URL.
+  src = fetchurl {
+    url = "https://releases.delta.dev/releases/stable/${version}/delta-linux-x86_64.tar.gz";
+    hash = "sha256-s8/5ZZvnXUnWLE7ATzlFMS8z3RDpboCr2BywH/Iss9w=";
   };
 in
   stdenv.mkDerivation {

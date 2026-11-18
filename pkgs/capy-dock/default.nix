@@ -9,24 +9,24 @@
 # patchelf, no strip, no shebang patching. On NixOS the glibc binary and its
 # native addons load through nix-ld.
 let
-  version = "0.8.0";
+  version = "0.9.2";
   # From https://downloads.capy.ai/stable/dock/<version>/SHA256SUMS.
   targets = {
     aarch64-darwin = {
       target = "darwin-arm64";
-      hash = "sha256-F4Yz1cdESsRXcX0BpMFwh5fI0IEZMVoTDoyry82tsNo=";
+      hash = "sha256-6rQjB4bVLWNwXd3SZwQTASNkuzKVxq4eMt4dVJ/R/Fo=";
     };
     x86_64-darwin = {
       target = "darwin-x64";
-      hash = "sha256-c18aa4DP9pbyfd4mRpe+HcTpLEUMJvR6BfXomYhgsew=";
+      hash = "sha256-37Kmrauc9RnjhW06dNw9MWOFVSxR9mTySghouhKuDCI=";
     };
     aarch64-linux = {
       target = "linux-arm64";
-      hash = "sha256-RYumwLiGokkE0QJwcUO8Ew2xAJK0nh0yy1BRwCLP+e0=";
+      hash = "sha256-111kqYShitcnenHfp0XR8mD9Tlhiu2CY/qNkRqa7hzg=";
     };
     x86_64-linux = {
       target = "linux-x64";
-      hash = "sha256-luyhmtbnswbVlclFvlxSzlKlrVKCFMU7rT7mRana1FQ=";
+      hash = "sha256-uYRWE7o3xQiJX+9MVsaXXH04qZzH4g2nFg87QSj7v2s=";
     };
   };
   platform =
