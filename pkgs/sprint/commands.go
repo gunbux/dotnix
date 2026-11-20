@@ -193,7 +193,8 @@ func init() {
 			flags: map[string]flagDef{"json": {isBool: true}}},
 		{path: "inventory", help: "everything a catch-up must cover: your open PRs in every repo, review requests, each open sprint, and the T3 calls to make",
 			run: cmdInventory, prefetch: prefetchInventory,
-			flags: map[string]flagDef{"json": {isBool: true}}},
+			flags: map[string]flagDef{"json": {isBool: true},
+				"topic": {repeat: true, help: "keep only items that name this word (title, branch, repo, sprint subgoal); repeat it or give a comma list"}}},
 	}
 }
 

@@ -84,3 +84,60 @@ func TestInventoryReportsAFailedSearch(t *testing.T) {
 	contains_(t, out, "ERROR: could not list your open PRs: rate limited")
 	contains_(t, out, "ERROR: could not list PRs that wait for your review: rate limited")
 }
+
+// On 20 Nov 2026 Chun asked for the SDK work only and got every thread. The
+// SDK fix #20103 names neither "sdk" in its title nor its branch: only its
+// sprint subgoal matches.
+func TestInventoryTopicKeepsOnlyThatTopic(t *testing.T) {
+	h := newHarness(t)
+	h.clock(1795190400) // 2026-11-20
+	w := newWorld(t)
+	gh := func(n int, title, branch string) string {
+		p := waiting(n, title)
+		p.URL = fmt.Sprintf("https://github.com/greptileai/greptilia/pull/%d", n)
+		p.HeadRefName = branch
+		w.set(p)
+		w.mine = append(w.mine, p.URL)
+		return p.URL
+	}
+	quota := gh(20103, "sandbox-orchestrator: retry a Pod create that loses a quota race", "chun/orchestrator-quota-conflict")
+	monitors := gh(19792, "Production Kubernetes sandboxes 6/7: Datadog monitors and dashboard", "chun/k8s-prod-datadog")
+	tenth := gh(19793, "Production Kubernetes sandboxes 7/7: 0.1% of regular reviews on Kubernetes", "chun/k8s-prod-default-0.1")
+	capacity := gh(17994, "greptile-staging: raise sandbox and T-Rex capacity for greptilia's T-Rex runs", "chun/trex-capacity")
+	stubSearch(t, func(filter string) ([]searchPR, error) {
+		if filter != "--author" {
+			return nil, nil
+		}
+		var out []searchPR
+		for _, u := range w.mine {
+			p := w.prs[u]
+			out = append(out, spr("greptileai/greptilia", prNumber(u), p.Title, "2026-11-20T09:00:00Z", "gunbux"))
+		}
+		return out, nil
+	})
+	h.ok("start", "k8s-sandbox", "Kubernetes sandbox", "--goal", "g")
+	h.ok("sub", "add", "sdk", "General sandbox SDK", "--goal", "g")
+	h.ok("sub", "add", "prod-first", "First production rollout", "--goal", "g")
+	h.ok("sub", "add", "staging", "Staging rollout", "--goal", "g")
+	h.ok("pr", "add", quota, "--subgoal", "sdk")
+	h.ok("pr", "add", monitors, tenth, "--subgoal", "prod-first")
+	h.ok("pr", "add", capacity, "--subgoal", "staging")
+
+	out := h.ok("inventory", "--topic", "SDK")
+	contains_(t, out, "Topic sdk: 1 PRs, 0 review requests\n")
+	contains_(t, out, "#20103 sandbox-orchestrator")
+	for _, n := range []string{"#19792", "#19793", "#17994", "pull/19792", "pull/19793", "pull/17994"} {
+		if strings.Contains(out, n) {
+			t.Fatalf("--topic sdk listed %s:\n%s", n, out)
+		}
+	}
+	contains_(t, out, "Topic sdk: keep only the threads whose title or last message names it")
+
+	// A comma list and a repeated flag both widen the filter.
+	contains_(t, h.ok("inventory", "--topic", "sdk,staging"), "Topic sdk, staging: 2 PRs")
+	contains_(t, h.ok("inventory", "--topic", "sdk", "--topic", "prod"), "Topic sdk, prod: 3 PRs")
+	// The branch matches too.
+	contains_(t, h.ok("inventory", "--topic", "quota-conflict"), "Topic quota-conflict: 1 PRs")
+	// No topic: every PR.
+	contains_(t, h.ok("inventory"), "Your open PRs (4):")
+}
