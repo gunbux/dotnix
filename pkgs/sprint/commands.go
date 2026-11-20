@@ -191,6 +191,9 @@ func init() {
 				"open":   {isBool: true, help: "open every list (Merged, Waiting, context sections) before checking"}}},
 		{path: "show", help: "goal, subgoals, progress, do-now list, PRs, dashboard link", run: cmdShow,
 			flags: map[string]flagDef{"json": {isBool: true}}},
+		{path: "inventory", help: "everything a catch-up must cover: your open PRs in every repo, review requests, each open sprint, and the T3 calls to make",
+			run: cmdInventory, prefetch: prefetchInventory,
+			flags: map[string]flagDef{"json": {isBool: true}}},
 	}
 }
 
