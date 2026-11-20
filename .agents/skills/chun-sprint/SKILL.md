@@ -284,7 +284,15 @@ Any thread can answer. Run `sprint show`. Don't run `sprint pr sync` in a work t
 4. For running work, the time left and the expected end time in SGT.
 5. The dashboard link from `sprint show`: the whole-sprint link, or the subgoal link when the question is about one stage.
 
-List the threads from the "Threads" section with their task and state, and your own subagents with theirs.
+### A catch-up covers every open PR and thread
+
+A catch-up ("catch me up", "I'm back", "what's ongoing") covers all open work, not only the sprint and the threads you remember. Collect it in this order:
+
+1. Run `sprint inventory`. It lists your open PRs in every repository, the PRs that wait for your review, each open sprint's do-now count and tracked PRs, and the PRs that are in no sprint. It counts the test-repository PRs and the stale PRs, and does not list them.
+2. Make each T3 call in its last section. The CLI cannot reach T3. List the threads of all projects and of each reachable linked machine, and read the last message of each thread updated in the last 3 days. Collect every PR that a thread names, also PRs by other people, such as a review.
+3. Put each PR and each thread in one section of the report. If an item fits no section, put it under "Threads you can close" or "Other open PRs". Leave nothing out without a reason.
+
+The catch-up page has these sections, in this order: Lead, Since the last report, Lines of work, Action order, Merge order, Waiting on other people, Other open PRs, Other items on the dashboard, and Threads you can close. Give each thread with its task and state, and your own subagents with theirs.
 
 ## Another machine's sprints
 
