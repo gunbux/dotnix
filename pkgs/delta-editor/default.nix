@@ -10,13 +10,13 @@
   vulkan-loader,
   wayland,
 }: let
-  version = "0.28.0";
+  version = "0.28.4";
 
   # The release API (delta.dev/api/releases/stable/<version>/asset) now
   # resolves to this fixed, unsigned URL.
   src = fetchurl {
     url = "https://releases.delta.dev/releases/stable/${version}/delta-linux-x86_64.tar.gz";
-    hash = "sha256-LryJftc5QdosIIaMnuX/PDcqXe3GHyOSbYfX0ZuhCBM=";
+    hash = "sha256-n4oQQ7UXzq5QXrEncHVfegQju+l7VrruPCkBMBe7ygM=";
   };
 in
   stdenv.mkDerivation {
