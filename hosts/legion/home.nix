@@ -13,6 +13,7 @@
     ../../modules/home/swaylock.nix
     ../../modules/home/t3-ask.nix
     ../../modules/home/sprint.nix
+    ../../modules/home/parl-digest.nix
 
     # GNOME specific settings
     ../../modules/home/dconf.nix

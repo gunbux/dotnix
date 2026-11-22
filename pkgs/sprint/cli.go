@@ -15,6 +15,7 @@ type flagDef struct {
 	help    string
 	isBool  bool
 	choices []string
+	repeat  bool // each use adds to a comma list
 }
 
 // argDef describes one positional. opt allows it to be missing; many takes
@@ -112,6 +113,9 @@ func parse(cmd *command, args []string, c *call) {
 		}
 		if def.choices != nil && !contains(def.choices, val) {
 			fail("%s: --%s must be one of %s", cmd.path, name, strings.Join(def.choices, ", "))
+		}
+		if def.repeat && c.set[name] {
+			val = c.vals[name] + "," + val
 		}
 		c.vals[name], c.set[name] = val, true
 	}
