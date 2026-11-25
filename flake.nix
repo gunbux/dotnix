@@ -42,7 +42,9 @@
     # Deliberately not following nixpkgs: upstream only builds and caches
     # against its own pin, and codex/crush/t3code are source builds that would
     # otherwise compile locally on every nixpkgs bump.
-    llm-agents.url = "github:numtide/llm-agents.nix";
+    # Hold until Codex drops its 2.1 GiB codex-vendor runtime reference.
+    # This also delays newer Claude Code and ChatGPT releases.
+    llm-agents.url = "github:numtide/llm-agents.nix/0cde3970ab62414aaba209787c74b11b951ec7e8";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     minegrub-theme.url = "github:Lxtharia/minegrub-theme";
     minecraft-plymouth-theme.url = "github:nikp123/minecraft-plymouth-theme";
