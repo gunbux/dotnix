@@ -28,14 +28,21 @@
 in
   stdenv.mkDerivation rec {
     pname = "scx-manager";
-    version = "1.16.0";
+    version = "1.17.1";
 
     src = fetchFromGitHub {
       owner = "CachyOS";
       repo = "scx-manager";
       tag = "v${version}";
-      hash = "sha256-fZJ20cYS/yHD7g25gzrBqGpRlp60ctLgLVTqrYFjiPI=";
+      hash = "sha256-EjWu4MQ/jNn/aya77TPOvWe/70JPp8FqY1PlnySJIRk=";
     };
+
+    # CPM only accepts a local fmt at least as new as its pinned tag. Upstream
+    # pins a newer fmt patch release than nixpkgs ships; use the nixpkgs one.
+    postPatch = ''
+      substituteInPlace CMakeLists.txt \
+        --replace-fail "GIT_TAG 12.2.1" "GIT_TAG ${fmt.version}"
+    '';
 
     cargoRoot = "scx-rustlib";
 

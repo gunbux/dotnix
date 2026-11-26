@@ -72,7 +72,7 @@
     # Pinned to a release tag: main can carry failing tests, and every main
     # commit means a full Rust rebuild. Bump the tag for a new release.
     hex = {
-      url = "github:anomalyco/hex/v3.4.0";
+      url = "github:anomalyco/hex/v3.5.0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
