@@ -87,6 +87,19 @@
   hardware.nvidia = {
     modesetting.enable = true;
     powerManagement.enable = true;
+    # Proprietary kernel module. The open module (595.112.07) logs
+    # "dmaAllocMapping_GM107: can't update VA space" when Deadlock fills the
+    # 6 GB of VRAM, and the game then draws stretched, flickering textures.
+    # NVIDIA open-gpu-kernel-modules #1364 and #1453; #1453 confirms the
+    # proprietary module does not have the bug. Turing supports both.
+    open = false;
+  };
+  # The driver also fails to get large contiguous RAM blocks when memory is
+  # fragmented ("Allocation failed with big page size"). Keep more RAM free
+  # and compact it in the background so those allocations succeed.
+  boot.kernel.sysctl = {
+    "vm.min_free_kbytes" = 262144;
+    "vm.compaction_proactiveness" = 50;
   };
 
   # Steam/Gaming Configs
